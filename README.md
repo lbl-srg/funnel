@@ -30,3 +30,11 @@ Usage: funnel [OPTION...]
   -?, --help                 Give this help list
       --usage                Give a short usage message
 ```
+
+# License
+
+Modified 3-clause BSD, see [LICENSE.md](LICENSE.md).
+
+# Copyright
+
+See [copyright notice](COPYRIGHT.md).
