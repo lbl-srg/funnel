@@ -11,25 +11,39 @@ being achieved.
 
 ### How to run tests? ###
 
+To compile the C files, run
+```
+make funnel
+```
 To see usage information, start the tool with command line argument `--help`
 or `--usage`
 ```
-./sources/Release/funnel --help
+./funnel --help
 ```
 You can set the arguments as:
 ```
 Usage: funnel [OPTION...]
 
-  -a, --absolute             Set to absolute tolerance
-  -b, --baseFile=FILE_PATH   Base CSV file path
-  -c, --compareFile=FILE_PATH   Test CSV file path
-  -o, --outputFile=DIR       Output directory
-  -t, --tolerance=TOLERANCE  Tolerance to generate data tube
+  -a, --absolute             Check if use absolute tolerance (use = true,
+                             not_use = false), default=false
+  -b, --baseFile=PATH        Path of CSV file to be used as base
+  -c, --compareFile=PATH     Path of CSV file to be tested
+  -o, --outputFile=DIR       Directory path to save output results
+  -t, --tolerance=TOLERANCE  Tolerance to generate data tube, default=0.002
   -x, --axes=AXES            Check if the tolerance value is set for half-width
-                             or half-height of tube
+                             (X) or half-height (Y) of the rectangle to
+                             generate tube, default=Y
   -?, --help                 Give this help list
       --usage                Give a short usage message
 ```
+To run an example, with `trended.csv` as base data and `simulated.csv` as test
+data, run:
+```
+./funnel -b trended.csv -c simulated.csv -o results/
+```
+where it uses default settings of relative tolerance, being set for half-height (Y)
+of the rectangle that is around each point for generating tube, with value of 0.002.
+It means that the half-height of the rectangle is 0.002*(max(Y) - min(Y)).
 
 # License
 

@@ -16,6 +16,9 @@
 #include "algorithmRectangle.h"
 #include "tube.h"
 #include "tubeSize.h"
+#include "mkdir_p.h"
+
+#define MAX 100
 
 /* Used by main to communicate with parse_opt */
 struct arguments {
@@ -31,14 +34,14 @@ struct arguments {
 
 /* Input options */
 static struct argp_option options[] = {
-    /* name, key, argname, flags, doc, group */
-    {"tolerance", 't', "TOLERANCE", 0, "Tolerance to generate data tube"},
-	{"axes", 'x', "AXES", 0, "Check if the tolerance value is set for half-width or half-height of tube"},
-	{"absolute", 'a', 0, 0, "Set to absolute tolerance"},
-	{"outputFile", 'o', "DIR", 0, "Output directory"},
-	{"compareFile", 'c', "FILE_PATH", 0, "Test CSV file path"},
-	{"baseFile", 'b', "FILE_PATH", 0, "Base CSV file path"},
-    { 0 }
+  /* name, key, argname, flags, doc, group */
+  {"tolerance", 't', "TOLERANCE", 0, "Tolerance to generate data tube, default=0.002"},
+	{"axes", 'x', "AXES", 0, "Check if the tolerance value is set for half-width (X) or half-height (Y) of the rectangle to generate tube, default=Y"},
+	{"absolute", 'a', 0, 0, "Check if use absolute tolerance (use = true, not_use = false), default=false"},
+	{"outputFile", 'o', "DIR", 0, "Directory path to save output results"},
+	{"compareFile", 'c', "PATH", 0, "Path of CSV file to be tested"},
+	{"baseFile", 'b', "PATH", 0, "Path of CSV file to be used as base"},
+  { 0 }
 };
 
 /* Parse a single option */
@@ -80,18 +83,32 @@ static struct argp argp = { options, parse_opt, 0, 0 };
  *   write input data structure to files
  *
  *   data: input data structure containing original CSV data, tube curve data, and validate report
+ *   outDir: directory to save the output files
  *   refData: file name for storing base CSV data
  *   testData: file name for storing test CSV data
  *   lowerData: file name for storing tube lower curve data
  *   upperData: file name for storing tube upper curve data
  *   report: file name for validate report
  */
-int write_to_file(struct sumData data, char const *refData, char const *testData, char const *lowerData, char const *upperData, char const *report) {
-	FILE *f1 = fopen(refData, "w");
-	FILE *f2 = fopen(testData, "w");
-	FILE *f3 = fopen(lowerData, "w");
-	FILE *f4 = fopen(upperData, "w");
-	FILE *f5 = fopen(report, "w");
+int write_to_file(struct sumData data, char const *outDir, char const *refData, char const *testData, char const *lowerData, char const *upperData, char const *report) {
+	mkdir_p(outDir);
+	char refDataFile[MAX], testDataFile[MAX], lowDataFile[MAX], upperDataFile[MAX], reportFile[MAX];
+	strcpy(refDataFile, outDir);
+	strcpy(testDataFile, outDir);
+	strcpy(lowDataFile, outDir);
+	strcpy(upperDataFile, outDir);
+	strcpy(reportFile, outDir);
+	strcat(refDataFile, refData);
+	strcat(testDataFile, testData);
+	strcat(lowDataFile, lowerData);
+	strcat(upperDataFile, upperData);
+	strcat(reportFile, report);
+
+	FILE *f1 = fopen(refDataFile, "w+");
+	FILE *f2 = fopen(testDataFile, "w+");
+	FILE *f3 = fopen(lowDataFile, "w+");
+	FILE *f4 = fopen(upperDataFile, "w+");
+	FILE *f5 = fopen(reportFile, "w+");
 
 	if (f1 == NULL || f2 == NULL || f3 == NULL || f4 == NULL || f5 == NULL) return -1;
 	int i = 0;
@@ -133,7 +150,6 @@ int write_to_file(struct sumData data, char const *refData, char const *testData
 }
 
 
-
 int main(int argc, char *argv[]) {
 	struct arguments arguments;
 	// Default values
@@ -173,12 +189,7 @@ int main(int argc, char *argv[]) {
 	sumReport.testData = testCSV;
 	sumReport.validateReport = validateReport;
 
-
-	write_to_file(sumReport, "results/0_refData.csv", "results/0_testData.csv", "results/0_lowerData.csv", "results/0_upperData.csv", "results/0_report.csv");
+	write_to_file(sumReport, arguments.output, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
 
 	return 0;
 }
-
-
-
-

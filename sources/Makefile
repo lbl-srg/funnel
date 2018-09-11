@@ -16,12 +16,18 @@ tube.o: tube.c tube.h
 tubeSize.o: tubeSize.c tubeSize.h
 	gcc -c tubeSize.c
 
-main.o: main.c data_structure.h readCSV.h algorithmRectangle.h tube.h tubeSize.h
+mkdir_p.o: mkdir_p.c mkdir_p.h
+	gcc -c mkdir_p.c
+
+main.o: main.c data_structure.h readCSV.h algorithmRectangle.h tube.h tubeSize.h mkdir_p.h
 	gcc -c main.c
 
-funnel: algorithmRectangle.o readCSV.o tube.o tubeSize.o main.o
-	gcc -o funnel algorithmRectangle.o readCSV.o tube.o tubeSize.o main.o
+funnel: algorithmRectangle.o readCSV.o tube.o tubeSize.o mkdir_p.o main.o
+	gcc -o funnel algorithmRectangle.o readCSV.o tube.o tubeSize.o mkdir_p.o main.o
 
 clean:
 	rm *.o funnel
 
+postProcess:
+	cd results && \
+	./processData.py --reference_csv refData.csv --test_csv testData.csv --lower_csv lowerData.csv --upper_csv upperData.csv
