@@ -26,4 +26,4 @@ build: algorithmRectangle.o readCSV.o tube.o tubeSize.o mkdir_p.o main.o
 	rm *.o
 
 clean:
-	rm *.o funnel
+	rm -f *.o ../bin/funnel

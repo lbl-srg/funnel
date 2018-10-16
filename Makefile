@@ -13,3 +13,4 @@ test:
 
 clean:
 	$(MAKE) -C $(SRC_DIR) clean
+	$(MAKE) -C tests clean
