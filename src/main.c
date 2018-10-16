@@ -36,11 +36,11 @@ struct arguments {
 static struct argp_option options[] = {
   /* name, key, argname, flags, doc, group */
   {"tolerance", 't', "TOLERANCE", 0, "Tolerance to generate data tube, default=0.002"},
-	{"axes", 'x', "AXES", 0, "Check if the tolerance value is set for half-width (X) or half-height (Y) of the rectangle to generate tube, default=Y"},
+	{"axes", 'x', "AXES", 0, "Check if the tolerance value is set for the half-width (X) or half-height (Y) of the rectangle to generate tube, default=Y"},
 	{"absolute", 'a', 0, 0, "Check if use absolute tolerance (use = true, not_use = false), default=false"},
-	{"outputFile", 'o', "DIR", 0, "Directory path to save output results"},
-	{"compareFile", 'c', "PATH", 0, "Path of CSV file to be tested"},
-	{"baseFile", 'b', "PATH", 0, "Path of CSV file to be used as base"},
+	{"outputFile", 'o', "DIR", 0, "Directory to save outputs"},
+	{"compareFile", 'c', "PATH", 0, "Name of CSV file to be tested"},
+	{"baseFile", 'b', "PATH", 0, "Name of CSV file to be used as the reference"},
   { 0 }
 };
 
