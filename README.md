@@ -13,7 +13,7 @@ being achieved.
 
 To compile the C files, run
 ```
-make funnel
+make build
 ```
 To see usage information, start the tool with command line argument `--help`
 or `--usage`

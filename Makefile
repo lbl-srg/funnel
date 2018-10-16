@@ -1,0 +1,15 @@
+##########################################
+# Makefile for funnel
+#########################################
+
+CC=gcc
+SRC_DIR=src
+
+build:
+	$(MAKE) -C $(SRC_DIR) build
+
+test:
+	$(MAKE) -C tests all
+
+clean:
+	$(MAKE) -C $(SRC_DIR) clean

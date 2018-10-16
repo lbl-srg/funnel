@@ -61,4 +61,4 @@ if __name__=='__main__':
     plt.xlim([np.min(testTime),np.max(testTime)])
     plt.ylim([np.min(lowerValue),np.max(upperValue)])
     plt.grid()
-    fig.savefig("processData.png")
+    fig.savefig("processData.pdf")
