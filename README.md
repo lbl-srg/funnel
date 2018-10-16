@@ -18,7 +18,7 @@ make build
 To see usage information, start the tool with command line argument `--help`
 or `--usage`
 ```
-./funnel --help
+bin/funnel --help
 ```
 You can set the arguments as:
 ```
@@ -37,13 +37,18 @@ Usage: funnel [OPTION...]
       --usage                Give a short usage message
 ```
 To run an example, with `trended.csv` as base data and `simulated.csv` as test
-data, run:
+data, run
 ```
 ./funnel -b trended.csv -c simulated.csv -o results/
 ```
 where it uses default settings of relative tolerance, being set for half-height (Y)
 of the rectangle that is around each point for generating tube, with value of 0.002.
 It means that the half-height of the rectangle is 0.002*(max(Y) - min(Y)).
+
+To run all tests, run
+```
+make build test
+```
 
 # License
 
