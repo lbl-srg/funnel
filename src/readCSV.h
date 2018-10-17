@@ -8,6 +8,6 @@
 #ifndef READCSV_H_
 #define READCSV_H_
 
-struct data readCSV(char* arg1,int skipLines);
+struct data readCSV(const char * filename, int skipLines);
 
 #endif /* READCSV_H_ */

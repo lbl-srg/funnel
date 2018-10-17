@@ -21,12 +21,12 @@
  * -----------------
  *   read in CSV file and returns data structure. The CSV file should be two columns, delimited by comma or semicolon.
  *
- *   arg1: path to the CSV file
+ *   filename: path to the CSV file
  *   skipLines: number of head lines to be skipped
  *
  *   returns: the data structure "inputs", which includes fist and second data set, and the number of rows
  */
-struct data readCSV(char* arg1, int skipLines) {
+struct data readCSV(const char * filename, int skipLines) {
   struct data inputs;
   double *time;
   double *value;
@@ -34,7 +34,7 @@ struct data readCSV(char* arg1, int skipLines) {
   int rowCount = 0;
   char buf[100];
 
-  FILE *fp = fopen(arg1, "r");
+  FILE *fp = fopen(filename, "r");
 
   time = malloc(sizeof(double) * arraySize);
   value = malloc(sizeof(double) * arraySize);
@@ -69,4 +69,3 @@ struct data readCSV(char* arg1, int skipLines) {
 
   return inputs;
 }
-

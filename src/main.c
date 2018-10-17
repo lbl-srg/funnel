@@ -152,28 +152,27 @@ int write_to_file(struct sumData data, char const *outDir, char const *refData, 
   return 0;
 }
 
-
-int main(int argc, char *argv[]) {
-  int exiVal; // Exit value
-
-  struct arguments arguments;
-  // Default values
-  arguments.toleranceFlag = false;
-  arguments.tolerance = 0.002;
-  arguments.axes = 'Y';
-  arguments.useRelativeTolerance = true;
-  arguments.outputFlag = false;
-
-  // Parse arguments
-  argp_parse (&argp, argc, argv, 0, 0, &arguments);
-
+/*
+ * Function: compareAndReport
+ * -----------------------
+ *   This function does the actual computations. It is introduced so that it
+ *   can be called from Python in which case the argument parsing of main
+ *   is not needed.
+ */
+int compareAndReport(
+  const char * baseFileName,
+  const char * testFileName,
+  const char * outputDirectory,
+  const double tolerance,
+  const char axes,
+  const bool useRelativeTolerance){
   // Read CSV files into data structure
-  struct data testCSV = readCSV(arguments.testFile, 1);
-  struct data baseCSV = readCSV(arguments.baseFile, 1);
+  struct data testCSV = readCSV(testFileName, 1);
+  struct data baseCSV = readCSV(baseFileName, 1);
 
   // Calculate tube size (half-width and half-height of rectangle)
   //printf("useRelative=%d\n", arguments.useRelativeTolerance);
-  double* tube = tubeSize(baseCSV, arguments.tolerance, arguments.axes, 0, 0, arguments.useRelativeTolerance);
+  double* tube = tubeSize(baseCSV, tolerance, axes, 0, 0, useRelativeTolerance);
 
   // Calculate the data set of lower and upper curve around base
   struct data lowerCurve = calculateLower(baseCSV, tube);
@@ -190,6 +189,30 @@ int main(int argc, char *argv[]) {
   sumReport.testData = testCSV;
   sumReport.validateReport = validateReport;
 
-  exiVal = write_to_file(sumReport, arguments.output, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+  return write_to_file(sumReport, outputDirectory, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+}
+
+int main(int argc, char *argv[]) {
+  int exiVal; // Exit value
+
+  struct arguments arguments;
+  // Default values
+  arguments.toleranceFlag = false;
+  arguments.tolerance = 0.002;
+  arguments.axes = 'Y';
+  arguments.useRelativeTolerance = true;
+  arguments.outputFlag = false;
+
+  // Parse arguments
+  argp_parse (&argp, argc, argv, 0, 0, &arguments);
+
+  exiVal = compareAndReport(
+    arguments.baseFile,
+    arguments.testFile,
+    arguments.output,
+    arguments.tolerance,
+    arguments.axes,
+    arguments.useRelativeTolerance);
+
   return exiVal;
 }
