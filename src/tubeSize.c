@@ -167,7 +167,7 @@ double * setFormerBaseAndRatio(struct data refData) {
  *   axes: when single value is used (non-zero), it sets whether the single value is for half-width (X) or half-height (Y)
  *   valueX: when singleValue is zero, it defines half-width (relative or absolute)
  *   valueY: when singleValue is zero, it defines half-height (relative or absolute)
- *   relativity : define if it is relative value
+ *   relative : define if it is relative value
  *
  *   return : an array "tubeSize" that includes:
  *                   x -- half width of rectangle
@@ -176,7 +176,7 @@ double * setFormerBaseAndRatio(struct data refData) {
  *               baseY -- base of relative value is y direction
  *               ratio -- ratio y / x
  */
-double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relativity) {
+double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relative) {
 	double x, y, baseX, baseY, ratio;
 	double* tubeSize = malloc(5 * sizeof(double));
 
@@ -197,9 +197,9 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
 		// If non-zero ratio
 		if (ratio > 0) {
 			// If relative value
-			if (relativity) {
+			if (relative) {
 				if ((singleValue < 0) || (singleValue > 1)) {
-					fputs("Relative value is out of expected range [0,1].\n", stderr);
+					fputs("Relative value is out of expected range [0, 1].\n", stderr);
 					exit(1);
 				}
 				// If value is relative to half-height (axes = Y)
@@ -212,7 +212,7 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
 					y = ratio * x;
 				}
 			// If absolute value
-			} else if (!relativity) {
+			} else if (!relative) {
 				// If value is half-height
 				if (axes == 'Y') {
 					y = singleValue;
@@ -227,15 +227,15 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
 	// Specify both height and width values to define half-width (x) and half-height (y) of rectangle
 	} else {
 		// If relative value
-		if (relativity && (baseX != 0) && (baseY != 0)) {
+		if (relative && (baseX != 0) && (baseY != 0)) {
 			if ((valueX < 0) || (valueX > 1))
-				fputs("Relative x value is out of expected range [0,1].", stderr);
+				fputs("Relative x value is out of expected range [0, 1].", stderr);
 			if ((valueY < 0) || (valueY > 1))
-				fputs("Relative y value is out of expected range [0,1].", stderr);
+				fputs("Relative y value is out of expected range [0, 1].", stderr);
 			x = valueX * baseX;
 			y = valueY * baseY;
 		// If absolute value
-		} else if (!relativity) {
+		} else if (!relative) {
 			x = valueX;
 			y = valueY;
 		}
@@ -250,4 +250,3 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
 
 	return tubeSize;
 }
-

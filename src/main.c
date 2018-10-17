@@ -25,7 +25,7 @@ struct arguments {
     bool toleranceFlag;
     double tolerance;
     char axes;
-    bool absoluteFlag;
+    bool useRelativeTolerance;
     bool outputFlag;
     char *output;
     char *testFile;
@@ -37,10 +37,10 @@ static struct argp_option options[] = {
   /* name, key, argname, flags, doc, group */
   {"tolerance", 't', "TOLERANCE", 0, "Tolerance to generate data tube, default=0.002"},
 	{"axes", 'x', "AXES", 0, "Check if the tolerance value is set for the half-width (X) or half-height (Y) of the rectangle to generate tube, default=Y"},
-	{"absolute", 'a', 0, 0, "Check if use absolute tolerance (use = true, not_use = false), default=false"},
-	{"outputFile", 'o', "DIR", 0, "Directory to save outputs"},
-	{"compareFile", 'c', "PATH", 0, "Name of CSV file to be tested"},
-	{"baseFile", 'b', "PATH", 0, "Name of CSV file to be used as the reference"},
+	{"absolute", 'a', 0, 0, "If specified, absolute tolerance is used."},
+	{"outputFile", 'o', "DIR", 0, "Directory to save outputs."},
+	{"compareFile", 'c', "PATH", 0, "Name of CSV file to be tested."},
+	{"baseFile", 'b', "PATH", 0, "Name of CSV file to be used as the reference."},
   { 0 }
 };
 
@@ -49,7 +49,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 	struct arguments *arguments = state->input; // get input argument from argp_parse
 	switch(key) {
 	case 'a':
-		arguments->absoluteFlag = true;
+		arguments->useRelativeTolerance = false;
 		break;
 	case 'b':
 		arguments->baseFile = arg;
@@ -110,7 +110,10 @@ int write_to_file(struct sumData data, char const *outDir, char const *refData, 
 	FILE *f4 = fopen(upperDataFile, "w+");
 	FILE *f5 = fopen(reportFile, "w+");
 
-	if (f1 == NULL || f2 == NULL || f3 == NULL || f4 == NULL || f5 == NULL) return -1;
+	if (f1 == NULL || f2 == NULL || f3 == NULL || f4 == NULL || f5 == NULL){
+    fputs("Error: Failed to open file in write_to_file.\n", stderr);
+    return -1;
+  }
 	int i = 0;
 	while (i < data.refData.size) {
 		fprintf(f1, "%lf,%lf\n", data.refData.X[i],data.refData.Y[i]);
@@ -151,24 +154,26 @@ int write_to_file(struct sumData data, char const *outDir, char const *refData, 
 
 
 int main(int argc, char *argv[]) {
+  int exiVal; // Exit value
+
 	struct arguments arguments;
 	// Default values
 	arguments.toleranceFlag = false;
 	arguments.tolerance = 0.002;
 	arguments.axes = 'Y';
-	arguments.absoluteFlag = false;
+	arguments.useRelativeTolerance = true;
 	arguments.outputFlag = false;
 
-	// Parse arguments; every option seen by parse_opt will be reflected in arguments
+	// Parse arguments
 	argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
 	// Read CSV files into data structure
 	struct data testCSV = readCSV(arguments.testFile, 1);
 	struct data baseCSV = readCSV(arguments.baseFile, 1);
 
-	char* absolute = (arguments.absoluteFlag) ? "true" : "false";
 	// Calculate tube size (half-width and half-height of rectangle)
-	double* tube = tubeSize(baseCSV, arguments.tolerance, arguments.axes, 0, 0, !absolute);
+  //printf("useRelative=%d\n", arguments.useRelativeTolerance);
+	double* tube = tubeSize(baseCSV, arguments.tolerance, arguments.axes, 0, 0, arguments.useRelativeTolerance);
 
 	// Calculate the data set of lower and upper curve around base
 	struct data lowerCurve = calculateLower(baseCSV, tube);
@@ -185,7 +190,6 @@ int main(int argc, char *argv[]) {
 	sumReport.testData = testCSV;
 	sumReport.validateReport = validateReport;
 
-	write_to_file(sumReport, arguments.output, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
-
-	return 0;
+	exiVal = write_to_file(sumReport, arguments.output, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+  return exiVal;
 }
