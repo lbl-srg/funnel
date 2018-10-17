@@ -170,10 +170,6 @@ int main(int argc, char *argv[]) {
 	// Calculate tube size (half-width and half-height of rectangle)
 	double* tube = tubeSize(baseCSV, arguments.tolerance, arguments.axes, 0, 0, !absolute);
 
-	printf("tolerance = %lf, axes = %c, absolute = %s; \n",
-					arguments.tolerance, arguments.axes, absolute);
-	printf("half-width = %lf; half-height = %lf; \n", tube[0], tube[1]);
-
 	// Calculate the data set of lower and upper curve around base
 	struct data lowerCurve = calculateLower(baseCSV, tube);
 	struct data upperCurve = calculateUpper(baseCSV, tube);
