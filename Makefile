@@ -2,7 +2,6 @@
 # Makefile for funnel
 #########################################
 
-CC=gcc
 SRC_DIR=src
 
 build:

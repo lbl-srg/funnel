@@ -1,4 +1,6 @@
 
+CC=gcc
+
 .PHONY: algorithmRectangle.o readCSV.o tube.o tubeSize.o main.o funnel clean
 
 algorithmRectangle.o: algorithmRectangle.c algorithmRectangle.h
