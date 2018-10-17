@@ -9,8 +9,8 @@
 #define ALGORITHMRECTANGLE_H_
 
 typedef struct node {
-	double val;
-	struct node * next;
+  double val;
+  struct node * next;
 } node_t;
 
 node_t * createNode();

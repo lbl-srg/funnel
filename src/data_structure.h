@@ -9,32 +9,32 @@
 #define DATA_STRUCTURE_H_
 
 struct data {
-	double *X;
-	double *Y;
-	int size;
+  double *X;
+  double *Y;
+  int size;
 };
 
 struct errReport {
-	double *X;
-	double *Y;
-	int size;
-	double *diffX;
-	double *diffY;
-	int diffSize;
+  double *X;
+  double *Y;
+  int size;
+  double *diffX;
+  double *diffY;
+  int diffSize;
 };
 
 struct reports {
-	struct data test;
-	struct errReport errors;
-	char *valid;
+  struct data test;
+  struct errReport errors;
+  char *valid;
 };
 
 struct sumData {
-	struct data refData;
-	struct data testData;
-	struct data lowerCurve;
-	struct data upperCurve;
-	struct reports validateReport;
+  struct data refData;
+  struct data testData;
+  struct data lowerCurve;
+  struct data upperCurve;
+  struct reports validateReport;
 };
 
 #endif /* DATA_STRUCTURE_H_ */

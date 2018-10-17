@@ -41,14 +41,14 @@
  *   return: minimum value of the data array
  */
 double minValue(double* array, int size) {
-	double min;
-	min = array[0];
-	for (int i=0; i<size; i++) {
-		if (array[i] < min) {
-			min = array[i];
-		}
-	}
-	return min;
+  double min;
+  min = array[0];
+  for (int i=0; i<size; i++) {
+    if (array[i] < min) {
+      min = array[i];
+    }
+  }
+  return min;
 }
 
 /*
@@ -62,14 +62,14 @@ double minValue(double* array, int size) {
  *   return: maximum value of the data array
  */
 double maxValue(double* array, int size) {
-	double max;
-	max = array[0];
-	for (int i=0; i<size; i++) {
-		if (array[i] > max) {
-			max = array[i];
-		}
-	}
-	return max;
+  double max;
+  max = array[0];
+  for (int i=0; i<size; i++) {
+    if (array[i] > max) {
+      max = array[i];
+    }
+  }
+  return max;
 }
 
 /*
@@ -82,43 +82,43 @@ double maxValue(double* array, int size) {
  *   return: data structure including base values and their ratio
  */
 double * setStandardBaseAndRatio(struct data refData) {
-	double baseX, baseY, ratio;
-	double* staBasRat = malloc(3 * sizeof(double));
+  double baseX, baseY, ratio;
+  double* staBasRat = malloc(3 * sizeof(double));
 
-	double maxX = maxValue(refData.X, refData.size);
-	double minX = minValue(refData.X, refData.size);
+  double maxX = maxValue(refData.X, refData.size);
+  double minX = minValue(refData.X, refData.size);
 
-	double maxY = maxValue(refData.Y, refData.size);
-	double minY = minValue(refData.Y, refData.size);
+  double maxY = maxValue(refData.Y, refData.size);
+  double minY = minValue(refData.Y, refData.size);
 
-	// set baseX
-	baseX = maxX - minX;
-	if (baseX == 0) {
-		baseX = abs(maxX);
-	}
-	if (baseX == 0) {
-		baseX = 1;
-	}
-	// set baseY
-	baseY = maxY - minY;
-	if (baseY == 0) {
-		baseY = abs(maxY);
-	}
-	if (baseY == 0) {
-		baseY = 0.0000000000000001;
-	}
-	// set ratio
-	if (baseX != 0) {
-		ratio = baseY / baseX;
-	} else {
-		ratio = 0;
-	}
+  // set baseX
+  baseX = maxX - minX;
+  if (baseX == 0) {
+    baseX = abs(maxX);
+  }
+  if (baseX == 0) {
+    baseX = 1;
+  }
+  // set baseY
+  baseY = maxY - minY;
+  if (baseY == 0) {
+    baseY = abs(maxY);
+  }
+  if (baseY == 0) {
+    baseY = 0.0000000000000001;
+  }
+  // set ratio
+  if (baseX != 0) {
+    ratio = baseY / baseX;
+  } else {
+    ratio = 0;
+  }
 
-	staBasRat[0] = baseX;
-	staBasRat[1] = baseY;
-	staBasRat[2] = ratio;
+  staBasRat[0] = baseX;
+  staBasRat[1] = baseY;
+  staBasRat[2] = ratio;
 
-	return staBasRat;
+  return staBasRat;
 }
 
 /*
@@ -131,28 +131,28 @@ double * setStandardBaseAndRatio(struct data refData) {
  *   return: structure of data set including base values and their ratio
  */
 double * setFormerBaseAndRatio(struct data refData) {
-	double baseX, baseY, ratio;
-	double* staBasRat = malloc(3 * sizeof(double));
+  double baseX, baseY, ratio;
+  double* staBasRat = malloc(3 * sizeof(double));
 
-	double maxX = maxValue(refData.X,refData.size);
-	double minX = minValue(refData.X,refData.size);
+  double maxX = maxValue(refData.X,refData.size);
+  double minX = minValue(refData.X,refData.size);
 
-	double maxY = maxValue(refData.Y,refData.size);
-	double minY = minValue(refData.Y,refData.size);
+  double maxY = maxValue(refData.Y,refData.size);
+  double minY = minValue(refData.Y,refData.size);
 
-	baseX = maxX - minX + abs(minX);
-	baseY = maxY - minY + abs(minY);
+  baseX = maxX - minX + abs(minX);
+  baseY = maxY - minY + abs(minY);
 
-	if (maxX != minX) {
-		ratio = max(0.0004, ((maxY - minY + abs(minY)) / (maxX - minX)));
-	} else {
-		ratio = 0;
-	}
+  if (maxX != minX) {
+    ratio = max(0.0004, ((maxY - minY + abs(minY)) / (maxX - minX)));
+  } else {
+    ratio = 0;
+  }
 
-	staBasRat[0] = baseX;
-	staBasRat[1] = baseY;
-	staBasRat[2] = ratio;
-	return staBasRat;
+  staBasRat[0] = baseX;
+  staBasRat[1] = baseY;
+  staBasRat[2] = ratio;
+  return staBasRat;
 }
 
 
@@ -177,76 +177,76 @@ double * setFormerBaseAndRatio(struct data refData) {
  *               ratio -- ratio y / x
  */
 double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relative) {
-	double x, y, baseX, baseY, ratio;
-	double* tubeSize = malloc(5 * sizeof(double));
+  double x, y, baseX, baseY, ratio;
+  double* tubeSize = malloc(5 * sizeof(double));
 
-	int i = 2; // 1: SetFormerBaseAndRatio; 2: SetStandardBaseAndRatio;
-	double *standValue;
+  int i = 2; // 1: SetFormerBaseAndRatio; 2: SetStandardBaseAndRatio;
+  double *standValue;
 
-	if (i == 1) {
-		standValue = setFormerBaseAndRatio(refData);
-	} else {
-		standValue = setStandardBaseAndRatio(refData);
-	}
-	baseX = standValue[0];
-	baseY = standValue[1];
-	ratio = standValue[2];
+  if (i == 1) {
+    standValue = setFormerBaseAndRatio(refData);
+  } else {
+    standValue = setStandardBaseAndRatio(refData);
+  }
+  baseX = standValue[0];
+  baseY = standValue[1];
+  ratio = standValue[2];
 
-	// Specify single value to define half-width (x) or half-height (y) of rectangle
-	if (singleValue != 0) {
-		// If non-zero ratio
-		if (ratio > 0) {
-			// If relative value
-			if (relative) {
-				if ((singleValue < 0) || (singleValue > 1)) {
-					fputs("Relative value is out of expected range [0, 1].\n", stderr);
-					exit(1);
-				}
-				// If value is relative to half-height (axes = Y)
-				if ((axes == 'Y') && (baseY > 0)) {
-					y = singleValue * baseY;
-					x = y / ratio;
-				// If value is relative to half-width (axes = X)
-				} else if ((axes == 'X') && (baseX > 0)) {
-					x = singleValue * baseX;
-					y = ratio * x;
-				}
-			// If absolute value
-			} else if (!relative) {
-				// If value is half-height
-				if (axes == 'Y') {
-					y = singleValue;
-					x = singleValue / ratio;
-				// If value is half-width
-				} else if (axes == 'X') {
-					x = singleValue;
-					y = ratio * singleValue;
-				}
-			}
-		}
-	// Specify both height and width values to define half-width (x) and half-height (y) of rectangle
-	} else {
-		// If relative value
-		if (relative && (baseX != 0) && (baseY != 0)) {
-			if ((valueX < 0) || (valueX > 1))
-				fputs("Relative x value is out of expected range [0, 1].", stderr);
-			if ((valueY < 0) || (valueY > 1))
-				fputs("Relative y value is out of expected range [0, 1].", stderr);
-			x = valueX * baseX;
-			y = valueY * baseY;
-		// If absolute value
-		} else if (!relative) {
-			x = valueX;
-			y = valueY;
-		}
+  // Specify single value to define half-width (x) or half-height (y) of rectangle
+  if (singleValue != 0) {
+    // If non-zero ratio
+    if (ratio > 0) {
+      // If relative value
+      if (relative) {
+        if ((singleValue < 0) || (singleValue > 1)) {
+          fputs("Relative value is out of expected range [0, 1].\n", stderr);
+          exit(1);
+        }
+        // If value is relative to half-height (axes = Y)
+        if ((axes == 'Y') && (baseY > 0)) {
+          y = singleValue * baseY;
+          x = y / ratio;
+        // If value is relative to half-width (axes = X)
+        } else if ((axes == 'X') && (baseX > 0)) {
+          x = singleValue * baseX;
+          y = ratio * x;
+        }
+      // If absolute value
+      } else if (!relative) {
+        // If value is half-height
+        if (axes == 'Y') {
+          y = singleValue;
+          x = singleValue / ratio;
+        // If value is half-width
+        } else if (axes == 'X') {
+          x = singleValue;
+          y = ratio * singleValue;
+        }
+      }
+    }
+  // Specify both height and width values to define half-width (x) and half-height (y) of rectangle
+  } else {
+    // If relative value
+    if (relative && (baseX != 0) && (baseY != 0)) {
+      if ((valueX < 0) || (valueX > 1))
+        fputs("Relative x value is out of expected range [0, 1].", stderr);
+      if ((valueY < 0) || (valueY > 1))
+        fputs("Relative y value is out of expected range [0, 1].", stderr);
+      x = valueX * baseX;
+      y = valueY * baseY;
+    // If absolute value
+    } else if (!relative) {
+      x = valueX;
+      y = valueY;
+    }
 
-	}
+  }
 
-	tubeSize[0] = x;
-	tubeSize[1] = y;
-	tubeSize[2] = baseX;
-	tubeSize[3] = baseY;
-	tubeSize[4] = ratio;
+  tubeSize[0] = x;
+  tubeSize[1] = y;
+  tubeSize[2] = baseX;
+  tubeSize[3] = baseY;
+  tubeSize[4] = ratio;
 
-	return tubeSize;
+  return tubeSize;
 }
