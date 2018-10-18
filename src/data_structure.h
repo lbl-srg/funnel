@@ -9,18 +9,18 @@
 #define DATA_STRUCTURE_H_
 
 struct data {
-  double *X;
-  double *Y;
-  int size;
+  double *x;
+  double *y;
+  size_t n;
 };
 
 struct errReport {
-  double *X;
-  double *Y;
-  int size;
+  double *x;
+  double *y;
+  size_t n;
   double *diffX;
   double *diffY;
-  int diffSize;
+  size_t diffSize;
 };
 
 struct reports {

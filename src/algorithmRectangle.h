@@ -29,7 +29,7 @@ struct data calculateLower(struct data reference, double* tubeSize);
 
 struct data calculateUpper(struct data reference, double* tubeSize);
 
-struct data removeLoop(double* X, double* Y, int size, int curInd);
+struct data removeLoop(double* x, double* y, int size, int curInd);
 
 double * removeRange(double* array, int size, int staInd, int count);
 

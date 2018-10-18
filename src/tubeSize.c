@@ -85,11 +85,11 @@ double * setStandardBaseAndRatio(struct data refData) {
   double baseX, baseY, ratio;
   double* staBasRat = malloc(3 * sizeof(double));
 
-  double maxX = maxValue(refData.X, refData.size);
-  double minX = minValue(refData.X, refData.size);
+  double maxX = maxValue(refData.x, refData.n);
+  double minX = minValue(refData.x, refData.n);
 
-  double maxY = maxValue(refData.Y, refData.size);
-  double minY = minValue(refData.Y, refData.size);
+  double maxY = maxValue(refData.y, refData.n);
+  double minY = minValue(refData.y, refData.n);
 
   // set baseX
   baseX = maxX - minX;
@@ -134,11 +134,11 @@ double * setFormerBaseAndRatio(struct data refData) {
   double baseX, baseY, ratio;
   double* staBasRat = malloc(3 * sizeof(double));
 
-  double maxX = maxValue(refData.X,refData.size);
-  double minX = minValue(refData.X,refData.size);
+  double maxX = maxValue(refData.x,refData.n);
+  double minX = minValue(refData.x,refData.n);
 
-  double maxY = maxValue(refData.Y,refData.size);
-  double minY = minValue(refData.Y,refData.size);
+  double maxY = maxValue(refData.y,refData.n);
+  double minY = minValue(refData.y,refData.n);
 
   baseX = maxX - minX + abs(minX);
   baseY = maxY - minY + abs(minY);
@@ -164,7 +164,7 @@ double * setFormerBaseAndRatio(struct data refData) {
  *   refData: CSV data which will be used as reference
  *   singleValue: single value (relative or absolute ) that will be used for defining size.
  *                If it is non-zero, the size will be defined based on this single value
- *   axes: when single value is used (non-zero), it sets whether the single value is for half-width (X) or half-height (Y)
+ *   axes: when single value is used (non-zero), it sets whether the single value is for half-width (x) or half-height (y)
  *   valueX: when singleValue is zero, it defines half-width (relative or absolute)
  *   valueY: when singleValue is zero, it defines half-height (relative or absolute)
  *   relative : define if it is relative value
@@ -202,23 +202,23 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
           fputs("Relative value is out of expected range [0, 1].\n", stderr);
           exit(1);
         }
-        // If value is relative to half-height (axes = Y)
-        if ((axes == 'Y') && (baseY > 0)) {
+        // If value is relative to half-height (axes = y)
+        if ((axes == 'y') && (baseY > 0)) {
           y = singleValue * baseY;
           x = y / ratio;
-        // If value is relative to half-width (axes = X)
-        } else if ((axes == 'X') && (baseX > 0)) {
+        // If value is relative to half-width (axes = x)
+        } else if ((axes == 'x') && (baseX > 0)) {
           x = singleValue * baseX;
           y = ratio * x;
         }
       // If absolute value
       } else if (!relative) {
         // If value is half-height
-        if (axes == 'Y') {
+        if (axes == 'y') {
           y = singleValue;
           x = singleValue / ratio;
         // If value is half-width
-        } else if (axes == 'X') {
+        } else if (axes == 'x') {
           x = singleValue;
           y = ratio * singleValue;
         }

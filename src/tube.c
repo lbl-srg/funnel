@@ -32,13 +32,13 @@
  *     targetY[i] = sourceY[j-1] + ------------------------- * (targetX[i] - sourceX[j-1])
  *                                 sourceX[j] - sourceX[j-1]
  *
- *   sourceX: source data X value
- *   sourceY: source data Y value
+ *   sourceX: source data x value
+ *   sourceY: source data y value
  *   sourceLength: total source data points
- *   targetX: target data X value
+ *   targetX: target data x value
  *   targetLength: total target data points
  *
- *   return: targetY -- target data Y value
+ *   return: targetY -- target data y value
  */
 double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, double* targetX, int targetLength) {
   if (sourceY == NULL || sourceLength == 0) {
@@ -95,9 +95,9 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
  *   testLen: total data points in test curve
  *
  *   return: errReport, data structure which includes;
- *              err.X -- time when there is error
- *              err.Y -- error value
- *           err.size -- total time moment when there is error
+ *              err.x -- time when there is error
+ *              err.y -- error value
+ *           err.n -- total time moment when there is error
  */
 struct errReport compare(double* lower, double* upper, int refLen, double* testY, double* testX, int testLen) {
   struct errReport err;
@@ -135,9 +135,9 @@ struct errReport compare(double* lower, double* upper, int refLen, double* testY
     }
   }
 
-  err.X = errX;
-  err.Y = errY;
-  err.size = errCount;
+  err.x = errX;
+  err.y = errY;
+  err.n = errCount;
   err.diffX = diffX;
   err.diffY = diffY;
   err.diffSize = minSize;
@@ -163,17 +163,17 @@ struct errReport compare(double* lower, double* upper, int refLen, double* testY
 struct reports validate(struct data lower, struct data upper, struct data test) {
   struct reports report;
 
-  double* lowerX = lower.X;
-  double* lowerY = lower.Y;
-  int lowerSize = lower.size;
+  double* lowerX = lower.x;
+  double* lowerY = lower.y;
+  int lowerSize = lower.n;
 
-  double* upperX = upper.X;
-  double* upperY = upper.Y;
-  int upperSize = upper.size;
+  double* upperX = upper.x;
+  double* upperY = upper.y;
+  int upperSize = upper.n;
 
-  double* testX = test.X;
-  double* testY = test.Y;
-  int testSize = test.size;
+  double* testX = test.x;
+  double* testY = test.y;
+  int testSize = test.n;
 
   if (lowerSize != 0 && testSize != 0) {
     double* newLower = interpolateValues(lowerX, lowerY, lowerSize, testX, testSize);
@@ -181,7 +181,7 @@ struct reports validate(struct data lower, struct data upper, struct data test) 
 
     report.test = test;
     report.errors = compare(newLower, newUpper, lowerSize, testY, testX, testSize);
-    if (report.errors.size == 0) {
+    if (report.errors.n == 0) {
       report.valid = "Valid";
     } else {
       report.valid = "Invalid";

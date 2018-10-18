@@ -36,7 +36,7 @@ struct arguments {
 static struct argp_option options[] = {
   /* name, key, argname, flags, doc, group */
   {"tolerance", 't', "TOLERANCE", 0, "Tolerance to generate data tube, default=0.002"},
-  {"axes", 'x', "AXES", 0, "Check if the tolerance value is set for the half-width (X) or half-height (Y) of the rectangle to generate tube, default=Y"},
+  {"axes", 'x', "AXES", 0, "Check if the tolerance value is set for the half-width (x) or half-height (y) of the rectangle to generate tube, default=y"},
   {"absolute", 'a', 0, 0, "If specified, absolute tolerance is used."},
   {"outputFile", 'o', "DIR", 0, "Directory to save outputs."},
   {"compareFile", 'c', "PATH", 0, "Name of CSV file to be tested."},
@@ -78,7 +78,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 static struct argp argp = { options, parse_opt, 0, 0 };
 
 /*
- * Function: write_to_file
+ * Function: writeToFile
  * -----------------------
  *   write input data structure to files
  *
@@ -90,9 +90,19 @@ static struct argp argp = { options, parse_opt, 0, 0 };
  *   upperData: file name for storing tube upper curve data
  *   report: file name for validate report
  */
-int write_to_file(struct sumData data, char const *outDir, char const *refData, char const *testData, char const *lowerData, char const *upperData, char const *report) {
+int writeToFile(
+  struct sumData data,
+  const char *outDir,
+  const char *refData,
+  const char *testData,
+  const char *lowerData,
+  const char *upperData,
+  const char *report) {
+
   mkdir_p(outDir);
+
   char refDataFile[MAX], testDataFile[MAX], lowDataFile[MAX], upperDataFile[MAX], reportFile[MAX];
+
   strcpy(refDataFile, outDir);
   strcpy(testDataFile, outDir);
   strcpy(lowDataFile, outDir);
@@ -111,32 +121,32 @@ int write_to_file(struct sumData data, char const *outDir, char const *refData, 
   FILE *f5 = fopen(reportFile, "w+");
 
   if (f1 == NULL || f2 == NULL || f3 == NULL || f4 == NULL || f5 == NULL){
-    fputs("Error: Failed to open file in write_to_file.\n", stderr);
+    fputs("Error: Failed to open file in writeToFile.\n", stderr);
     return -1;
   }
   int i = 0;
-  while (i < data.refData.size) {
-    fprintf(f1, "%lf,%lf\n", data.refData.X[i],data.refData.Y[i]);
+  while (i < data.refData.n) {
+    fprintf(f1, "%lf,%lf\n", data.refData.x[i],data.refData.y[i]);
     i++;
   }
   int j = 0;
-  while (j < data.testData.size) {
-    fprintf(f2, "%lf,%lf\n", data.testData.X[j], data.testData.Y[j]);
+  while (j < data.testData.n) {
+    fprintf(f2, "%lf,%lf\n", data.testData.x[j], data.testData.y[j]);
     j++;
   }
   int k = 0;
-  while (k < data.lowerCurve.size) {
-    fprintf(f3, "%lf,%lf\n", data.lowerCurve.X[k],data.lowerCurve.Y[k]);
+  while (k < data.lowerCurve.n) {
+    fprintf(f3, "%lf,%lf\n", data.lowerCurve.x[k],data.lowerCurve.y[k]);
     k++;
   }
   int l = 0;
-  while (l < data.upperCurve.size) {
-    fprintf(f4, "%lf,%lf\n", data.upperCurve.X[l],data.upperCurve.Y[l]);
+  while (l < data.upperCurve.n) {
+    fprintf(f4, "%lf,%lf\n", data.upperCurve.x[l],data.upperCurve.y[l]);
     l++;
   }
   fprintf(f5, "The test result is %s.\n", data.validateReport.valid);
-  if (data.validateReport.errors.size != 0) {
-    fprintf(f5, "There are errors at %d points.\n", data.validateReport.errors.size);
+  if (data.validateReport.errors.n != 0) {
+    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.n);
     int m = 0;
     while (m < data.validateReport.errors.diffSize) {
       fprintf(f5, "%lf,%lf\n",
@@ -152,6 +162,48 @@ int write_to_file(struct sumData data, char const *outDir, char const *refData, 
   return 0;
 }
 
+struct data *newData(
+  const double x[],
+  const double y[],
+  size_t n) {
+
+  struct data *retVal = malloc (sizeof (struct data));
+  if (retVal == NULL){
+    fputs("Error: Failed to allocate memory for data.\n", stderr);
+    return NULL;
+  }
+  // Try to allocate vector data, free structure if fail.
+
+  retVal->x = malloc (n * sizeof (double));
+  if (retVal->x == NULL) {
+    fputs("Error: Failed to allocate memory for data.x.\n", stderr);
+    free (retVal);
+    return NULL;
+  }
+  memcpy(retVal->x, x, sizeof(double)*n);
+
+  retVal->y = malloc (n * sizeof (double));
+  if (retVal->y == NULL) {
+    fputs("Error: Failed to allocate memory for data.y.\n", stderr);
+    free (retVal->x);
+    free (retVal);
+    return NULL;
+  }
+  memcpy(retVal->y, y, sizeof(double)*n);
+
+  // Set size and return.
+  retVal->n = n;
+  return retVal;
+}
+
+void freeData (struct data *dat) {
+  if (dat != NULL) {
+      free (dat->x);
+      free (dat->y);
+      free (dat);
+  }
+}
+
 /*
  * Function: compareAndReport
  * -----------------------
@@ -160,36 +212,46 @@ int write_to_file(struct sumData data, char const *outDir, char const *refData, 
  *   is not needed.
  */
 int compareAndReport(
-  const char * baseFileName,
-  const char * testFileName,
+  const double tReference[],
+  const double yReference[],
+  const size_t nReference,
+  const double tTest[],
+  const double yTest[],
+  const size_t nTest,
   const char * outputDirectory,
   const double tolerance,
   const char axes,
   const bool useRelativeTolerance){
-  // Read CSV files into data structure
-  struct data testCSV = readCSV(testFileName, 1);
-  struct data baseCSV = readCSV(baseFileName, 1);
+
+  int retVal;
+
+  struct data * baseCSV = newData(tReference, yReference, nReference);
+  struct data * testCSV = newData(tTest, yTest, nTest);
 
   // Calculate tube size (half-width and half-height of rectangle)
   //printf("useRelative=%d\n", arguments.useRelativeTolerance);
-  double* tube = tubeSize(baseCSV, tolerance, axes, 0, 0, useRelativeTolerance);
+  double* tube = tubeSize(*baseCSV, tolerance, axes, 0, 0, useRelativeTolerance);
 
   // Calculate the data set of lower and upper curve around base
-  struct data lowerCurve = calculateLower(baseCSV, tube);
-  struct data upperCurve = calculateUpper(baseCSV, tube);
+  struct data lowerCurve = calculateLower(*baseCSV, tube);
+  struct data upperCurve = calculateUpper(*baseCSV, tube);
 
   // Validate test curve and generate error report
-  struct reports validateReport = validate(lowerCurve, upperCurve, testCSV);
+  struct reports validateReport = validate(lowerCurve, upperCurve, *testCSV);
 
   // Summarize the results
   struct sumData sumReport;
-  sumReport.refData = baseCSV;
+  sumReport.refData = *baseCSV;
   sumReport.lowerCurve = lowerCurve;
   sumReport.upperCurve = upperCurve;
-  sumReport.testData = testCSV;
+  sumReport.testData = *testCSV;
   sumReport.validateReport = validateReport;
 
-  return write_to_file(sumReport, outputDirectory, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+  retVal = writeToFile(sumReport, outputDirectory, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+  freeData(baseCSV);
+  freeData(testCSV);
+
+  return retVal;
 }
 
 int main(int argc, char *argv[]) {
@@ -199,16 +261,23 @@ int main(int argc, char *argv[]) {
   // Default values
   arguments.toleranceFlag = false;
   arguments.tolerance = 0.002;
-  arguments.axes = 'Y';
+  arguments.axes = 'y';
   arguments.useRelativeTolerance = true;
   arguments.outputFlag = false;
 
   // Parse arguments
   argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
+  struct data baseCSV = readCSV(arguments.baseFile, 1);
+  struct data testCSV = readCSV(arguments.testFile, 1);
+
   exiVal = compareAndReport(
-    arguments.baseFile,
-    arguments.testFile,
+    baseCSV.x,
+    baseCSV.y,
+    baseCSV.n,
+    testCSV.x,
+    testCSV.y,
+    testCSV.n,
     arguments.output,
     arguments.tolerance,
     arguments.axes,

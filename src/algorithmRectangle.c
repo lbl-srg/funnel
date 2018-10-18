@@ -210,14 +210,14 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   double xLen = tubeSize[0];
   double yLen = tubeSize[1];
 
-  // ----- 1.1 Start: rectangle with center (x,y) = (reference.X[0], reference.Y[0]) -----
+  // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while ((reference.X[b] - reference.X[b+1] == 0) && (reference.Y[b] - reference.Y[b+1] == 0))
+  while ((reference.x[b] - reference.x[b+1] == 0) && (reference.y[b] - reference.y[b+1] == 0))
     b = b+1;
-  s0 = sign(reference.Y[b+1] - reference.Y[b]);
-  if (reference.X[b+1] != reference.X[b]) {
-    m0 = (reference.Y[b+1] - reference.Y[b]) / (reference.X[b+1] - reference.X[b]);
+  s0 = sign(reference.y[b+1] - reference.y[b]);
+  if (reference.x[b+1] != reference.x[b]) {
+    m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
   } else {
     if (s0 > 0) {
       m0 = 1e+15;
@@ -227,25 +227,25 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   }
 
   // add down left point
-  lx = addNode(lx,(reference.X[b] - xLen));
-  ly = addNode(ly, (reference.Y[b] - yLen));
+  lx = addNode(lx,(reference.x[b] - xLen));
+  ly = addNode(ly, (reference.y[b] - yLen));
 
   if (s0 == 1) {
     // add down right point
-    lx = addNode(lx, (reference.X[b] + xLen));
-    ly = addNode(ly, (reference.Y[b] - yLen));
+    lx = addNode(lx, (reference.x[b] + xLen));
+    ly = addNode(ly, (reference.y[b] - yLen));
   }
 
-  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.X[i], reference.Y[i]) -----
-  for (int i = b+1; i < reference.size-1; i++) {
+  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
+  for (int i = b+1; i < reference.n-1; i++) {
     // ignore identical points
-    if ((reference.X[i] - reference.X[i+1] == 0) && (reference.Y[i] - reference.Y[i+1] == 0))
+    if ((reference.x[i] - reference.x[i+1] == 0) && (reference.y[i] - reference.y[i+1] == 0))
       continue;
 
     // slopes of reference curve
-    s1 = sign(reference.Y[i+1] - reference.Y[i]);
-    if (reference.X[i+1] - reference.X[i] != 0) {
-      m1 = (reference.Y[i+1] - reference.Y[i]) / (reference.X[i+1] - reference.X[i]);
+    s1 = sign(reference.y[i+1] - reference.y[i]);
+    if (reference.x[i+1] - reference.x[i] != 0) {
+      m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
     } else {
       m1 = (s1>0) ? (1e+15) : (-1e+15);
     }
@@ -254,32 +254,32 @@ struct data calculateLower(struct data reference, double* tubeSize) {
     if (m0 != m1) {
       if ((s0 != -1) && (s1 != -1)) {
         // add down right point
-        lx = addNode(lx, (reference.X[i] + xLen));
-        ly = addNode(ly, (reference.Y[i] - yLen));
+        lx = addNode(lx, (reference.x[i] + xLen));
+        ly = addNode(ly, (reference.y[i] - yLen));
       } else if ((s0 != 1) && (s1 != 1)) {
         // add down left point
-        lx = addNode(lx, (reference.X[i] - xLen));
-        ly = addNode(ly, (reference.Y[i] - yLen));
+        lx = addNode(lx, (reference.x[i] - xLen));
+        ly = addNode(ly, (reference.y[i] - yLen));
       } else if ((s0 == -1) && (s1 == 1)) {
         // add down left point
-        lx = addNode(lx, (reference.X[i] - xLen));
-        ly = addNode(ly, (reference.Y[i] - yLen));
+        lx = addNode(lx, (reference.x[i] - xLen));
+        ly = addNode(ly, (reference.y[i] - yLen));
         // add down right point
-        lx = addNode(lx, (reference.X[i] + xLen));
-        ly = addNode(ly, (reference.Y[i] - yLen));
+        lx = addNode(lx, (reference.x[i] + xLen));
+        ly = addNode(ly, (reference.y[i] - yLen));
       } else if ((s0 == 1) && (s1 == -1)) {
         // add down right point
-        lx = addNode(lx, (reference.X[i] + xLen));
-        ly = addNode(ly, (reference.Y[i] - yLen));
+        lx = addNode(lx, (reference.x[i] + xLen));
+        ly = addNode(ly, (reference.y[i] - yLen));
         // add down left point
-        lx = addNode(lx, (reference.X[i] - xLen));
-        ly = addNode(ly, (reference.Y[i] - yLen));
+        lx = addNode(lx, (reference.x[i] - xLen));
+        ly = addNode(ly, (reference.y[i] - yLen));
       }
 
       int len = listLen(ly);
       double lastY = getNth(ly, len-1);
       // remove the last added points in case of zero slope of tube curve
-      if ((reference.Y[i+1] - yLen) == lastY) {
+      if ((reference.y[i+1] - yLen) == lastY) {
         if ((s0 * s1 == -1) && (getNth(ly, len-3) == lastY)) {
           // remove two points, if two points were added at last
           // ((len-1) - 2 >= 0, because start point + two added points)
@@ -298,15 +298,15 @@ struct data calculateLower(struct data reference, double* tubeSize) {
     s0 = s1;
     m0 = m1;
   }
-  // ----- 1.3. End: Rectangle with center (x,y) = (reference.X[reference.size - 1], reference.Y[reference.size - 1]) -----
+  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
   if (s0 == -1) {
     // add down left point
-    lx = addNode(lx, (reference.X[reference.size-1] - xLen));
-    ly = addNode(ly, (reference.Y[reference.size-1] - yLen));
+    lx = addNode(lx, (reference.x[reference.n-1] - xLen));
+    ly = addNode(ly, (reference.y[reference.n-1] - yLen));
   }
   // add down right point
-  lx = addNode(lx, (reference.X[reference.size-1] + xLen));
-  ly = addNode(ly, (reference.Y[reference.size-1] - yLen));
+  lx = addNode(lx, (reference.x[reference.n-1] + xLen));
+  ly = addNode(ly, (reference.y[reference.n-1] - yLen));
 
   // ===== 2. Remove points and add intersection points in case of backward order =====
   int lisLen = listLen(ly);
@@ -349,14 +349,14 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   double xLen = tubeSize[0];
   double yLen = tubeSize[1];
 
-  // ----- 1.1 Start: rectangle with center (x,y) = (reference.X[0], reference.Y[0]) -----
+  // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while ((reference.X[b] - reference.X[b+1] == 0) && (reference.Y[b] - reference.Y[b+1] == 0))
+  while ((reference.x[b] - reference.x[b+1] == 0) && (reference.y[b] - reference.y[b+1] == 0))
     b = b+1;
-  s0 = sign(reference.Y[b+1] - reference.Y[b]);
-  if (reference.X[b+1] != reference.X[b]) {
-    m0 = (reference.Y[b+1] - reference.Y[b]) / (reference.X[b+1] - reference.X[b]);
+  s0 = sign(reference.y[b+1] - reference.y[b]);
+  if (reference.x[b+1] != reference.x[b]) {
+    m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
   } else {
     if (s0 > 0) {
       m0 = 1e+15;
@@ -366,25 +366,25 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   }
 
   // add top left point
-  ux = addNode(ux,(reference.X[b] - xLen));
-  uy = addNode(uy, (reference.Y[b] + yLen));
+  ux = addNode(ux,(reference.x[b] - xLen));
+  uy = addNode(uy, (reference.y[b] + yLen));
 
   if (s0 == -1) {
     // add top right point
-    ux = addNode(ux, (reference.X[b] + xLen));
-    uy = addNode(uy, (reference.Y[b] + yLen));
+    ux = addNode(ux, (reference.x[b] + xLen));
+    uy = addNode(uy, (reference.y[b] + yLen));
   }
 
-  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.X[i], reference.Y[i]) -----
-  for (int i = b+1; i < reference.size-1; i++) {
+  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
+  for (int i = b+1; i < reference.n-1; i++) {
     // ignore identical points
-    if ((reference.X[i] - reference.X[i+1] == 0) && (reference.Y[i] - reference.Y[i+1] == 0))
+    if ((reference.x[i] - reference.x[i+1] == 0) && (reference.y[i] - reference.y[i+1] == 0))
       continue;
 
     // slopes of reference curve
-    s1 = sign(reference.Y[i+1] - reference.Y[i]);
-    if (reference.X[i+1] - reference.X[i] != 0) {
-      m1 = (reference.Y[i+1] - reference.Y[i]) / (reference.X[i+1] - reference.X[i]);
+    s1 = sign(reference.y[i+1] - reference.y[i]);
+    if (reference.x[i+1] - reference.x[i] != 0) {
+      m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
     } else {
       m1 = (s1>0) ? (1e+15) : (-1e+15);
     }
@@ -393,32 +393,32 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
     if (m0 != m1) {
       if ((s0 != -1) && (s1 != -1)) {
         // add top left point
-        ux = addNode(ux, (reference.X[i] - xLen));
-        uy = addNode(uy, (reference.Y[i] + yLen));
+        ux = addNode(ux, (reference.x[i] - xLen));
+        uy = addNode(uy, (reference.y[i] + yLen));
       } else if ((s0 != 1) && (s1 != 1)) {
         // add top right point
-        ux = addNode(ux, (reference.X[i] + xLen));
-        uy = addNode(uy, (reference.Y[i] + yLen));
+        ux = addNode(ux, (reference.x[i] + xLen));
+        uy = addNode(uy, (reference.y[i] + yLen));
       } else if ((s0 == 1) && (s1 == -1)) {
         // add top left point
-        ux = addNode(ux, (reference.X[i] - xLen));
-        uy = addNode(uy, (reference.Y[i] + yLen));
+        ux = addNode(ux, (reference.x[i] - xLen));
+        uy = addNode(uy, (reference.y[i] + yLen));
         // add top right point
-        ux = addNode(ux, (reference.X[i] + xLen));
-        uy = addNode(uy, (reference.Y[i] + yLen));
+        ux = addNode(ux, (reference.x[i] + xLen));
+        uy = addNode(uy, (reference.y[i] + yLen));
       } else if ((s0 == -1) && (s1 == 1)) {
         // add top right point
-        ux = addNode(ux, (reference.X[i] + xLen));
-        uy = addNode(uy, (reference.Y[i] + yLen));
+        ux = addNode(ux, (reference.x[i] + xLen));
+        uy = addNode(uy, (reference.y[i] + yLen));
         // add top left point
-        ux = addNode(ux, (reference.X[i] - xLen));
-        uy = addNode(uy, (reference.Y[i] + yLen));
+        ux = addNode(ux, (reference.x[i] - xLen));
+        uy = addNode(uy, (reference.y[i] + yLen));
       }
 
       int len = listLen(uy);
       double lastY = getNth(uy, len-1);
       // remove the last added points in case of zero slope of tube curve
-      if ((reference.Y[i+1] + yLen) == lastY) {
+      if ((reference.y[i+1] + yLen) == lastY) {
         if ((s0 * s1 == -1) && (getNth(uy, len-3) == lastY)) {
           // remove two points, if two points were added at last
           // ((len-1) - 2 >= 0, because start point + two added points)
@@ -437,15 +437,15 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
     s0 = s1;
     m0 = m1;
   }
-  // ----- 1.3. End: Rectangle with center (x,y) = (reference.X[reference.size - 1], reference.Y[reference.size - 1]) -----
+  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
   if (s0 == 1) {
     // add top left point
-    ux = addNode(ux, (reference.X[reference.size-1] - xLen));
-    uy = addNode(uy, (reference.Y[reference.size-1] + yLen));
+    ux = addNode(ux, (reference.x[reference.n-1] - xLen));
+    uy = addNode(uy, (reference.y[reference.n-1] + yLen));
   }
   // add top right point
-  ux = addNode(ux, (reference.X[reference.size-1] + xLen));
-  uy = addNode(uy, (reference.Y[reference.size-1] + yLen));
+  ux = addNode(ux, (reference.x[reference.n-1] + xLen));
+  uy = addNode(uy, (reference.y[reference.n-1] + yLen));
 
   // ===== 2. Remove points and add intersection points in case of backward order =====
   int lisLen = listLen(uy);
@@ -460,186 +460,185 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   return upper;
 }
 
+ /*
+  * Function: removeLoop
+  * --------------------
+  *   remove points and add intersection points in case of backward order
+  *
+  *   X: x values of curve
+  *   Y: y values of curve
+  *   size: size of curve array
+  *   curInd: if equals to 1, algorithms for upper tube curve is used,
+  *           if equals to -1, algorithms for lower tube curve is used
+  *
+  *   return: data structure including updated curve data sets (X, Y, size)
+  */
+ struct data removeLoop(double* X, double* Y, int size, int curInd) {
+   struct data output;
+   int j = 1;
+   int countLoops = 0;
+   int re_size = size;
 
-/*
- * Function: removeLoop
- * --------------------
- *   remove points and add intersection points in case of backward order
- *
- *   X: x values of curve
- *   Y: y values of curve
- *   size: size of curve array
- *   curInd: if equals to 1, algorithms for upper tube curve is used,
- *           if equals to -1, algorithms for lower tube curve is used
- *
- *   return: data structure including updated curve data sets (X, Y, size)
- */
-struct data removeLoop(double* X, double* Y, int size, int curInd) {
-  struct data output;
-  int j = 1;
-  int countLoops = 0;
-  int re_size = size;
+   while (j < re_size -2) {
+     // Find backward segment (j, j+1)
+     if (X[j+1] < X[j]) {
 
-  while (j < re_size -2) {
-    // Find backward segment (j, j+1)
-    if (X[j+1] < X[j]) {
+       countLoops = countLoops + 1;
+       // ===== 1. Find i, k, such that i <= j<j+1 <= k-1 and segment (i-1, i) intersect segment (k-1, k) =====
+       int i, k, iPrevious;
+       double y;
+       // for calculation and adding of intersection point
+       bool addPoint = true;
+       double ix = 0;
+       double iy = 0;
+       int kMax;
 
-      countLoops = countLoops + 1;
-      // ===== 1. Find i, k, such that i <= j<j+1 <= k-1 and segment (i-1, i) intersect segment (k-1, k) =====
-      int i, k, iPrevious;
-      double y;
-      // for calculation and adding of intersection point
-      bool addPoint = true;
-      double ix = 0;
-      double iy = 0;
-      int kMax;
+       i = j;
+       iPrevious = i;
 
-      i = j;
-      iPrevious = i;
+       // Find initial value for i = i_s, such that X[i_s-1]  <= X[j+1] < X[i_s]
+       // it holds: i element of interval (i_s, j)
+       while (X[j+1] < X[i-1])
+         i = i-1;
+       // j+1 < k <= kMax
+       kMax = j+1;
+       while (X[kMax] < X[j] && kMax < re_size-1)  //=============================re_size
+         kMax = kMax+1;
 
-      // Find initial value for i = i_s, such that X[i_s-1]  <= X[j+1] < X[i_s]
-      // it holds: i element of interval (i_s, j)
-      while (X[j+1] < X[i-1])
-        i = i-1;
-      // j+1 < k <= kMax
-      kMax = j+1;
-      while (X[kMax] < X[j] && kMax < re_size-1)  //=============================re_size
-        kMax = kMax+1;
+       // initial value for k
+       k = j+1;
+       y = Y[i-1];
 
-      // initial value for k
-      k = j+1;
-      y = Y[i-1];
+       // Find k
+       while (((curInd==-1 && y < Y[k]) || (curInd==1 && Y[k] < y))
+           && k < kMax) {
+         iPrevious = i;
+         k = k+1;
+         while ((X[i] < X[k]
+                  || (curInd==-1 && X[i] == X[k] && Y[i] < Y[k] && !(k + 1 < re_size && X[k] == X[k + 1] && Y[k + 1] < Y[k]))
+                  || (curInd==1 && X[i] == X[k] && Y[i] > Y[k] && !(k + 1 < re_size && X[k] == X[k + 1] && Y[k + 1] > Y[k])))
+             && i < j)
+           i = i+1;
+         // it holds X[i - 1] < X[k] <= X[i], particularly X[i] != X[i - 1]
+         // for i < j and X[i - 1] < X[k] it holds X[i - 1] < X[k] <= X[i], particularly X[i] != X[i - 1]
+         // linear interpolation of (x, y) = (X[k], y) on segment (i - 1, i)
+         if (X[i] - X[i - 1] != 0)
+           y = (Y[i] - Y[i - 1]) / (X[i] - X[i - 1]) * (X[k] - X[i - 1]) + Y[i - 1];
+         else
+           y = Y[i];
+       }
 
-      // Find k
-      while (((curInd==-1 && y < Y[k]) || (curInd==1 && Y[k] < y))
-          && k < kMax) {
-        iPrevious = i;
-        k = k+1;
-        while ((X[i] < X[k]
-                 || (curInd==-1 && X[i] == X[k] && Y[i] < Y[k] && !(k + 1 < re_size && X[k] == X[k + 1] && Y[k + 1] < Y[k]))
-                 || (curInd==1 && X[i] == X[k] && Y[i] > Y[k] && !(k + 1 < re_size && X[k] == X[k + 1] && Y[k + 1] > Y[k])))
-            && i < j)
-          i = i+1;
-        // it holds X[i - 1] < X[k] <= X[i], particularly X[i] != X[i - 1]
-        // for i < j and X[i - 1] < X[k] it holds X[i - 1] < X[k] <= X[i], particularly X[i] != X[i - 1]
-        // linear interpolation of (x, y) = (X[k], y) on segment (i - 1, i)
-        if (X[i] - X[i - 1] != 0)
-          y = (Y[i] - Y[i - 1]) / (X[i] - X[i - 1]) * (X[k] - X[i - 1]) + Y[i - 1];
-        else
-          y = Y[i];
-      }
+       // k located: intersection point is on segment (k - 1, k)
+       // i approximately located: intersection point is on polygonal line (iPrevoius - 1, i)
+       // Regular case
+       if (iPrevious > 1)
+         i = iPrevious - 1;
+       // Special case handling: assure, that i - 1 >= 0
+       else
+         i = iPrevious;
+       if (X[k] != X[k - 1])
+           // linear interpolation of (x, y) = (X[i], y) on segment (k - 1, k)
+         y = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]) * (X[i] - X[k - 1]) + Y[k - 1];
+       // it holds Y[i] = Y[iPrevious - 1] < Y[k - 1]
+       // Find i
+       while ((X[k] != X[k - 1]
+                   && ((curInd==-1 && Y[i] < y) || (curInd==1 && y < Y[i])))
+           || (X[k] == X[k - 1] && X[i] < X[k]))
+       {
+         i = i+1;
+           if (X[k] != X[k - 1])
+             // linear interpolation of (x, y) = (X[i], y) on segment (k - 1, k)
+               y = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]) * (X[i] - X[k - 1]) + Y[k - 1];
+       }
 
-      // k located: intersection point is on segment (k - 1, k)
-      // i approximately located: intersection point is on polygonal line (iPrevoius - 1, i)
-      // Regular case
-      if (iPrevious > 1)
-        i = iPrevious - 1;
-      // Special case handling: assure, that i - 1 >= 0
-      else
-        i = iPrevious;
-      if (X[k] != X[k - 1])
-          // linear interpolation of (x, y) = (X[i], y) on segment (k - 1, k)
-        y = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]) * (X[i] - X[k - 1]) + Y[k - 1];
-      // it holds Y[i] = Y[iPrevious - 1] < Y[k - 1]
-      // Find i
-      while ((X[k] != X[k - 1]
-                  && ((curInd==-1 && Y[i] < y) || (curInd==1 && y < Y[i])))
-          || (X[k] == X[k - 1] && X[i] < X[k]))
-      {
-        i = i+1;
-          if (X[k] != X[k - 1])
-            // linear interpolation of (x, y) = (X[i], y) on segment (k - 1, k)
-              y = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]) * (X[i] - X[k - 1]) + Y[k - 1];
-      }
+       // ===== 2. Calculate intersection point (ix, iy) of segments (i - 1, i) and (k - 1, k) =====
+       double a1 = 0;
+       double a2 = 0;
 
-      // ===== 2. Calculate intersection point (ix, iy) of segments (i - 1, i) and (k - 1, k) =====
-      double a1 = 0;
-      double a2 = 0;
+       // both branches vertical
+       if (X[i] == X[i - 1] && X[k] == X[k - 1])
+         // add no point; check if case occur: slopes have different signs
+         addPoint = false;
+       // case i-branch vertical
+       else if (X[i] == X[i - 1]) {
+         ix = X[i];
+         iy = Y[k - 1] + ((X[i] - X[k - 1]) * (Y[k] - Y[k - 1])) / (X[k] - X[k - 1]);
+       }
+       // case k-branch vertical
+       else if (X[k] == X[k - 1]) {
+         ix = X[k];
+         iy = Y[i - 1] + ((X[k] - X[i - 1]) * (Y[i] - Y[i - 1])) / (X[i] - X[i - 1]);
+       }
+       // common case
+       else {
+         a1 = (Y[i] - Y[i - 1]) / (X[i] - X[i - 1]); // slope of segment (i - 1, i)
+         a2 = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]); // slope of segment (k - 1, k)
+         // common case: no equal slopes
+         if (a1 != a2) {
+           ix = (a1 * X[i - 1] - a2 * X[k - 1] - Y[i - 1] + Y[k - 1]) / (a1 - a2);
+           if (fabs(a1) > fabs(a2))
+             // calculate y on segment (k - 1, k)
+             iy = a2 * (ix - X[k - 1]) + Y[k - 1];
+           else
+             // calculate y on segment (i - 1, i)
+             iy = a1 * (ix - X[i - 1]) + Y[i - 1];
+         }
+         else
+           // case equal slopes: add no point
+           addPoint = false;
+       }
 
-      // both branches vertical
-      if (X[i] == X[i - 1] && X[k] == X[k - 1])
-        // add no point; check if case occur: slopes have different signs
-        addPoint = false;
-      // case i-branch vertical
-      else if (X[i] == X[i - 1]) {
-        ix = X[i];
-        iy = Y[k - 1] + ((X[i] - X[k - 1]) * (Y[k] - Y[k - 1])) / (X[k] - X[k - 1]);
-      }
-      // case k-branch vertical
-      else if (X[k] == X[k - 1]) {
-        ix = X[k];
-        iy = Y[i - 1] + ((X[k] - X[i - 1]) * (Y[i] - Y[i - 1])) / (X[i] - X[i - 1]);
-      }
-      // common case
-      else {
-        a1 = (Y[i] - Y[i - 1]) / (X[i] - X[i - 1]); // slope of segment (i - 1, i)
-        a2 = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]); // slope of segment (k - 1, k)
-        // common case: no equal slopes
-        if (a1 != a2) {
-          ix = (a1 * X[i - 1] - a2 * X[k - 1] - Y[i - 1] + Y[k - 1]) / (a1 - a2);
-          if (fabs(a1) > fabs(a2))
-            // calculate y on segment (k - 1, k)
-            iy = a2 * (ix - X[k - 1]) + Y[k - 1];
-          else
-            // calculate y on segment (i - 1, i)
-            iy = a1 * (ix - X[i - 1]) + Y[i - 1];
-        }
-        else
-          // case equal slopes: add no point
-          addPoint = false;
-      }
+       // ===== 3. Delete points i until (including) k-1 =====
+       int count = k-i;
+       double* XX = malloc((re_size-count) * sizeof(double));
+       XX = removeRange(X, re_size, i, count);
+       double* YY = malloc((size-count) * sizeof(double));
+       YY = removeRange(Y, re_size, i, count);
+       re_size = re_size-count;
+       // ===== 4. Add intersection point =====
+       // add intersection point, if it isn't already there
+       if (addPoint && (XX[i] != ix || YY[i] != iy)) {
+         re_size = re_size+1;
+         double *X_temp = malloc(re_size * sizeof(double));
+         double *Y_temp = malloc(re_size * sizeof(double));
+         X_temp = insertAt(XX, re_size-1, i, ix);
+         Y_temp = insertAt(YY, re_size-1, i, iy);
 
-      // ===== 3. Delete points i until (including) k-1 =====
-      int count = k-i;
-      double* XX = malloc((re_size-count) * sizeof(double));
-      XX = removeRange(X, re_size, i, count);
-      double* YY = malloc((size-count) * sizeof(double));
-      YY = removeRange(Y, re_size, i, count);
-      re_size = re_size-count;
-      // ===== 4. Add intersection point =====
-      // add intersection point, if it isn't already there
-      if (addPoint && (XX[i] != ix || YY[i] != iy)) {
-        re_size = re_size+1;
-        double *X_temp = malloc(re_size * sizeof(double));
-        double *Y_temp = malloc(re_size * sizeof(double));
-        X_temp = insertAt(XX, re_size-1, i, ix);
-        Y_temp = insertAt(YY, re_size-1, i, iy);
+         XX = realloc(XX, sizeof(double)*re_size);
+         YY = realloc(YY, sizeof(double)*re_size);
+         XX = X_temp;
+         YY = Y_temp;
+       }
 
-        XX = realloc(XX, sizeof(double)*re_size);
-        YY = realloc(YY, sizeof(double)*re_size);
-        XX = X_temp;
-        YY = Y_temp;
-      }
+       // ===== 5. set j = i =====
+       j = i;
 
-      // ===== 5. set j = i =====
-      j = i;
+       // ===== 6. Delete points that are doubled =====
+       if (XX[i-1] == XX[i] && YY[i-1] == YY[i]) {
+         re_size = re_size-1;
+         double *X_temp = malloc(re_size * sizeof(double));
+         double *Y_temp = malloc(re_size * sizeof(double));
+         X_temp = removeAt(XX, re_size+1, i);
+         Y_temp = removeAt(YY, re_size+1, i);
 
-      // ===== 6. Delete points that are doubled =====
-      if (XX[i-1] == XX[i] && YY[i-1] == YY[i]) {
-        re_size = re_size-1;
-        double *X_temp = malloc(re_size * sizeof(double));
-        double *Y_temp = malloc(re_size * sizeof(double));
-        X_temp = removeAt(XX, re_size+1, i);
-        Y_temp = removeAt(YY, re_size+1, i);
-
-        XX = realloc(XX, sizeof(double)*re_size);
-        YY = realloc(YY, sizeof(double)*re_size);
-        XX = X_temp;
-        YY = Y_temp;
-        j = i - 1;
-      }
-      X = realloc(X, sizeof(double)*re_size);
-      Y = realloc(Y, sizeof(double)*re_size);
-      X = XX;
-      Y = YY;
-    }
-    j=j+1;
-  }
-  output.X = X;
-  output.Y = Y;
-  output.size = re_size;
-  return output;
-}
+         XX = realloc(XX, sizeof(double)*re_size);
+         YY = realloc(YY, sizeof(double)*re_size);
+         XX = X_temp;
+         YY = Y_temp;
+         j = i - 1;
+       }
+       X = realloc(X, sizeof(double)*re_size);
+       Y = realloc(Y, sizeof(double)*re_size);
+       X = XX;
+       Y = YY;
+     }
+     j=j+1;
+   }
+   output.x = X;
+   output.y = Y;
+   output.n = re_size;
+   return output;
+ }
 
 
 /*
@@ -742,18 +741,3 @@ double * insertAt(double* array, int size, int index, double item) {
   }
   return updArr;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

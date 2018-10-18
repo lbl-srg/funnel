@@ -63,9 +63,9 @@ struct data readCSV(const char * filename, int skipLines) {
   }
   fclose(fp);
 
-  inputs.X = time;
-  inputs.Y = value;
-  inputs.size = rowCount;
+  inputs.x = time;
+  inputs.y = value;
+  inputs.n = rowCount;
 
   return inputs;
 }
