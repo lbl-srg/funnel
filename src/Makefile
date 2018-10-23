@@ -1,31 +1,31 @@
 
 CC=gcc
+CFLAGS=-Wall -c
 
-.PHONY: algorithmRectangle.o readCSV.o tube.o tubeSize.o main.o funnel clean
+LIB=libfunnel.so
 
-algorithmRectangle.o: algorithmRectangle.c algorithmRectangle.h
-	$(CC) -c algorithmRectangle.c
+SRCS=$(foreach fil,*.c, $(fil))
+OBJS = algorithmRectangle.o compare.o main.o mkdir_p.o readCSV.o tube.o tubeSize.o
 
-readCSV.o: readCSV.c readCSV.h
-	$(CC) -c readCSV.c
 
-tube.o: tube.c tube.h
-	$(CC) -c tube.c
+%.o : %.o
+	$(CC) -c $(CFLAGS) $< -o $@
 
-tubeSize.o: tubeSize.c tubeSize.h
-	$(CC) -c tubeSize.c
+test:
+	echo $(SRCS)
+	echo $(OBJS)
 
-mkdir_p.o: mkdir_p.c mkdir_p.h
-	$(CC) -c mkdir_p.c
+compile:
+	$(CC) $(CC_FLAGS_$(ARCH)) -fPIC -c $(SRCS)
 
-main.o: main.c data_structure.h readCSV.h algorithmRectangle.h tube.h tubeSize.h mkdir_p.h
-	$(CC) -c main.c
-
-build: algorithmRectangle.o readCSV.o tube.o tubeSize.o mkdir_p.o main.o
-	$(CC) -o funnel algorithmRectangle.o readCSV.o tube.o tubeSize.o mkdir_p.o main.o
+build: compile
+	$(CC) -shared -fPIC -Wl,-soname,$(LIB) -o $(LIB) $(OBJS) -lc
+	mkdir -p ../lib64
+	mv $(LIB) ../lib64
+	$(CC) -o funnel $(OBJS)
 	mkdir -p ../bin
 	mv funnel ../bin
 	rm *.o
 
 clean:
-	rm -f *.o ../bin/funnel
+	rm -f *.o ../bin/funnel ../lib64/$(LIB)
