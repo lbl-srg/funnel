@@ -1,0 +1,17 @@
+language: python
+python:
+  - "2.7"
+
+notifications:
+  email: false
+
+git:
+  depth: 10
+
+compiler:
+  - clang
+  - gcc
+
+# Execute tests
+script:
+  - make build test
