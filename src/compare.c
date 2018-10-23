@@ -69,16 +69,20 @@ int writeToFile(
     fprintf(f4, "%lf,%lf\n", data.upperCurve.x[l],data.upperCurve.y[l]);
     l++;
   }
-  fprintf(f5, "The test result is %s.\n", data.validateReport.valid);
-  if (data.validateReport.errors.n != 0) {
-    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.n);
+  if (data.validateReport.errors.diff.n != 0) {
+    fprintf(f5, "The test result is invalid.\n");
+    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.diff.n);
     int m = 0;
-    while (m < data.validateReport.errors.diffSize) {
+    while (m < data.validateReport.errors.diff.n) {
       fprintf(f5, "%lf,%lf\n",
-          data.validateReport.errors.diffX[m],data.validateReport.errors.diffY[m]);
+          data.validateReport.errors.diff.x[m],
+          data.validateReport.errors.diff.y[m]);
       m++;
     }
   }
+  else
+    fprintf(f5, "The test result is valid.\n");
+
   fclose(f1);
   fclose(f2);
   fclose(f3);
@@ -162,7 +166,14 @@ int compareAndReport(
   struct data upperCurve = calculateUpper(*baseCSV, tube);
 
   // Validate test curve and generate error report
-  struct reports validateReport = validate(lowerCurve, upperCurve, *testCSV);
+  if (lowerCurve.n == 0 || upperCurve.n == 0){
+    fputs("Error: lower or upper curve has 0 elements.\n", stderr);
+    return 1;
+  }
+  struct reports validateReport;
+  retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
+  if (retVal != 0)
+    return retVal;
 
   // Summarize the results
   struct sumData sumReport;
@@ -171,7 +182,6 @@ int compareAndReport(
   sumReport.upperCurve = upperCurve;
   sumReport.testData = *testCSV;
   sumReport.validateReport = validateReport;
-
   retVal = writeToFile(sumReport, outputDirectory, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
   freeData(baseCSV);
   freeData(testCSV);

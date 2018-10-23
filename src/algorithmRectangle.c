@@ -41,7 +41,7 @@
  */
 node_t * createNode() {
   node_t* temp;
-  temp = (node_t*)malloc(sizeof(node_t));
+  temp = malloc(sizeof(node_t));
   temp->next = NULL;
   return temp;
 }

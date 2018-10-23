@@ -10,9 +10,14 @@
 
 double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, double* targetX, int targetLength);
 
-struct errReport compare(double* lower, double* upper, int refLen, double* testY, double* testX, int testLen);
+int compare(double* lower, double* upper, int refLen,
+  double* testY, double* testX, int testLen,
+  struct errorReport* err);
 
-struct reports validate(struct data lower, struct data upper, struct data test);
-
+int validate(
+  const struct data lower,
+  const struct data upper,
+  const struct data test,
+  struct errorReport* err);
 
 #endif /* TUBE_H_ */
