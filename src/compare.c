@@ -23,6 +23,7 @@ int writeToFile(
   const char *lowerData,
   const char *upperData,
   const char *report) {
+  int i = 0;
 
   mkdir_p(outDir);
 
@@ -33,6 +34,7 @@ int writeToFile(
   strcpy(lowDataFile, outDir);
   strcpy(upperDataFile, outDir);
   strcpy(reportFile, outDir);
+
   strcat(refDataFile, refData);
   strcat(testDataFile, testData);
   strcat(lowDataFile, lowerData);
@@ -49,36 +51,31 @@ int writeToFile(
     fputs("Error: Failed to open file in writeToFile.\n", stderr);
     return -1;
   }
-  int i = 0;
-  while (i < data.refData.n) {
+
+  for (i = 0; i < data.refData.n; i++) {
     fprintf(f1, "%lf,%lf\n", data.refData.x[i],data.refData.y[i]);
-    i++;
   }
-  int j = 0;
-  while (j < data.testData.n) {
-    fprintf(f2, "%lf,%lf\n", data.testData.x[j], data.testData.y[j]);
-    j++;
+  for (i = 0; i < data.testData.n; i++) {
+    fprintf(f2, "%lf,%lf\n", data.testData.x[i], data.testData.y[i]);
   }
-  int k = 0;
-  while (k < data.lowerCurve.n) {
-    fprintf(f3, "%lf,%lf\n", data.lowerCurve.x[k],data.lowerCurve.y[k]);
-    k++;
+  for (i = 0; i < data.lowerCurve.n; i++) {
+    fprintf(f3, "%lf,%lf\n", data.lowerCurve.x[i],data.lowerCurve.y[i]);
   }
-  int l = 0;
-  while (l < data.upperCurve.n) {
-    fprintf(f4, "%lf,%lf\n", data.upperCurve.x[l],data.upperCurve.y[l]);
-    l++;
+  for (i = 0; i < data.upperCurve.n; i++) {
+    fprintf(f4, "%lf,%lf\n", data.upperCurve.x[i],data.upperCurve.y[i]);
   }
-  fprintf(f5, "The test result is %s.\n", data.validateReport.valid);
-  if (data.validateReport.errors.n != 0) {
-    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.n);
-    int m = 0;
-    while (m < data.validateReport.errors.diffSize) {
+  if (data.validateReport.errors.diff.n != 0) {
+    fprintf(f5, "The test result is invalid.\n");
+    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.diff.n);
+    for (i =0; i < data.validateReport.errors.diff.n; i++){
       fprintf(f5, "%lf,%lf\n",
-          data.validateReport.errors.diffX[m],data.validateReport.errors.diffY[m]);
-      m++;
+          data.validateReport.errors.diff.x[i],
+          data.validateReport.errors.diff.y[i]);
     }
   }
+  else
+    fprintf(f5, "The test result is valid.\n");
+
   fclose(f1);
   fclose(f2);
   fclose(f3);
@@ -162,7 +159,14 @@ int compareAndReport(
   struct data upperCurve = calculateUpper(*baseCSV, tube);
 
   // Validate test curve and generate error report
-  struct reports validateReport = validate(lowerCurve, upperCurve, *testCSV);
+  if (lowerCurve.n == 0 || upperCurve.n == 0){
+    fputs("Error: lower or upper curve has 0 elements.\n", stderr);
+    return 1;
+  }
+  struct reports validateReport;
+  retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
+  if (retVal != 0)
+    return retVal;
 
   // Summarize the results
   struct sumData sumReport;
@@ -171,8 +175,8 @@ int compareAndReport(
   sumReport.upperCurve = upperCurve;
   sumReport.testData = *testCSV;
   sumReport.validateReport = validateReport;
-
-  retVal = writeToFile(sumReport, outputDirectory, "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+  retVal = writeToFile(sumReport, outputDirectory,
+    "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
   freeData(baseCSV);
   freeData(testCSV);
 

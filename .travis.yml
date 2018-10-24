@@ -1,0 +1,28 @@
+dist: trusty
+
+sudo: false
+
+language: C
+
+python:
+  - "2.7"
+
+notifications:
+  email: false
+
+git:
+  depth: 10
+
+compiler:
+  - gcc
+
+#install:
+#  pip install -r requirements.txt
+
+# Execute tests
+script:
+  - make build
+  - make test
+  - git status tests
+  - cat tests/success1/results/report.csv
+#  - git diff --exit-code tests

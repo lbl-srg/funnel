@@ -8,25 +8,21 @@
 #ifndef DATA_STRUCTURE_H_
 #define DATA_STRUCTURE_H_
 
+#include <sys/types.h>
+
 struct data {
-  double *x;
-  double *y;
+  double* x;
+  double* y;
   size_t n;
 };
 
-struct errReport {
-  double *x;
-  double *y;
-  size_t n;
-  double *diffX;
-  double *diffY;
-  size_t diffSize;
+struct errorReport {
+  struct data original;
+  struct data diff;
 };
 
 struct reports {
-  struct data test;
-  struct errReport errors;
-  char *valid;
+  struct errorReport errors;
 };
 
 struct sumData {

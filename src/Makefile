@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-Wall -c
+CFLAGS=-Wall -Wfloat-equal
 
 LIB=libfunnel.so
 
@@ -16,13 +16,13 @@ test:
 	echo $(OBJS)
 
 compile:
-	$(CC) $(CC_FLAGS_$(ARCH)) -fPIC -c $(SRCS)
+	$(CC) $(CFLAGS) -fPIC -c $(SRCS)
 
 build: compile
-	$(CC) -shared -fPIC -Wl,-soname,$(LIB) -o $(LIB) $(OBJS) -lc
+	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname,$(LIB) -o $(LIB) $(OBJS) -lc
 	mkdir -p ../lib64
 	mv $(LIB) ../lib64
-	$(CC) -o funnel $(OBJS)
+	$(CC) $(CFLAGS) -o funnel $(OBJS)
 	mkdir -p ../bin
 	mv funnel ../bin
 	rm *.o

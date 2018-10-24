@@ -44,12 +44,12 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
   if (sourceY == NULL || sourceLength == 0) {
     return sourceY;
   }
-
+  int i;
   double* targetY = malloc(targetLength * sizeof(double));
   int j = 1;
   double x, x0, x1, y0, y1;
 
-  for (int i=0; i<targetLength; i++) {
+  for (i=0; i<targetLength; i++) {
     // Prevent extrapolating
     if (targetX[i] > sourceX[sourceLength-1]) {
       double *tmp = realloc(targetY, sizeof(double)*i);
@@ -83,7 +83,7 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
 }
 
 /*
- * Function: errReport
+ * Function: compare
  * -------------------
  *   compare test value with data tube
  *
@@ -94,55 +94,74 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
  *   testX: test curve time value
  *   testLen: total data points in test curve
  *
- *   return: errReport, data structure which includes;
- *              err.x -- time when there is error
- *              err.y -- error value
- *           err.n -- total time moment when there is error
+ *   return: errorReport, data structure which includes;
+ *              err->x -- time when there is error
+ *              err->y -- error value
+ *           err->n -- total time moment when there is error
  */
-struct errReport compare(double* lower, double* upper, int refLen, double* testY, double* testX, int testLen) {
-  struct errReport err;
+int compare(double* lower, double* upper, int refLen,
+  double* testY, double* testX, int testLen,
+  struct errorReport* err) {
+  int i;
   int errArrSize = 1;
-  int errCount = 0;
-  double* errX = malloc(errArrSize * sizeof(double));
-  double* errY = malloc(errArrSize * sizeof(double));
-
-  int minSize = min(testLen,refLen);
-
-  double* diffX = malloc(minSize * sizeof(double));
-  double* diffY = malloc(minSize * sizeof(double));
-
-  for (int i=0; i<minSize; i++) {
-    if (testY[i] < lower[i] || testY[i] > upper[i]) {
-      errX[errCount] = testX[i];
-      if (testY[i] < lower[i]) {
-        errY[errCount] = lower[i]-testY[i];
-      } else {
-        errY[errCount] = testY[i]-upper[i];
-      }
-      diffY[i] = errY[errCount];
-      errCount++;
-    } else {
-      diffY[i] = 0.0;
-    }
-    diffX[i] = testX[i];
-    // resize error arrays
-    if (errCount == errArrSize) {
-      errArrSize += 10;
-      double *tmpX = realloc(errX, sizeof(double)*errArrSize);
-      double *tmpY = realloc(errY, sizeof(double)*errArrSize);
-      errX = tmpX;
-      errY = tmpY;
-    }
+  err->original.n = 0;
+  err->original.x = malloc(errArrSize * sizeof(double));
+  if (err->original.x == NULL){
+    fputs("Error: Failed to allocate memory for err->original.x.\n", stderr);
+    return -1;
+  }
+  err->original.y = malloc(errArrSize * sizeof(double));
+  if (err->original.y == NULL){
+    fputs("Error: Failed to allocate memory for err->original.y.\n", stderr);
+    return -1;
   }
 
-  err.x = errX;
-  err.y = errY;
-  err.n = errCount;
-  err.diffX = diffX;
-  err.diffY = diffY;
-  err.diffSize = minSize;
 
-  return err;
+  err->diff.n = min(testLen, refLen);
+  err->diff.x = malloc(err->diff.n * sizeof(double));
+  if (err->diff.x == NULL){
+    fputs("Error: Failed to allocate memory for err->diff.x.\n", stderr);
+    return -1;
+  }
+  err->diff.y = malloc(err->diff.n * sizeof(double));
+  if (err->diff.y == NULL){
+    fputs("Error: Failed to allocate memory for err->diff.y.\n", stderr);
+    return -1;
+  }
+
+  for (i=0; i < err->diff.n; i++) {
+    if (testY[i] < lower[i] || testY[i] > upper[i]) {
+      err->original.x[err->original.n] = testX[i];
+      if (testY[i] < lower[i]) {
+        err->original.y[err->original.n] = lower[i]-testY[i];
+      } else {
+        err->original.y[err->original.n] = testY[i]-upper[i];
+      }
+      err->diff.y[i] = err->original.y[err->original.n];
+      err->original.n++;
+    } else {
+      err->diff.y[i] = 0.0;
+    }
+    err->diff.x[i] = testX[i];
+    // resize error arrays
+    if (err->original.n == errArrSize) {
+      errArrSize += 10;
+      err->original.x = realloc(err->original.x, sizeof(double)*errArrSize);
+
+
+      if (err->original.x == NULL){
+        fputs("Error: Failed to reallocate memory for err->original.x.\n", stderr);
+        return -1;
+      }
+
+      err->original.y = realloc(err->original.y, sizeof(double)*errArrSize);
+      if (err->original.y == NULL){
+        fputs("Error: Failed to reallocate memory for err->original.y.\n", stderr);
+        return -1;
+      }
+    }
+  }
+  return 0;
 }
 
 
@@ -155,45 +174,15 @@ struct errReport compare(double* lower, double* upper, int refLen, double* testY
  *   upper: data structure for upper curve
  *   test: data structure for test curve
  *
- *   return: data structure which includes:
- *            report.test -- test curve
- *          report.errors -- error report
- *           report.valid -- validity
+ *   return: 0 if there was success
  */
-struct reports validate(struct data lower, struct data upper, struct data test) {
-  struct reports report;
-
-  double* lowerX = lower.x;
-  double* lowerY = lower.y;
-  int lowerSize = lower.n;
-
-  double* upperX = upper.x;
-  double* upperY = upper.y;
-  int upperSize = upper.n;
-
-  double* testX = test.x;
-  double* testY = test.y;
-  int testSize = test.n;
-
-  if (lowerSize != 0 && testSize != 0) {
-    double* newLower = interpolateValues(lowerX, lowerY, lowerSize, testX, testSize);
-    double* newUpper = interpolateValues(upperX, upperY, upperSize, testX, testSize);
-
-    report.test = test;
-    report.errors = compare(newLower, newUpper, lowerSize, testY, testX, testSize);
-    if (report.errors.n == 0) {
-      report.valid = "Valid";
-    } else {
-      report.valid = "Invalid";
-    }
-  } else {
-    report.valid = "Undefined";
-  }
-
-  return report;
+int validate(
+  const struct data lower,
+  const struct data upper,
+  const struct data test,
+  struct errorReport* err) {
+  double* newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
+  double* newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
+  int retVal = compare(newLower, newUpper, lower.n, test.y, test.x, test.n, err);
+  return retVal;
 }
-
-
-
-
-

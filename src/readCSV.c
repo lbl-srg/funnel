@@ -27,6 +27,7 @@
  *   returns: the data structure "inputs", which includes fist and second data set, and the number of rows
  */
 struct data readCSV(const char * filename, int skipLines) {
+  int i;
   struct data inputs;
   double *time;
   double *value;
@@ -42,7 +43,7 @@ struct data readCSV(const char * filename, int skipLines) {
   memset(time,0,sizeof(double)*arraySize);
   memset(value,0,sizeof(double)*arraySize);
 
-  for (int i=0; i<skipLines; i++) {
+  for (i=0; i<skipLines; i++) {
     fgets(buf,100,fp); // skip the first "skipLines" lines
   }
 

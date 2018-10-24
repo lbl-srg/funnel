@@ -41,7 +41,7 @@
  */
 node_t * createNode() {
   node_t* temp;
-  temp = (node_t*)malloc(sizeof(node_t));
+  temp = malloc(sizeof(node_t));
   temp->next = NULL;
   return temp;
 }
@@ -199,6 +199,7 @@ void lastNodeDeletion(node_t* head) {
  *   return : data set defining lower curve of the tube
  */
 struct data calculateLower(struct data reference, double* tubeSize) {
+  int i;
   struct data lower;
   node_t* lx = NULL;
   node_t* ly = NULL;
@@ -207,8 +208,8 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   double m0, m1; // slopes before and after point i of reference curve
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
   int b;
-  double xLen = tubeSize[0];
-  double yLen = tubeSize[1];
+  const double xLen = tubeSize[0];
+  const double yLen = tubeSize[1];
 
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
@@ -237,7 +238,7 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   }
 
   // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
-  for (int i = b+1; i < reference.n-1; i++) {
+  for (i = b+1; i < reference.n-1; i++) {
     // ignore identical points
     if ((reference.x[i] - reference.x[i+1] == 0) && (reference.y[i] - reference.y[i+1] == 0))
       continue;
@@ -338,6 +339,7 @@ struct data calculateLower(struct data reference, double* tubeSize) {
  *   return : data set defining upper curve of the tube
  */
 struct data calculateUpper(struct data reference, double* tubeSize) {
+  int i;
   struct data upper;
   node_t* ux = NULL;
   node_t* uy = NULL;
@@ -376,7 +378,7 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   }
 
   // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
-  for (int i = b+1; i < reference.n-1; i++) {
+  for (i = b+1; i < reference.n-1; i++) {
     // ignore identical points
     if ((reference.x[i] - reference.x[i+1] == 0) && (reference.y[i] - reference.y[i+1] == 0))
       continue;
@@ -654,16 +656,17 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
  *   return: updated array with specified length of elements being removed
  */
 double * removeRange(double* array, int size, int staInd, int count) {
+  int i;
   double* updArr = malloc((size-count) * sizeof(double));
   if (!((staInd+count) <= size)) {
     fputs("Deletion not possible!\n", stderr);
     exit(1);
   } else {
-    for (int i=0; i<staInd; i++) {
+    for (i=0; i<staInd; i++) {
       updArr[i] = array[i];
     }
     if (staInd+count != size) {
-      for (int i=staInd; i<(size-count); i++) {
+      for (i=staInd; i<(size-count); i++) {
         updArr[i] = array[i+count];
       }
     }
@@ -684,20 +687,21 @@ double * removeRange(double* array, int size, int staInd, int count) {
  *   return: updated array with specified element being removed
  */
 double * removeAt(double* array, int size, int ind) {
+  int i;
   double* updArr = malloc((size-1) * sizeof(double));
   if (ind > size-1) {
     fputs("Deletion not possible!\n", stderr);
     exit(1);
   } else {
     if (ind == size-1) {
-      for (int i=0; i<size-1; i++) {
+      for (i=0; i<size-1; i++) {
         updArr[i] = array[i];
       }
     } else {
-      for (int i=0; i<ind; i++) {
+      for (i=0; i<ind; i++) {
         updArr[i] = array[i];
       }
-      for (int i=ind; i<size-1; i++) {
+      for (i=ind; i<size-1; i++) {
         updArr[i] = array[i+1];
       }
     }
@@ -719,22 +723,23 @@ double * removeAt(double* array, int size, int ind) {
  *   return: updated array with new element being added at specified position
  */
 double * insertAt(double* array, int size, int index, double item) {
+  int i;
   double* updArr = malloc((size+1) * sizeof(double));
   if (index > size) {
     fputs("Insert not possible!\n", stderr);
     exit(1);
   } else {
     if (index == size) {
-      for (int i=0; i<size; i++) {
+      for (i=0; i<size; i++) {
         updArr[i] = array[i];
       }
       updArr[size] = item;
     } else {
-      for (int i=0; i<index; i++) {
+      for (i=0; i<index; i++) {
         updArr[i] = array[i];
       }
       updArr[index] = item;
-      for (int i=index; i<size; i++) {
+      for (i=index; i<size; i++) {
         updArr[i+1] = array[i];
       }
     }
