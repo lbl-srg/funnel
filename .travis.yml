@@ -17,7 +17,7 @@ compiler:
   - gcc
 
 #install:
-#  pip install -r requirements.txt
+  pip install -r requirements.txt
 
 # Execute tests
 script:
@@ -25,4 +25,4 @@ script:
   - make test
   - git status tests
   - cat tests/success1/results/report.csv
-#  - git diff --exit-code tests
+  - git diff --exit-code tests

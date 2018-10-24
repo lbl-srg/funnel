@@ -7,7 +7,7 @@ all: test-c test-python
 test-c:
 	@for di in $(DIRS); \
 	do \
-		(cd $$di; $(TEST) )\
+		(cd $$di; $(TEST) && $(PLOT) )\
 	done
 
 test-python:
