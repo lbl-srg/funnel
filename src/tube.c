@@ -44,12 +44,12 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
   if (sourceY == NULL || sourceLength == 0) {
     return sourceY;
   }
-
+  int i;
   double* targetY = malloc(targetLength * sizeof(double));
   int j = 1;
   double x, x0, x1, y0, y1;
 
-  for (int i=0; i<targetLength; i++) {
+  for (i=0; i<targetLength; i++) {
     // Prevent extrapolating
     if (targetX[i] > sourceX[sourceLength-1]) {
       double *tmp = realloc(targetY, sizeof(double)*i);
@@ -102,6 +102,7 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
 int compare(double* lower, double* upper, int refLen,
   double* testY, double* testX, int testLen,
   struct errorReport* err) {
+  int i;
   int errArrSize = 1;
   err->original.n = 0;
   err->original.x = malloc(errArrSize * sizeof(double));
@@ -128,7 +129,7 @@ int compare(double* lower, double* upper, int refLen,
     return -1;
   }
 
-  for (int i=0; i < err->diff.n; i++) {
+  for (i=0; i < err->diff.n; i++) {
     if (testY[i] < lower[i] || testY[i] > upper[i]) {
       err->original.x[err->original.n] = testX[i];
       if (testY[i] < lower[i]) {
