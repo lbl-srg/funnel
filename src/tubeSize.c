@@ -16,7 +16,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stdbool.h"
+#include <stdbool.h>
+#include <math.h>
 
 #include "data_structure.h"
 #include "tubeSize.h"
@@ -96,7 +97,7 @@ double * setStandardBaseAndRatio(struct data refData) {
   // set baseX
   baseX = maxX - minX;
   if (baseX == 0) {
-    baseX = abs(maxX);
+    baseX = fabs(maxX);
   }
   if (baseX == 0) {
     baseX = 1;
@@ -104,7 +105,7 @@ double * setStandardBaseAndRatio(struct data refData) {
   // set baseY
   baseY = maxY - minY;
   if (baseY == 0) {
-    baseY = abs(maxY);
+    baseY = fabs(maxY);
   }
   if (baseY == 0) {
     baseY = 0.0000000000000001;
@@ -142,11 +143,11 @@ double * setFormerBaseAndRatio(struct data refData) {
   double maxY = maxValue(refData.y,refData.n);
   double minY = minValue(refData.y,refData.n);
 
-  baseX = maxX - minX + abs(minX);
-  baseY = maxY - minY + abs(minY);
+  baseX = maxX - minX + fabs(minX);
+  baseY = maxY - minY + fabs(minY);
 
   if (maxX != minX) {
-    ratio = max(0.0004, ((maxY - minY + abs(minY)) / (maxX - minX)));
+    ratio = max(0.0004, ((maxY - minY + fabs(minY)) / (maxX - minX)));
   } else {
     ratio = 0;
   }
