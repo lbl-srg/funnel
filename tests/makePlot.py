@@ -3,6 +3,7 @@
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+matplotlib.use('agg') # Needed for headless testing
 
 def readCSVFile(filename):
     time = []
