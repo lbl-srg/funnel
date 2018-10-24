@@ -23,4 +23,4 @@ script:
   - make build
   - make test
   - git status tests
-  - git diff --quiet tests
+  - git diff --exit-code tests
