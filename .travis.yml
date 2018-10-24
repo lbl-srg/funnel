@@ -17,4 +17,7 @@ compiler:
 
 # Execute tests
 script:
-  - make build test
+  - make build
+  - make test
+  - git status tests
+  - git diff --quiet tests
