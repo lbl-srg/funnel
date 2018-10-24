@@ -1,4 +1,4 @@
-language: python
+language: C
 
 sudo: false
 
@@ -12,11 +12,10 @@ git:
   depth: 10
 
 compiler:
-  - clang
   - gcc
 
-install:
-  pip install -r requirements.txt
+#install:
+#  pip install -r requirements.txt
 
 # Execute tests
 script:
