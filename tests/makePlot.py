@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #############################################################
 import csv
+import matplotlib as mpl
+mpl.use('Agg') # Needed for headless testing
 import matplotlib.pyplot as plt
 import numpy as np
-matplotlib.use('agg') # Needed for headless testing
 
 def readCSVFile(filename):
     time = []
