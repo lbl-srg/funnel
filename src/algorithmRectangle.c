@@ -730,7 +730,7 @@ double * insertAt(double* array, int size, int index, double item) {
     exit(1);
   } else {
     if (index == size) {
-      for (int i=0; i<size; i++) {
+      for (i=0; i<size; i++) {
         updArr[i] = array[i];
       }
       updArr[size] = item;
