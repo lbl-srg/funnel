@@ -283,7 +283,7 @@ struct data calculateLower(struct data reference, double* tubeSize) {
       int len = listLen(ly);
       double lastY = getNth(ly, len-1);
       // remove the last added points in case of zero slope of tube curve
-      if ((reference.y[i+1] - yLen) == lastY) {
+      if equ((reference.y[i+1] - yLen), lastY) {
         if (equ(s0 * s1, -1) && equ(getNth(ly, len-3), lastY)) {
           // remove two points, if two points were added at last
           // ((len-1) - 2 >= 0, because start point + two added points)

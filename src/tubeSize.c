@@ -200,7 +200,7 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
   ratio = standValue[2];
 
   // Specify single value to define half-width (x) or half-height (y) of rectangle
-  if (singleValue != 0) {
+  if (!equ(singleValue, 0)) {
     // If non-zero ratio
     if (ratio > 0) {
       // If relative value
@@ -234,7 +234,7 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
   // Specify both height and width values to define half-width (x) and half-height (y) of rectangle
   } else {
     // If relative value
-    if (relative && (baseX != 0) && (baseY != 0)) {
+    if (relative && !equ(baseX, 0) && !equ(baseY, 0)) {
       if ((valueX < 0) || (valueX > 1))
         fputs("Relative x value is out of expected range [0, 1].", stderr);
       if ((valueY < 0) || (valueY > 1))

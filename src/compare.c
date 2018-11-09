@@ -64,9 +64,9 @@ int writeToFile(
   for (i = 0; i < data.upperCurve.n; i++) {
     fprintf(f4, "%lf,%lf\n", data.upperCurve.x[i],data.upperCurve.y[i]);
   }
-  if (data.validateReport.errors.diff.n != 0) {
+  if (data.validateReport.errors.original.n != 0) {
     fprintf(f5, "The test result is invalid.\n");
-    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.diff.n);
+    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.original.n);
     for (i =0; i < data.validateReport.errors.diff.n; i++){
       fprintf(f5, "%lf,%lf\n",
           data.validateReport.errors.diff.x[i],
