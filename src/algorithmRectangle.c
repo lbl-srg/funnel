@@ -33,6 +33,9 @@
 #define sign(a) ((a>0) ? 1 : ((a<0) ? -1 : 0))
 #endif
 
+#ifndef equ
+#define equ(a,b) (fabs(a-b) < 1e-10 ? true : false)
+#endif
 
 /*
  * Function: createNode
@@ -214,10 +217,10 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while ((reference.x[b] - reference.x[b+1] == 0) && (reference.y[b] - reference.y[b+1] == 0))
+  while (equ(reference.x[b], reference.x[b+1]) && (equ(reference.y[b], reference.y[b+1])))
     b = b+1;
   s0 = sign(reference.y[b+1] - reference.y[b]);
-  if (reference.x[b+1] != reference.x[b]) {
+  if (!equ(reference.x[b+1], reference.x[b])) {
     m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
   } else {
     if (s0 > 0) {
@@ -231,7 +234,7 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   lx = addNode(lx,(reference.x[b] - xLen));
   ly = addNode(ly, (reference.y[b] - yLen));
 
-  if (s0 == 1) {
+  if (equ(s0, 1)) {
     // add down right point
     lx = addNode(lx, (reference.x[b] + xLen));
     ly = addNode(ly, (reference.y[b] - yLen));
@@ -240,35 +243,35 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
   for (i = b+1; i < reference.n-1; i++) {
     // ignore identical points
-    if ((reference.x[i] - reference.x[i+1] == 0) && (reference.y[i] - reference.y[i+1] == 0))
+    if (equ(reference.x[i], reference.x[i+1]) && equ(reference.y[i], reference.y[i+1]))
       continue;
 
     // slopes of reference curve
     s1 = sign(reference.y[i+1] - reference.y[i]);
-    if (reference.x[i+1] - reference.x[i] != 0) {
+    if (!equ(reference.x[i+1], reference.x[i])) {
       m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
     } else {
       m1 = (s1>0) ? (1e+15) : (-1e+15);
     }
 
     // add no point for equal slopes of reference curve
-    if (m0 != m1) {
-      if ((s0 != -1) && (s1 != -1)) {
+    if (!equ(m0, m1)) {
+      if (!equ(s0, -1) && !equ(s1, -1)) {
         // add down right point
         lx = addNode(lx, (reference.x[i] + xLen));
         ly = addNode(ly, (reference.y[i] - yLen));
-      } else if ((s0 != 1) && (s1 != 1)) {
+      } else if (!equ(s0, 1) && !equ(s1, 1)) {
         // add down left point
         lx = addNode(lx, (reference.x[i] - xLen));
         ly = addNode(ly, (reference.y[i] - yLen));
-      } else if ((s0 == -1) && (s1 == 1)) {
+      } else if (equ(s0, -1) && equ(s1, 1)) {
         // add down left point
         lx = addNode(lx, (reference.x[i] - xLen));
         ly = addNode(ly, (reference.y[i] - yLen));
         // add down right point
         lx = addNode(lx, (reference.x[i] + xLen));
         ly = addNode(ly, (reference.y[i] - yLen));
-      } else if ((s0 == 1) && (s1 == -1)) {
+      } else if (equ(s0, 1) && equ(s1, -1)) {
         // add down right point
         lx = addNode(lx, (reference.x[i] + xLen));
         ly = addNode(ly, (reference.y[i] - yLen));
@@ -280,15 +283,15 @@ struct data calculateLower(struct data reference, double* tubeSize) {
       int len = listLen(ly);
       double lastY = getNth(ly, len-1);
       // remove the last added points in case of zero slope of tube curve
-      if ((reference.y[i+1] - yLen) == lastY) {
-        if ((s0 * s1 == -1) && (getNth(ly, len-3) == lastY)) {
+      if equ((reference.y[i+1] - yLen), lastY) {
+        if (equ(s0 * s1, -1) && equ(getNth(ly, len-3), lastY)) {
           // remove two points, if two points were added at last
           // ((len-1) - 2 >= 0, because start point + two added points)
           lastNodeDeletion(lx);
           lastNodeDeletion(ly);
           lastNodeDeletion(lx);
           lastNodeDeletion(ly);
-        } else if ((s0 * s1 != -1) && (getNth(ly, len-2) == lastY)) {
+        } else if (!equ(s0 * s1, -1) && equ(getNth(ly, len-2), lastY)) {
           // remove one point, if one point was added at last
             // ((len-1) - 1 >= 0, because start point + one added point)
           lastNodeDeletion(lx);
@@ -300,7 +303,7 @@ struct data calculateLower(struct data reference, double* tubeSize) {
     m0 = m1;
   }
   // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
-  if (s0 == -1) {
+  if equ(s0, -1) {
     // add down left point
     lx = addNode(lx, (reference.x[reference.n-1] - xLen));
     ly = addNode(ly, (reference.y[reference.n-1] - yLen));
@@ -354,10 +357,10 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while ((reference.x[b] - reference.x[b+1] == 0) && (reference.y[b] - reference.y[b+1] == 0))
+  while (equ(reference.x[b], reference.x[b+1]) && equ(reference.y[b], reference.y[b+1]))
     b = b+1;
   s0 = sign(reference.y[b+1] - reference.y[b]);
-  if (reference.x[b+1] != reference.x[b]) {
+  if (!equ(reference.x[b+1], reference.x[b])) {
     m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
   } else {
     if (s0 > 0) {
@@ -371,7 +374,7 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   ux = addNode(ux,(reference.x[b] - xLen));
   uy = addNode(uy, (reference.y[b] + yLen));
 
-  if (s0 == -1) {
+  if equ(s0, -1) {
     // add top right point
     ux = addNode(ux, (reference.x[b] + xLen));
     uy = addNode(uy, (reference.y[b] + yLen));
@@ -380,35 +383,35 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
   for (i = b+1; i < reference.n-1; i++) {
     // ignore identical points
-    if ((reference.x[i] - reference.x[i+1] == 0) && (reference.y[i] - reference.y[i+1] == 0))
+    if (equ(reference.x[i], reference.x[i+1]) && equ(reference.y[i], reference.y[i+1]))
       continue;
 
     // slopes of reference curve
     s1 = sign(reference.y[i+1] - reference.y[i]);
-    if (reference.x[i+1] - reference.x[i] != 0) {
+    if (!equ(reference.x[i+1], reference.x[i])) {
       m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
     } else {
       m1 = (s1>0) ? (1e+15) : (-1e+15);
     }
 
     // add no point for equal slopes of reference curve
-    if (m0 != m1) {
-      if ((s0 != -1) && (s1 != -1)) {
+    if (!equ(m0, m1)) {
+      if (!equ(s0, -1) && !equ(s1, -1)) {
         // add top left point
         ux = addNode(ux, (reference.x[i] - xLen));
         uy = addNode(uy, (reference.y[i] + yLen));
-      } else if ((s0 != 1) && (s1 != 1)) {
+      } else if (!equ(s0, 1) && !equ(s1, 1)) {
         // add top right point
         ux = addNode(ux, (reference.x[i] + xLen));
         uy = addNode(uy, (reference.y[i] + yLen));
-      } else if ((s0 == 1) && (s1 == -1)) {
+      } else if (equ(s0, 1) && equ(s1, -1)) {
         // add top left point
         ux = addNode(ux, (reference.x[i] - xLen));
         uy = addNode(uy, (reference.y[i] + yLen));
         // add top right point
         ux = addNode(ux, (reference.x[i] + xLen));
         uy = addNode(uy, (reference.y[i] + yLen));
-      } else if ((s0 == -1) && (s1 == 1)) {
+      } else if (equ(s0, -1) && equ(s1, 1)) {
         // add top right point
         ux = addNode(ux, (reference.x[i] + xLen));
         uy = addNode(uy, (reference.y[i] + yLen));
@@ -420,15 +423,15 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
       int len = listLen(uy);
       double lastY = getNth(uy, len-1);
       // remove the last added points in case of zero slope of tube curve
-      if ((reference.y[i+1] + yLen) == lastY) {
-        if ((s0 * s1 == -1) && (getNth(uy, len-3) == lastY)) {
+      if equ((reference.y[i+1] + yLen), lastY) {
+        if (equ(s0 * s1, -1) && equ(getNth(uy, len-3), lastY)) {
           // remove two points, if two points were added at last
           // ((len-1) - 2 >= 0, because start point + two added points)
           lastNodeDeletion(ux);
           lastNodeDeletion(uy);
           lastNodeDeletion(ux);
           lastNodeDeletion(uy);
-        } else if ((s0 * s1 != -1) && (getNth(uy, len-2) == lastY)) {
+        } else if (!equ(s0 * s1, -1) && equ(getNth(uy, len-2), lastY)) {
           // remove one point, if one point was added at last
             // ((len-1) - 1 >= 0, because start point + one added point)
           lastNodeDeletion(ux);
@@ -440,7 +443,7 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
     m0 = m1;
   }
   // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
-  if (s0 == 1) {
+  if equ(s0, 1) {
     // add top left point
     ux = addNode(ux, (reference.x[reference.n-1] - xLen));
     uy = addNode(uy, (reference.y[reference.n-1] + yLen));
@@ -517,14 +520,14 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
          iPrevious = i;
          k = k+1;
          while ((X[i] < X[k]
-                  || (curInd==-1 && X[i] == X[k] && Y[i] < Y[k] && !(k + 1 < re_size && X[k] == X[k + 1] && Y[k + 1] < Y[k]))
-                  || (curInd==1 && X[i] == X[k] && Y[i] > Y[k] && !(k + 1 < re_size && X[k] == X[k + 1] && Y[k + 1] > Y[k])))
+                  || (curInd==-1 && equ(X[i], X[k]) && Y[i] < Y[k] && !(k + 1 < re_size && equ(X[k], X[k + 1]) && Y[k + 1] < Y[k]))
+                  || (curInd==1 && equ(X[i], X[k]) && Y[i] > Y[k] && !(k + 1 < re_size && equ(X[k], X[k + 1]) && Y[k + 1] > Y[k])))
              && i < j)
            i = i+1;
          // it holds X[i - 1] < X[k] <= X[i], particularly X[i] != X[i - 1]
          // for i < j and X[i - 1] < X[k] it holds X[i - 1] < X[k] <= X[i], particularly X[i] != X[i - 1]
          // linear interpolation of (x, y) = (X[k], y) on segment (i - 1, i)
-         if (X[i] - X[i - 1] != 0)
+         if (!equ(X[i], X[i - 1]))
            y = (Y[i] - Y[i - 1]) / (X[i] - X[i - 1]) * (X[k] - X[i - 1]) + Y[i - 1];
          else
            y = Y[i];
@@ -538,17 +541,17 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        // Special case handling: assure, that i - 1 >= 0
        else
          i = iPrevious;
-       if (X[k] != X[k - 1])
+       if (!equ(X[k], X[k - 1]))
            // linear interpolation of (x, y) = (X[i], y) on segment (k - 1, k)
          y = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]) * (X[i] - X[k - 1]) + Y[k - 1];
        // it holds Y[i] = Y[iPrevious - 1] < Y[k - 1]
        // Find i
-       while ((X[k] != X[k - 1]
+       while ((!equ(X[k], X[k - 1])
                    && ((curInd==-1 && Y[i] < y) || (curInd==1 && y < Y[i])))
-           || (X[k] == X[k - 1] && X[i] < X[k]))
+           || (equ(X[k], X[k - 1]) && X[i] < X[k]))
        {
          i = i+1;
-           if (X[k] != X[k - 1])
+           if (!equ(X[k], X[k - 1]))
              // linear interpolation of (x, y) = (X[i], y) on segment (k - 1, k)
                y = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]) * (X[i] - X[k - 1]) + Y[k - 1];
        }
@@ -558,16 +561,16 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        double a2 = 0;
 
        // both branches vertical
-       if (X[i] == X[i - 1] && X[k] == X[k - 1])
+       if (equ(X[i], X[i - 1]) && equ(X[k], X[k - 1]))
          // add no point; check if case occur: slopes have different signs
          addPoint = false;
        // case i-branch vertical
-       else if (X[i] == X[i - 1]) {
+       else if equ(X[i], X[i - 1]) {
          ix = X[i];
          iy = Y[k - 1] + ((X[i] - X[k - 1]) * (Y[k] - Y[k - 1])) / (X[k] - X[k - 1]);
        }
        // case k-branch vertical
-       else if (X[k] == X[k - 1]) {
+       else if equ(X[k], X[k - 1]) {
          ix = X[k];
          iy = Y[i - 1] + ((X[k] - X[i - 1]) * (Y[i] - Y[i - 1])) / (X[i] - X[i - 1]);
        }
@@ -576,7 +579,7 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
          a1 = (Y[i] - Y[i - 1]) / (X[i] - X[i - 1]); // slope of segment (i - 1, i)
          a2 = (Y[k] - Y[k - 1]) / (X[k] - X[k - 1]); // slope of segment (k - 1, k)
          // common case: no equal slopes
-         if (a1 != a2) {
+         if (!equ(a1, a2)) {
            ix = (a1 * X[i - 1] - a2 * X[k - 1] - Y[i - 1] + Y[k - 1]) / (a1 - a2);
            if (fabs(a1) > fabs(a2))
              // calculate y on segment (k - 1, k)
@@ -599,7 +602,7 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        re_size = re_size-count;
        // ===== 4. Add intersection point =====
        // add intersection point, if it isn't already there
-       if (addPoint && (XX[i] != ix || YY[i] != iy)) {
+       if (addPoint && (!equ(XX[i], ix) || !equ(YY[i], iy))) {
          re_size = re_size+1;
          double *X_temp = malloc(re_size * sizeof(double));
          double *Y_temp = malloc(re_size * sizeof(double));
@@ -616,7 +619,7 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        j = i;
 
        // ===== 6. Delete points that are doubled =====
-       if (XX[i-1] == XX[i] && YY[i-1] == YY[i]) {
+       if (equ(XX[i-1], XX[i]) && equ(YY[i-1], YY[i])) {
          re_size = re_size-1;
          double *X_temp = malloc(re_size * sizeof(double));
          double *Y_temp = malloc(re_size * sizeof(double));

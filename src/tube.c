@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "data_structure.h"
 #include "tubeSize.h"
@@ -22,6 +23,10 @@
 
 #ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef equ
+#define equ(a,b) (fabs(a-b) < 1e-10 ? true : false)
 #endif
 
 /*
@@ -72,7 +77,7 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
     y0 = sourceY[j-1];
 
     // Prevent NaN -> division by zero
-    if (((x1-x0)*(x-x0)) != 0) {
+    if (!equ((x1-x0)*(x-x0), 0)) {
       targetY[i] = y0 + (((y1 - y0) / (x1 - x0)) * (x - x0));
     } else {
       targetY[i] = y0;
@@ -183,6 +188,6 @@ int validate(
   struct errorReport* err) {
   double* newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
   double* newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
-  int retVal = compare(newLower, newUpper, lower.n, test.y, test.x, test.n, err);
+  int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
   return retVal;
 }

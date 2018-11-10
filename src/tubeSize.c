@@ -30,6 +30,10 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+#ifndef equ
+#define equ(a,b) (fabs(a-b) < 1e-10 ? true : false)
+#endif
+
 
 /*
  * Function: minValue
@@ -96,22 +100,22 @@ double * setStandardBaseAndRatio(struct data refData) {
 
   // set baseX
   baseX = maxX - minX;
-  if (baseX == 0) {
+  if (equ(baseX, 0)) {
     baseX = fabs(maxX);
   }
-  if (baseX == 0) {
+  if (equ(baseX, 0)) {
     baseX = 1;
   }
   // set baseY
   baseY = maxY - minY;
-  if (baseY == 0) {
+  if (equ(baseY, 0)) {
     baseY = fabs(maxY);
   }
-  if (baseY == 0) {
+  if (equ(baseY, 0)) {
     baseY = 0.0000000000000001;
   }
   // set ratio
-  if (baseX != 0) {
+  if (!equ(baseX, 0)) {
     ratio = baseY / baseX;
   } else {
     ratio = 0;
@@ -146,7 +150,7 @@ double * setFormerBaseAndRatio(struct data refData) {
   baseX = maxX - minX + fabs(minX);
   baseY = maxY - minY + fabs(minY);
 
-  if (maxX != minX) {
+  if (!equ(maxX, minX)) {
     ratio = max(0.0004, ((maxY - minY + fabs(minY)) / (maxX - minX)));
   } else {
     ratio = 0;
@@ -196,7 +200,7 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
   ratio = standValue[2];
 
   // Specify single value to define half-width (x) or half-height (y) of rectangle
-  if (singleValue != 0) {
+  if (!equ(singleValue, 0)) {
     // If non-zero ratio
     if (ratio > 0) {
       // If relative value
@@ -230,7 +234,7 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
   // Specify both height and width values to define half-width (x) and half-height (y) of rectangle
   } else {
     // If relative value
-    if (relative && (baseX != 0) && (baseY != 0)) {
+    if (relative && !equ(baseX, 0) && !equ(baseY, 0)) {
       if ((valueX < 0) || (valueX > 1))
         fputs("Relative x value is out of expected range [0, 1].", stderr);
       if ((valueY < 0) || (valueY > 1))
