@@ -91,6 +91,10 @@ double maxValue(double* array, int size) {
 double * setStandardBaseAndRatio(struct data refData) {
   double baseX, baseY, ratio;
   double* staBasRat = malloc(3 * sizeof(double));
+  if (staBasRat == NULL){
+	  fputs("Error: Failed to allocate memory for staBasRat.\n", stderr);
+	  exit(1);
+  }
 
   double maxX = maxValue(refData.x, refData.n);
   double minX = minValue(refData.x, refData.n);
@@ -140,6 +144,10 @@ double * setStandardBaseAndRatio(struct data refData) {
 double * setFormerBaseAndRatio(struct data refData) {
   double baseX, baseY, ratio;
   double* staBasRat = malloc(3 * sizeof(double));
+  if (staBasRat == NULL){
+  	  fputs("Error: Failed to allocate memory for staBasRat.\n", stderr);
+  	  exit(1);
+  }
 
   double maxX = maxValue(refData.x,refData.n);
   double minX = minValue(refData.x,refData.n);
@@ -186,6 +194,10 @@ double * setFormerBaseAndRatio(struct data refData) {
 double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relative) {
   double x, y, baseX, baseY, ratio;
   double* tubeSize = malloc(5 * sizeof(double));
+  if (tubeSize == NULL){
+	  fputs("Error: Failed to allocate memory for tubeSize.\n", stderr);
+	  exit(1);
+  }
 
   int i = 2; // 1: SetFormerBaseAndRatio; 2: SetStandardBaseAndRatio;
   double *standValue;

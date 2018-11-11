@@ -45,6 +45,10 @@
 node_t * createNode() {
   node_t* temp;
   temp = malloc(sizeof(node_t));
+  if (temp == NULL){
+	  fputs("Error: Failed to allocate memory for temp.\n", stderr);
+      exit(1);
+  }
   temp->next = NULL;
   return temp;
 }
@@ -131,6 +135,10 @@ double getNth(node_t* head, int index) {
 double * getListValues(node_t* head) {
   int size = 1;
   double *value = malloc(sizeof(double) * size);
+  if (value == NULL){
+	  fputs("Error: Failed to allocate memory for value.\n", stderr);
+      exit(1);
+  }
   memset(value,0,sizeof(double)*size);
 
   node_t* current = head;
@@ -141,7 +149,7 @@ double * getListValues(node_t* head) {
       // need more space
       size += 10;
       double *value_tmp = realloc(value, sizeof(double)*size);
-      if (!value_tmp) {
+      if (value_tmp == NULL) {
         fputs("Fatal error -- out of memory!\n", stderr);
         exit(1);
       }
@@ -315,7 +323,15 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   // ===== 2. Remove points and add intersection points in case of backward order =====
   int lisLen = listLen(ly);
   double* tempLX = malloc(lisLen * sizeof(double));
+  if (tempLX == NULL){
+  	  fputs("Error: Failed to allocate memory for tempLX.\n", stderr);
+      exit(1);
+  }
   double* tempLY = malloc(lisLen * sizeof(double));
+  if (tempLY == NULL){
+  	  fputs("Error: Failed to allocate memory for tempLY.\n", stderr);
+      exit(1);
+  }
 
   tempLX = getListValues(lx);
   tempLY = getListValues(ly);
@@ -455,7 +471,15 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   // ===== 2. Remove points and add intersection points in case of backward order =====
   int lisLen = listLen(uy);
   double* tempUX = malloc(lisLen * sizeof(double));
+  if (tempUX == NULL){
+	  fputs("Error: Failed to allocate memory for tempUX.\n", stderr);
+      exit(1);
+  }
   double* tempUY = malloc(lisLen * sizeof(double));
+  if (tempUY == NULL){
+  	  fputs("Error: Failed to allocate memory for tempUY.\n", stderr);
+      exit(1);
+  }
 
   tempUX = getListValues(ux);
   tempUY = getListValues(uy);
@@ -596,8 +620,16 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        // ===== 3. Delete points i until (including) k-1 =====
        int count = k-i;
        double* XX = malloc((re_size-count) * sizeof(double));
+       if (XX == NULL){
+    	   fputs("Error: Failed to allocate memory for XX.\n", stderr);
+           exit(1);
+       }
        XX = removeRange(X, re_size, i, count);
        double* YY = malloc((size-count) * sizeof(double));
+       if (YY == NULL){
+           fputs("Error: Failed to allocate memory for YY.\n", stderr);
+           exit(1);
+       }
        YY = removeRange(Y, re_size, i, count);
        re_size = re_size-count;
        // ===== 4. Add intersection point =====
@@ -605,12 +637,28 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        if (addPoint && (!equ(XX[i], ix) || !equ(YY[i], iy))) {
          re_size = re_size+1;
          double *X_temp = malloc(re_size * sizeof(double));
+         if (X_temp == NULL){
+        	 fputs("Error: Failed to allocate memory for X_temp.\n", stderr);
+             exit(1);
+         }
          double *Y_temp = malloc(re_size * sizeof(double));
+         if (Y_temp == NULL){
+        	 fputs("Error: Failed to allocate memory for Y_temp.\n", stderr);
+        	 exit(1);
+         }
          X_temp = insertAt(XX, re_size-1, i, ix);
          Y_temp = insertAt(YY, re_size-1, i, iy);
 
          XX = realloc(XX, sizeof(double)*re_size);
+         if (XX == NULL){
+        	 fputs("Error: Failed to reallocate memory for XX.\n", stderr);
+        	 exit(1);
+         }
          YY = realloc(YY, sizeof(double)*re_size);
+         if (YY == NULL){
+        	 fputs("Error: Failed to reallocate memory for YY.\n", stderr);
+        	 exit(1);
+         }
          XX = X_temp;
          YY = Y_temp;
        }
@@ -622,18 +670,42 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
        if (equ(XX[i-1], XX[i]) && equ(YY[i-1], YY[i])) {
          re_size = re_size-1;
          double *X_temp = malloc(re_size * sizeof(double));
+         if (X_temp == NULL){
+        	 fputs("Error: Failed to allocate memory for X_temp.\n", stderr);
+        	 exit(1);
+         }
          double *Y_temp = malloc(re_size * sizeof(double));
+         if (Y_temp == NULL){
+        	 fputs("Error: Failed to allocate memory for Y_temp.\n", stderr);
+        	 exit(1);
+         }
          X_temp = removeAt(XX, re_size+1, i);
          Y_temp = removeAt(YY, re_size+1, i);
 
          XX = realloc(XX, sizeof(double)*re_size);
+         if (XX == NULL){
+        	 fputs("Error: Failed to reallocate memory for XX.\n", stderr);
+        	 exit(1);
+         }
          YY = realloc(YY, sizeof(double)*re_size);
+         if (YY == NULL){
+        	 fputs("Error: Failed to reallocate memory for YY.\n", stderr);
+        	 exit(1);
+         }
          XX = X_temp;
          YY = Y_temp;
          j = i - 1;
        }
        X = realloc(X, sizeof(double)*re_size);
+       if (X == NULL){
+    	   fputs("Error: Failed to reallocate memory for X.\n", stderr);
+    	   exit(1);
+       }
        Y = realloc(Y, sizeof(double)*re_size);
+       if (Y == NULL){
+    	   fputs("Error: Failed to reallocate memory for Y.\n", stderr);
+    	   exit(1);
+       }
        X = XX;
        Y = YY;
      }
@@ -661,6 +733,10 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
 double * removeRange(double* array, int size, int staInd, int count) {
   int i;
   double* updArr = malloc((size-count) * sizeof(double));
+  if (updArr == NULL){
+	  fputs("Error: Failed to allocate memory for updArr.\n", stderr);
+	  exit(1);
+  }
   if (!((staInd+count) <= size)) {
     fputs("Deletion not possible!\n", stderr);
     exit(1);
@@ -692,6 +768,10 @@ double * removeRange(double* array, int size, int staInd, int count) {
 double * removeAt(double* array, int size, int ind) {
   int i;
   double* updArr = malloc((size-1) * sizeof(double));
+  if (updArr == NULL){
+  	  fputs("Error: Failed to allocate memory for updArr.\n", stderr);
+  	  exit(1);
+  }
   if (ind > size-1) {
     fputs("Deletion not possible!\n", stderr);
     exit(1);
@@ -728,6 +808,10 @@ double * removeAt(double* array, int size, int ind) {
 double * insertAt(double* array, int size, int index, double item) {
   int i;
   double* updArr = malloc((size+1) * sizeof(double));
+  if (updArr == NULL){
+	  fputs("Error: Failed to allocate memory for updArr.\n", stderr);
+	  exit(1);
+  }
   if (index > size) {
     fputs("Insert not possible!\n", stderr);
     exit(1);

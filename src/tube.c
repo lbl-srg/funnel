@@ -51,6 +51,10 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
   }
   int i;
   double* targetY = malloc(targetLength * sizeof(double));
+  if (targetY == NULL){
+  	  fputs("Error: Failed to allocate memory for targetY.\n", stderr);
+  	  exit(1);
+  }
   int j = 1;
   double x, x0, x1, y0, y1;
 
@@ -58,6 +62,10 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
     // Prevent extrapolating
     if (targetX[i] > sourceX[sourceLength-1]) {
       double *tmp = realloc(targetY, sizeof(double)*i);
+      if (tmp == NULL){
+    	  fputs("Error: Failed to reallocate memory for tmp.\n", stderr);
+    	  exit(1);
+      }
       targetY = tmp;
       break;
     }
