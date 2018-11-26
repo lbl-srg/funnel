@@ -160,8 +160,6 @@ int compare(double* lower, double* upper, int refLen,
     if (err->original.n == errArrSize) {
       errArrSize += 10;
       err->original.x = realloc(err->original.x, sizeof(double)*errArrSize);
-
-
       if (err->original.x == NULL){
         fputs("Error: Failed to reallocate memory for err->original.x.\n", stderr);
         return -1;
