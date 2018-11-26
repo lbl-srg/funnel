@@ -28,7 +28,7 @@ compile:
 	$(CC) $(CFLAGS) -fPIC -c $(SRCS)
 
 build: compile
-	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname,$(LIB) -o $(LIB) $(OBJS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -shared -fPIC -Wl,$(API),$(LIB) -o $(LIB) $(OBJS) $(LDFLAGS)
 	mkdir -p ../lib64
 	mv $(LIB) ../lib64
 	$(CC) $(CFLAGS) -o funnel $(OBJS) $(LDFLAGS)
