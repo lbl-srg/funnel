@@ -184,7 +184,7 @@ double * setFormerBaseAndRatio(struct data refData) {
  *               ratio -- ratio y / x
  */
 double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relative) {
-  double x, y, baseX, baseY, ratio;
+  double x = 1e-10, y = 1e-10, baseX, baseY, ratio;
   double* tubeSize = malloc(5 * sizeof(double));
 
   int i = 2; // 1: SetFormerBaseAndRatio; 2: SetStandardBaseAndRatio;
@@ -202,7 +202,7 @@ double * tubeSize(struct data refData, double singleValue, char axes, double val
   // Specify single value to define half-width (x) or half-height (y) of rectangle
   if (!equ(singleValue, 0)) {
     // If non-zero ratio
-    if (ratio > 0) {
+    if (!equ(ratio, 0)) {
       // If relative value
       if (relative) {
         if ((singleValue < 0) || (singleValue > 1)) {
