@@ -16,7 +16,7 @@ git:
 compiler:
   - gcc
 
-#install:
+install:
   pip install -r requirements.txt
 
 # Execute tests
