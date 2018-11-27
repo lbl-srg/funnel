@@ -24,5 +24,4 @@ script:
   - make build
   - make test
   - git status tests
-  - cat tests/success1/results/report.csv
   - git diff --exit-code tests
