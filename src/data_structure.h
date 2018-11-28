@@ -25,12 +25,4 @@ struct reports {
   struct errorReport errors;
 };
 
-struct sumData {
-  struct data refData;
-  struct data testData;
-  struct data lowerCurve;
-  struct data upperCurve;
-  struct reports validateReport;
-};
-
 #endif /* DATA_STRUCTURE_H_ */

@@ -1,6 +1,6 @@
 dist: trusty
 
-sudo: false
+sudo: true
 
 language: C
 
@@ -16,13 +16,9 @@ git:
 compiler:
   - gcc
 
-#install:
-  pip install -r requirements.txt
-
 # Execute tests
 script:
   - make build
   - make test
   - git status tests
-  - cat tests/success1/results/report.csv
   - git diff --exit-code tests
