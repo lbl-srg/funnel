@@ -7,64 +7,37 @@
  * -----------------------
  *   write input data structure to files
  *
- *   data: input data structure containing original CSV data, tube curve data, and validate report
  *   outDir: directory to save the output files
- *   refData: file name for storing base CSV data
- *   testData: file name for storing test CSV data
- *   lowerData: file name for storing tube lower curve data
- *   upperData: file name for storing tube upper curve data
- *   report: file name for validate report
+ *   fileName: file name for storing base CSV data
+ *   data: data to be written
  */
 int writeToFile(
-  struct sumData data,
   const char *outDir,
-  const char *refData,
-  const char *testData,
-  const char *lowerData,
-  const char *upperData,
-  const char *report) {
+  const char* fileName,
+  struct data* data) {
+
   int i = 0;
 
   mkdir_p(outDir);
 
-  char refDataFile[MAX], testDataFile[MAX], lowDataFile[MAX], upperDataFile[MAX], reportFile[MAX];
+  /* fixme: this is not secure, need to prevent buffer overlow */
+  char fname[MAX];
+  strcpy(fname, outDir);
+  strcat(fname, fileName);
 
-  strcpy(refDataFile, outDir);
-  strcpy(testDataFile, outDir);
-  strcpy(lowDataFile, outDir);
-  strcpy(upperDataFile, outDir);
-  strcpy(reportFile, outDir);
+  FILE *fil = fopen(fname, "w+");
 
-  strcat(refDataFile, refData);
-  strcat(testDataFile, testData);
-  strcat(lowDataFile, lowerData);
-  strcat(upperDataFile, upperData);
-  strcat(reportFile, report);
-
-  FILE *f1 = fopen(refDataFile, "w+");
-  FILE *f2 = fopen(testDataFile, "w+");
-  FILE *f3 = fopen(lowDataFile, "w+");
-  FILE *f4 = fopen(upperDataFile, "w+");
-  FILE *f5 = fopen(reportFile, "w+");
-
-  if (f1 == NULL || f2 == NULL || f3 == NULL || f4 == NULL || f5 == NULL){
-    fputs("Error: Failed to open file in writeToFile.\n", stderr);
+  if (fil == NULL){
+    fprintf(stderr, "Error: Failed to open '%s' in writeToFile.\n", fname);
     return -1;
   }
 
-  for (i = 0; i < data.refData.n; i++) {
-    fprintf(f1, "%lf,%lf\n", data.refData.x[i],data.refData.y[i]);
+  fprintf(fil, "%s\n", "x,y");
+  for (i = 0; i < data->n; i++) {
+    fprintf(fil, "%lf,%lf\n", data->x[i], data->y[i]);
   }
-  for (i = 0; i < data.testData.n; i++) {
-    fprintf(f2, "%lf,%lf\n", data.testData.x[i], data.testData.y[i]);
-  }
-  for (i = 0; i < data.lowerCurve.n; i++) {
-    fprintf(f3, "%lf,%lf\n", data.lowerCurve.x[i],data.lowerCurve.y[i]);
-  }
-  for (i = 0; i < data.upperCurve.n; i++) {
-    fprintf(f4, "%lf,%lf\n", data.upperCurve.x[i],data.upperCurve.y[i]);
-  }
-  if (data.validateReport.errors.original.n != 0) {
+
+/*  if (data.validateReport.errors.original.n != 0) {
     fprintf(f5, "The test result is invalid.\n");
     fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.original.n);
     for (i =0; i < data.validateReport.errors.diff.n; i++){
@@ -75,12 +48,9 @@ int writeToFile(
   }
   else
     fprintf(f5, "The test result is valid.\n");
+*/
+  fclose(fil);
 
-  fclose(f1);
-  fclose(f2);
-  fclose(f3);
-  fclose(f4);
-  fclose(f5);
   return 0;
 }
 
@@ -164,19 +134,28 @@ int compareAndReport(
     return 1;
   }
   struct reports validateReport;
+
   retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
   if (retVal != 0)
     return retVal;
 
-  // Summarize the results
-  struct sumData sumReport;
-  sumReport.refData = *baseCSV;
-  sumReport.lowerCurve = lowerCurve;
-  sumReport.upperCurve = upperCurve;
-  sumReport.testData = *testCSV;
-  sumReport.validateReport = validateReport;
-  retVal = writeToFile(sumReport, outputDirectory,
-    "refData.csv", "testData.csv", "lowerData.csv", "upperData.csv", "report.csv");
+  /* Write data to files */
+  retVal = writeToFile(outputDirectory, "reference.csv", baseCSV);
+  if (retVal != 0)
+    return retVal;
+  retVal = writeToFile(outputDirectory, "lowerBound.csv", &lowerCurve);
+  if (retVal != 0)
+    return retVal;
+  retVal = writeToFile(outputDirectory, "upperBound.csv", &upperCurve);
+  if (retVal != 0)
+    return retVal;
+  retVal = writeToFile(outputDirectory, "test.csv", testCSV);
+  if (retVal != 0)
+    return retVal;
+  retVal = writeToFile(outputDirectory, "errors.csv", &validateReport.errors.diff);
+  if (retVal != 0)
+    return retVal;
+
   freeData(baseCSV);
   freeData(testCSV);
 
