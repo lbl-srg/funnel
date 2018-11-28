@@ -16,7 +16,6 @@ def compareAndReport(
     useRelativeTolerance):
 
     import os
-    import numpy as np
 
     lib = cdll.LoadLibrary(
         os.path.join(os.path.dirname(__file__), "..", "lib64/libfunnel.so"))
