@@ -1,4 +1,7 @@
 # funnel
+
+[![Build Status](https://travis-ci.org/lbl-srg/funnel.svg?branch=master)](https://travis-ci.org/lbl-srg/funnel)
+
 Software to compare time series within user-specified tolerances.
 
 A funnel is generated around the reference curve and the other curve is checked
