@@ -16,6 +16,9 @@ git:
 compiler:
   - gcc
 
+before_script:
+   export PYTHONPATH=$PYTHONPATH:$(pwd)/bin
+
 # Execute tests
 script:
   - make build
