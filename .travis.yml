@@ -16,10 +16,6 @@ git:
 compiler:
   - gcc
 
-install:
-  - pip install --upgrade pip
-  - pip install -r requirements.txt
-
 # Execute tests
 script:
   - make build
