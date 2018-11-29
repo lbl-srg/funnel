@@ -17,17 +17,37 @@ int writeToFile(
   struct data* data) {
 
   int i = 0;
+  const char lastChar = outDir[(strlen(outDir)-1)];
+  #ifdef _WIN32
+  /* Windows supports forward and backward slash */
+    bool addSlash = (lastChar == '/' || lastChar == '\\') ? false : true;
+  #else
+    bool addSlash = (lastChar == '/') ? false : true;
+  #endif
 
   mkdir_p(outDir);
 
   char* fname = NULL;
-  fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
+  if (addSlash)
+    fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 2) * sizeof(char));
+  else
+    fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
+
   if (fname == NULL){
     fprintf(stderr, "Error: Failed to allocate memory for fname in writeToFile.\n");
     return -1;
   }
 
   strcpy(fname, outDir);
+
+  #ifdef _WIN32
+  if (addSlash)
+    strcat(fname, "\\");
+  #else
+  if (addSlash)
+    strcat(fname, "/");
+  #endif
+
   strcat(fname, fileName);
 
   FILE *fil = fopen(fname, "w+");
