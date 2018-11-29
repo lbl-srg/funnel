@@ -17,7 +17,7 @@ if __name__ == "__main__":
     yReference = [0., 0., 1., 1., 0., 0.]
     tTest = range(0, nTest)
     yTest = [0, 0, 1.1, 1, 0, 0]
-    outputDirectory = 'testPython/'
+    outputDirectory = 'testPython'
     atolx = 0
     atoly = 0
     rtolx = 0.002
