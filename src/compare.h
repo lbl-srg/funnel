@@ -30,8 +30,6 @@ int compareAndReport(
   const double* yTest,
   const size_t nTest,
   const char * outputDirectory,
-  const double tolerance,
-  const char axes,
-  const bool useRelativeTolerance);
+  struct tolerances tolerances);
 
 #endif /* COMPARE_H_ */

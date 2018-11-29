@@ -111,9 +111,7 @@ int compareAndReport(
   const double* yTest,
   const size_t nTest,
   const char * outputDirectory,
-  const double tolerance,
-  const char axes,
-  const bool useRelativeTolerance){
+  struct tolerances tolerances){
 
   int retVal;
 
@@ -122,7 +120,7 @@ int compareAndReport(
 
   // Calculate tube size (half-width and half-height of rectangle)
   //printf("useRelative=%d\n", arguments.useRelativeTolerance);
-  double* tube = tubeSize(*baseCSV, tolerance, axes, 0, 0, useRelativeTolerance);
+  double* tube = tubeSize(*baseCSV, tolerances);
 
   // Calculate the data set of lower and upper curve around base
   struct data lowerCurve = calculateLower(*baseCSV, tube);
