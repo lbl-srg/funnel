@@ -12,51 +12,57 @@ data curves from simulation using developed control sequences, to verify if the
 developed control sequences have been implemented correctly so the same behavior
 being achieved.
 
-### How to run tests? ###
+## How to run
 
 To compile the C files, run
 ```
 make build
 ```
 To see usage information, start the tool with command line argument `--help`
-or `--usage`
 ```
 bin/funnel --help
 ```
 You can set the arguments as:
 ```
-Usage: funnel [OPTION...]
+Usage: funnel [OPTIONS...]
+  Compares time series within user-specified tolerances.
 
-  -a, --absolute             Check if use absolute tolerance (use = true,
-                             not_use = false), default=false
-  -b, --baseFile=PATH        Path of CSV file to be used as base
-  -c, --compareFile=PATH     Path of CSV file to be tested
-  -o, --outputFile=DIR       Directory path to save output results
-  -t, --tolerance=TOLERANCE  Tolerance to generate data tube, default=0.002
-  -x, --axes=AXES            Check if the tolerance value is set for half-width
-                             (X) or half-height (Y) of the rectangle to
-                             generate tube, default=Y
-  -?, --help                 Give this help list
-      --usage                Give a short usage message
+  --test             Name of CSV file to be tested.
+  --reference        Name of CSV file with reference data.
+  --output           Directory path to save output results.
+  --atolx            Absolute tolerance in x direction.
+  --atoly            Absolute tolerance in y direction.
+  --rtolx            Relative tolerance in x direction.
+  --rtoly            Relative tolerance in y direction.
+  --help             Print this help.
+
+  At least one tolerance must be specified for x and y.
+
+  Typical use:
+    ./funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results/
+
+  Full documentation at https://github.com/lbl-srg/funnel
 ```
 To run an example, with `trended.csv` as base data and `simulated.csv` as test
 data, run
 ```
-./funnel -b trended.csv -c simulated.csv -o results/
+./funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results/
 ```
 where it uses default settings of relative tolerance, being set for half-height (Y)
 of the rectangle that is around each point for generating tube, with value of 0.002.
 It means that the half-height of the rectangle is 0.002*(max(Y) - min(Y)).
+
+## How to run tests
 
 To run all tests, run
 ```
 make build test
 ```
 
-# License
+## License
 
 Modified 3-clause BSD, see [LICENSE.md](LICENSE.md).
 
-# Copyright
+## Copyright
 
 See [copyright notice](COPYRIGHT.md).

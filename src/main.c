@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   double atolx = 0, atoly = 0, rtolx = 0, rtoly = 0;
   char *output = NULL, *testFile = NULL, *baseFile = NULL;
   char *help =
-		  "Usage: funnel [OPTION...] \n"
+		  "Usage: funnel [OPTIONS...] \n"
       "  Compares time series within user-specified tolerances.\n\n"
 		  "  --test             Name of CSV file to be tested.\n"
 		  "  --reference        Name of CSV file with reference data.\n"
@@ -35,7 +35,11 @@ int main(int argc, char **argv) {
 		  "  --rtoly            Relative tolerance in y direction.\n"
 		  "  --help             Print this help.\n"
       "\n"
-      "  At least one tolerance must be specified for x and y."
+      "  At least one tolerance must be specified for x and y.\n"
+      "\n"
+      "  Typical use:\n"
+      "    ./funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results/\n"
+      "\n"
       "  Full documentation at https://github.com/lbl-srg/funnel\n";
 
   struct tolerances tolerances;
