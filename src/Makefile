@@ -2,6 +2,12 @@
 CC=gcc
 CFLAGS=-Wall -Wfloat-equal
 
+SONAME = -soname
+UNAME := $(shell uname)
+ifeq ($(UNAME),Darwin)
+SONAME=-install_name
+endif
+
 LIB=libfunnel.so
 
 SRCS=$(foreach fil,*.c, $(fil))
@@ -19,7 +25,7 @@ compile:
 	$(CC) $(CFLAGS) -fPIC -c $(SRCS)
 
 build: compile
-	$(CC) $(CFLAGS) -shared -fPIC -Wl,-soname,$(LIB) -o $(LIB) $(OBJS) -lc
+	$(CC) $(CFLAGS) -shared -fPIC -Wl,$(SONAME),$(LIB) -o $(LIB) $(OBJS) -lc
 	mkdir -p ../lib64
 	mv $(LIB) ../lib64
 	$(CC) $(CFLAGS) -o funnel $(OBJS)
