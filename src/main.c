@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
       "  Compares time series within user-specified tolerances.\n\n"
 		  "  --test             Name of CSV file to be tested.\n"
 		  "  --reference        Name of CSV file with reference data.\n"
-		  "  --output           Directory path to save output results.\n"
+		  "  --output           Directory to save outputs.\n"
 		  "  --atolx            Absolute tolerance in x direction.\n"
 		  "  --atoly            Absolute tolerance in y direction.\n"
 		  "  --rtolx            Relative tolerance in x direction.\n"

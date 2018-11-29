@@ -29,7 +29,7 @@ Usage: funnel [OPTIONS...]
 
   --test             Name of CSV file to be tested.
   --reference        Name of CSV file with reference data.
-  --output           Directory path to save output results.
+  --output           Directory to save outputs.
   --atolx            Absolute tolerance in x direction.
   --atoly            Absolute tolerance in y direction.
   --rtolx            Relative tolerance in x direction.
@@ -41,16 +41,12 @@ Usage: funnel [OPTIONS...]
   Typical use:
     ./funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results/
 
-  Full documentation at https://github.com/lbl-srg/funnel
 ```
 To run an example, with `trended.csv` as base data and `simulated.csv` as test
 data, run
 ```
 ./funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results/
 ```
-where it uses default settings of relative tolerance, being set for half-height (Y)
-of the rectangle that is around each point for generating tube, with value of 0.002.
-It means that the half-height of the rectangle is 0.002*(max(Y) - min(Y)).
 
 ## How to run tests
 
