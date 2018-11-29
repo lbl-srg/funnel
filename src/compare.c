@@ -20,12 +20,18 @@ int writeToFile(
 
   mkdir_p(outDir);
 
-  /* fixme: this is not secure, need to prevent buffer overlow */
-  char fname[MAX];
+  char* fname = NULL;
+  fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
+  if (fname == NULL){
+    fprintf(stderr, "Error: Failed to allocate memory for fname in writeToFile.\n");
+    return -1;
+  }
+
   strcpy(fname, outDir);
   strcat(fname, fileName);
 
   FILE *fil = fopen(fname, "w+");
+  free(fname);
 
   if (fil == NULL){
     fprintf(stderr, "Error: Failed to open '%s' in writeToFile.\n", fname);
