@@ -80,86 +80,36 @@ double maxValue(double* array, int size) {
 }
 
 /*
- * Function: setStandardBaseAndRatio
- * ---------------------------------
- *   calculate standard values for base of relative values in x and y direction, and their ratio
+ * Function: setData
+ * -----------------
+ *   find maximum values and value ranges in x and y of reference data
  *
- *   refData: reference data set
+ *   refData: CSV data which will be used as reference
  *
- *   return: data structure including base values and their ratio
+ *   return : an array "results" that includes:
+ *              rangeX -- value range of x
+ *              rangeY -- value range of Y
+ *              maxX   -- maximum x
+ *              maxY   -- maximum y
  */
-double * setStandardBaseAndRatio(struct data refData) {
-  double baseX, baseY, ratio;
-  double* staBasRat = malloc(3 * sizeof(double));
+double * setData(struct data refData) {
+	double rangeX, rangeY;
+	double* results = malloc(4 * sizeof(double));
 
-  double maxX = maxValue(refData.x, refData.n);
-  double minX = minValue(refData.x, refData.n);
+	double maxX = maxValue(refData.x,refData.n);
+	double minX = minValue(refData.x,refData.n);
 
-  double maxY = maxValue(refData.y, refData.n);
-  double minY = minValue(refData.y, refData.n);
+	double maxY = maxValue(refData.y,refData.n);
+	double minY = minValue(refData.y,refData.n);
 
-  // set baseX
-  baseX = maxX - minX;
-  if (equ(baseX, 0)) {
-    baseX = fabs(maxX);
-  }
-  if (equ(baseX, 0)) {
-    baseX = 1;
-  }
-  // set baseY
-  baseY = maxY - minY;
-  if (equ(baseY, 0)) {
-    baseY = fabs(maxY);
-  }
-  if (equ(baseY, 0)) {
-    baseY = 0.0000000000000001;
-  }
-  // set ratio
-  if (!equ(baseX, 0)) {
-    ratio = baseY / baseX;
-  } else {
-    ratio = 0;
-  }
+	rangeX = maxX - minX;
+	rangeY = maxY - minY;
 
-  staBasRat[0] = baseX;
-  staBasRat[1] = baseY;
-  staBasRat[2] = ratio;
-
-  return staBasRat;
-}
-
-/*
- * Function: setFormerBaseAndRatio
- * -------------------------------
- *   calculate former standard values for baseX, baseY and ratio
- *
- *   refData: reference data set
- *
- *   return: structure of data set including base values and their ratio
- */
-double * setFormerBaseAndRatio(struct data refData) {
-  double baseX, baseY, ratio;
-  double* staBasRat = malloc(3 * sizeof(double));
-
-  double maxX = maxValue(refData.x,refData.n);
-  double minX = minValue(refData.x,refData.n);
-
-  double maxY = maxValue(refData.y,refData.n);
-  double minY = minValue(refData.y,refData.n);
-
-  baseX = maxX - minX + fabs(minX);
-  baseY = maxY - minY + fabs(minY);
-
-  if (!equ(maxX, minX)) {
-    ratio = max(0.0004, ((maxY - minY + fabs(minY)) / (maxX - minX)));
-  } else {
-    ratio = 0;
-  }
-
-  staBasRat[0] = baseX;
-  staBasRat[1] = baseY;
-  staBasRat[2] = ratio;
-  return staBasRat;
+	results[0] = rangeX;
+	results[1] = rangeY;
+	results[2] = maxX;
+	results[3] = maxY;
+	return results;
 }
 
 
@@ -169,91 +119,48 @@ double * setFormerBaseAndRatio(struct data refData) {
  *   calculate tubeSize (half-width and half-height of rectangle)
  *
  *   refData: CSV data which will be used as reference
- *   singleValue: single value (relative or absolute ) that will be used for defining size.
- *                If it is non-zero, the size will be defined based on this single value
- *   axes: when single value is used (non-zero), it sets whether the single value is for half-width (x) or half-height (y)
- *   valueX: when singleValue is zero, it defines half-width (relative or absolute)
- *   valueY: when singleValue is zero, it defines half-height (relative or absolute)
- *   relative : define if it is relative value
+ *   tol    : data structure containing absolute tolerance (atolx, atoly)
+ *            and relative tolerance (rtolx, rtoly)
  *
  *   return : an array "tubeSize" that includes:
- *                   x -- half width of rectangle
- *                   y -- half height of rectangle
- *               baseX -- base of relative value is x direction
- *               baseY -- base of relative value is y direction
- *               ratio -- ratio y / x
+ *                   x  -- half width of rectangle
+ *                   y  -- half height of rectangle
+ *               rangeX -- value range of x
+ *               rangeY -- value range of y
  */
-double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relative) {
-  double x = 1e-10, y = 1e-10, baseX, baseY, ratio;
-  double* tubeSize = malloc(5 * sizeof(double));
+double * tubeSize(struct data refData, struct tolerances tol) {
+  double x = 1e-10, y = 1e-10, rangeX, rangeY, maxX, maxY;
+  double* tubeSize = malloc(4 * sizeof(double));
 
-  int i = 2; // 1: SetFormerBaseAndRatio; 2: SetStandardBaseAndRatio;
   double *standValue;
 
-  if (i == 1) {
-    standValue = setFormerBaseAndRatio(refData);
-  } else {
-    standValue = setStandardBaseAndRatio(refData);
-  }
-  baseX = standValue[0];
-  baseY = standValue[1];
-  ratio = standValue[2];
+  standValue = setData(refData);
+  rangeX = standValue[0];
+  rangeY = standValue[1];
+  maxX   = standValue[2];
+  maxY   = standValue[3];
 
-  // Specify single value to define half-width (x) or half-height (y) of rectangle
-  if (!equ(singleValue, 0)) {
-    // If non-zero ratio
-    if (!equ(ratio, 0)) {
-      // If relative value
-      if (relative) {
-        if ((singleValue < 0) || (singleValue > 1)) {
-          fputs("Relative value is out of expected range [0, 1].\n", stderr);
-          exit(1);
-        }
-        // If value is relative to half-height (axes = y)
-        if ((axes == 'y') && (baseY > 0)) {
-          y = singleValue * baseY;
-          x = y / ratio;
-        // If value is relative to half-width (axes = x)
-        } else if ((axes == 'x') && (baseX > 0)) {
-          x = singleValue * baseX;
-          y = ratio * x;
-        }
-      // If absolute value
-      } else if (!relative) {
-        // If value is half-height
-        if (axes == 'y') {
-          y = singleValue;
-          x = singleValue / ratio;
-        // If value is half-width
-        } else if (axes == 'x') {
-          x = singleValue;
-          y = ratio * singleValue;
-        }
-      }
-    }
-  // Specify both height and width values to define half-width (x) and half-height (y) of rectangle
-  } else {
-    // If relative value
-    if (relative && !equ(baseX, 0) && !equ(baseY, 0)) {
-      if ((valueX < 0) || (valueX > 1))
-        fputs("Relative x value is out of expected range [0, 1].", stderr);
-      if ((valueY < 0) || (valueY > 1))
-        fputs("Relative y value is out of expected range [0, 1].", stderr);
-      x = valueX * baseX;
-      y = valueY * baseY;
-    // If absolute value
-    } else if (!relative) {
-      x = valueX;
-      y = valueY;
-    }
-
+  if ((equ(tol.atolx,0) && equ(tol.rtolx, 0)) || (equ(tol.atoly,0) && equ(tol.rtoly, 0))) {
+	  fputs("Error: At least one tolerance has to be set for both, x and y.\n", stderr);
+	  exit(1);
   }
+
+  if (equ(rangeX, 0)) {
+	  x = max(1e-5, 1e-5*fabs(maxX));
+  } else {
+	  x = max(tol.atolx, tol.rtolx * rangeX);
+  }
+
+  if (equ(rangeY, 0)) {
+  	  y = max(1e-5, 1e-5*fabs(maxY));
+    } else {
+  	  y = max(tol.atoly, tol.rtoly * rangeY);
+    }
 
   tubeSize[0] = x;
   tubeSize[1] = y;
-  tubeSize[2] = baseX;
-  tubeSize[3] = baseY;
-  tubeSize[4] = ratio;
+  tubeSize[2] = rangeX;
+  tubeSize[3] = rangeX;
 
   return tubeSize;
 }

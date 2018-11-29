@@ -30,8 +30,9 @@ int compareAndReport(
   const double* yTest,
   const size_t nTest,
   const char * outputDirectory,
-  const double tolerance,
-  const char axes,
-  const bool useRelativeTolerance);
+  const double atolx,
+  const double atoly,
+  const double rtolx,
+  const double rtoly);
 
 #endif /* COMPARE_H_ */

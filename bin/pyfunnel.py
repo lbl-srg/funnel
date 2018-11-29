@@ -11,9 +11,10 @@ def compareAndReport(
     tTest,
     yTest,
     outputDirectory,
-    tolerance,
-    axes,
-    useRelativeTolerance):
+    atolx,
+    atoly,
+    rtolx,
+    rtoly):
 
     import os
 
@@ -29,8 +30,9 @@ def compareAndReport(
         c_int,
         c_char_p,
         c_double,
-        c_char,
-        c_bool]
+        c_double,
+        c_double,
+        c_double]
     lib.compareAndReport.restype = c_int
 
     nReference = len(tReference)
@@ -50,7 +52,8 @@ def compareAndReport(
         (c_double * len(yTest))(*yTest),
         nTest,
         outputDirectory,
-        tolerance,
-        axes,
-        useRelativeTolerance)
+        atolx,
+        atoly,
+        rtolx,
+        rtoly)
     print("Return value is {}".format(retVal))

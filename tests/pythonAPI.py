@@ -18,9 +18,10 @@ if __name__ == "__main__":
     tTest = range(0, nTest)
     yTest = [0, 0, 1.1, 1, 0, 0]
     outputDirectory = 'testPython/'
-    tolerance = 0.002
-    axes = 'Y'
-    useRelativeTolerance = True
+    atolx = 0
+    atoly = 0
+    rtolx = 0.002
+    rtoly = 0.002
 
     pf.compareAndReport(
         tReference,
@@ -28,6 +29,7 @@ if __name__ == "__main__":
         tTest,
         yTest,
         outputDirectory,
-        tolerance,
-        axes,
-        useRelativeTolerance)
+        atolx,
+        atoly,
+        rtolx,
+        rtoly)

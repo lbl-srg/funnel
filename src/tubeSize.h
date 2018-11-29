@@ -14,6 +14,6 @@ double minValue(double* array, int size);
 
 double maxValue(double* array, int size);
 
-double * tubeSize(struct data refData, double singleValue, char axes, double valueX, double valueY, bool relativity);
+double * tubeSize(struct data refData, struct tolerances tol);
 
 #endif /* TUBESIZE_H_ */

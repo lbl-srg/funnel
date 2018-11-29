@@ -1,5 +1,5 @@
 DIRS=fail1 success1
-TEST=echo "Running test in `pwd`" && ../../bin/funnel -b trended.csv -c simulated.csv -o results/
+TEST=echo "Running test in `pwd`" && ../../bin/funnel --reference trended.csv --test simulated.csv --rtolx 0.002 --rtoly 0.002 --output results/
 #PLOT=cd results && ../../makePlot.py --reference_csv reference.csv --test_csv test.csv --lower_csv lowerBound.csv --upper_csv upperBound.csv
 
 all: test-c test-python

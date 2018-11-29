@@ -25,4 +25,10 @@ struct reports {
   struct errorReport errors;
 };
 
+struct tolerances {
+	double atolx;
+	double atoly;
+	double rtolx;
+	double rtoly;
+};
 #endif /* DATA_STRUCTURE_H_ */
