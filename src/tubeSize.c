@@ -141,7 +141,7 @@ double * tubeSize(struct data refData, struct tolerances tol) {
   maxY   = standValue[3];
 
   if ((equ(tol.atolx,0) && equ(tol.rtolx, 0)) || (equ(tol.atoly,0) && equ(tol.rtoly, 0))) {
-	  fputs("At least one tolerance has to be set of either x or y. \n", stderr);
+	  fputs("Error: At least one tolerance has to be set for both, x and y.\n", stderr);
 	  exit(1);
   }
 

@@ -21,18 +21,22 @@ int main(int argc, char **argv) {
 
   int c;
 
-  double atolx = 0, atoly = 0, rtolx = 0.002, rtoly = 0.002;
+  double atolx = 0, atoly = 0, rtolx = 0, rtoly = 0;
   char *output = NULL, *testFile = NULL, *baseFile = NULL;
   char *help =
 		  "Usage: funnel [OPTION...] \n"
-		  "--test             Path of CSV file to be tested \n"
-		  "--reference        Path of CSV file to be used as base \n"
-		  "--output           Directory path to save output results \n"
-		  "--atolx            Absolute tolerance in x direction, default=0 \n"
-		  "--atoly            Absolute tolerance in y direction, default=0 \n"
-		  "--rtolx            Relative tolerance in x direction, default=0.002 \n"
-		  "--rtoly            Relative tolerance in y direction, default=0.002 \n"
-		  "--help             Give this help list\n";
+      "  Compares time series within user-specified tolerances.\n\n"
+		  "  --test             Name of CSV file to be tested.\n"
+		  "  --reference        Name of CSV file with reference data.\n"
+		  "  --output           Directory path to save output results.\n"
+		  "  --atolx            Absolute tolerance in x direction.\n"
+		  "  --atoly            Absolute tolerance in y direction.\n"
+		  "  --rtolx            Relative tolerance in x direction.\n"
+		  "  --rtoly            Relative tolerance in y direction.\n"
+		  "  --help             Print this help.\n"
+      "\n"
+      "  At least one tolerance must be specified for x and y."
+      "  Full documentation at https://github.com/lbl-srg/funnel\n";
 
   struct tolerances tolerances;
 
@@ -95,7 +99,7 @@ int main(int argc, char **argv) {
 		  output = optarg;
 		  break;
 	  case 'h':
-		  printf("use it as following: \n %s", help);
+		  printf("%s", help);
 		  exit (0);
 	  case '?':
 		  break;
