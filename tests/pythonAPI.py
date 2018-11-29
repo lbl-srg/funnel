@@ -18,10 +18,10 @@ if __name__ == "__main__":
     tTest = range(0, nTest)
     yTest = [0, 0, 1.1, 1, 0, 0]
     outputDirectory = 'testPython/'
-    atolx = 0.002
-    atoly = 0.002
-    rtolx = 0
-    rtoly = 0
+    atolx = 0
+    atoly = 0
+    rtolx = 0.002
+    rtoly = 0.002
 
     pf.compareAndReport(
         tReference,
