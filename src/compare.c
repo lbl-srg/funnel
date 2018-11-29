@@ -111,13 +111,20 @@ int compareAndReport(
   const double* yTest,
   const size_t nTest,
   const char * outputDirectory,
-  struct tolerances tolerances){
+  const double atolx,
+  const double atoly,
+  const double rtolx,
+  const double rtoly){
 
   int retVal;
 
   struct data * baseCSV = newData(tReference, yReference, nReference);
   struct data * testCSV = newData(tTest, yTest, nTest);
-
+  struct tolerances tolerances;
+  tolerances.atolx = atolx;
+  tolerances.atoly = atoly;
+  tolerances.rtolx = rtolx;
+  tolerances.rtoly = rtoly;
   // Calculate tube size (half-width and half-height of rectangle)
   //printf("useRelative=%d\n", arguments.useRelativeTolerance);
   double* tube = tubeSize(*baseCSV, tolerances);

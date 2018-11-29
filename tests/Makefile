@@ -1,13 +1,13 @@
 DIRS=fail1 success1
-TEST=echo "Running test in `pwd`" && ../../bin/funnel --reference trended.csv --test simulated.csv --output results/
-#PLOT=cd results && ../../makePlot.py --reference_csv reference.csv --test_csv test.csv --lower_csv lowerBound.csv --upper_csv upperBound.csv
+TEST=echo "Running test in `pwd`" && ../../bin/funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results/
+PLOT=cd results && ../../makePlot.py --reference_csv reference.csv --test_csv test.csv --lower_csv lowerBound.csv --upper_csv upperBound.csv
 
 all: test-c test-python
 
 test-c:
 	@for di in $(DIRS); \
 	do \
-		(cd $$di; $(TEST) )\
+		(cd $$di; $(TEST) && $(PLOT))\
 	done
 
 test-python:

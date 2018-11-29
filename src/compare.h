@@ -30,6 +30,9 @@ int compareAndReport(
   const double* yTest,
   const size_t nTest,
   const char * outputDirectory,
-  struct tolerances tolerances);
+  const double atolx,
+  const double atoly,
+  const double rtolx,
+  const double rtoly);
 
 #endif /* COMPARE_H_ */

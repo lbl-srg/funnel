@@ -42,8 +42,6 @@ int main(int argc, char **argv) {
       "\n"
       "  Full documentation at https://github.com/lbl-srg/funnel\n";
 
-  struct tolerances tolerances;
-
   while (1)
   {
 	  static struct option long_options[] =
@@ -112,11 +110,6 @@ int main(int argc, char **argv) {
 	  }
   }
 
-  tolerances.atolx = atolx;
-  tolerances.atoly = atoly;
-  tolerances.rtolx = rtolx;
-  tolerances.rtoly = rtoly;
-
   struct data baseCSV = readCSV(baseFile, 1);
   struct data testCSV = readCSV(testFile, 1);
 
@@ -128,7 +121,10 @@ int main(int argc, char **argv) {
     testCSV.y,
     testCSV.n,
     output,
-    tolerances);
+    atolx,
+    atoly,
+    rtolx,
+    rtoly);
 
   return exiVal;
 }
