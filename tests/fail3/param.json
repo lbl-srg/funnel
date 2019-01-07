@@ -1,1 +1,1 @@
-{"rtolx": 0.0, "rtoly": 0.0, "atoly": 1e-06, "atolx": 0.01, "outputDirectory": "results"}
+{"test": "simulated.csv", "reference": "trended.csv", "output": "results", "rtolx": 0.0, "rtoly": 0.0, "atoly": 0.1, "atolx": 0.1}
