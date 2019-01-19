@@ -1,7 +1,21 @@
+#if defined(_WIN32)     /* Win32 or Win64                */
+
+#include <windows.h>
+#include <stdio.h>
+#include <tchar.h>
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+#define S_IRWXU    0700  /* Mask for file owner permissions                 */
+
+#else                   /* OSX or Linux                */
+
 #include <string.h>
 #include <limits.h>     /* PATH_MAX */
 #include <sys/stat.h>   /* mkdir(2) */
 #include <errno.h>
+
+#endif
 
 int mkdir_p(const char *path)
 {

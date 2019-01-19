@@ -1,1 +1,0 @@
-Random y error sized by relative tolerance
