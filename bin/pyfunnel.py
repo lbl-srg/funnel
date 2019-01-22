@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #######################################################
 # Python binding for funnel library: compareAndReport
-# Function that plot results: plot_funnel
+# Function that plots results: plot_funnel
 #######################################################
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -13,7 +13,7 @@ import webbrowser
 import re
 import time
 import threading
-from ctypes import cdll, POINTER, c_double, c_int, c_char_p
+from ctypes import cdll, POINTER, c_double, c_int, c_char_p, py_object, pythonapi, c_long
 try:
     from http.server import HTTPServer, SimpleHTTPRequestHandler # Python 3
 except ImportError:
@@ -85,7 +85,7 @@ def compareAndReport(
     Returns:
         None
     """
-    # Check arguments
+    # Check arguments.
     ## Logic
     assert (atolx is not None) or (rtolx is not None),\
         "At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values."
@@ -100,7 +100,7 @@ def compareAndReport(
     assert len(xTest) == len(yTest),\
         "xTest and yTest must have the same length."
 
-    # Convert arrays to lists (to support np.array and pd.Series)
+    # Convert arrays to lists (to support np.array and pd.Series).
     try:
         xReference = list(xReference)
         yReference = list(yReference)
@@ -109,7 +109,7 @@ def compareAndReport(
     except Exception as e:
         raise TypeError("Input data arrays could not be converted to lists: {}".format(e))
 
-    # Convert None tolerance to 0
+    # Convert None tolerance to 0.
     tol = dict()
     args = locals()
     for k in ('atolx', 'atoly', 'rtolx', 'rtoly'):
@@ -123,14 +123,14 @@ def compareAndReport(
             if tol[k] < 0:
                 raise ValueError("Tolerance {} must be positive.".format(k))
 
-    # Load library
+    # Load library.
     try:
         lib_path = get_lib_path('funnel')
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
         raise RuntimeError("Could not load funnel library with this path: {}. {}".format(lib_path, e))
 
-    # Map arguments
+    # Map arguments.
     lib.compareAndReport.argtypes = [
         POINTER(c_double),
         POINTER(c_double),
@@ -160,7 +160,6 @@ def compareAndReport(
             tol['rtolx'],
             tol['rtoly'])
     except Exception as e:
-        # sys.stderr.flush()
         raise RuntimeError("Library call raises exception: {}".format(e))
 
     sys.stderr.flush()
@@ -192,7 +191,6 @@ def plot_funnel(test_dir, browser=None):
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
-
     class CORSRequestHandler(SimpleHTTPRequestHandler):
         def log_message(self, format, *args):
             func_stdout.write("%s - - [%s] %s\n" %
@@ -204,7 +202,6 @@ def plot_funnel(test_dir, browser=None):
             self.send_header('Access-Control-Allow-Origin', '*')
             SimpleHTTPRequestHandler.end_headers(self)
 
-  
     # based on https://stackoverflow.com/a/2785908/1056345                                                                                                                                                                                                                                                                         
     def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
         must_end = time.time() + timeout
@@ -225,11 +222,10 @@ def plot_funnel(test_dir, browser=None):
             else:
                 pattern = '{}.*\n.*{}'.format(pattern, raw_pattern.format(l))
         return bool(re.search(pattern, content))
-
     
-    def clean(thread):
-        threadd = threading.Thread(target=server.shutdown)  # multiprocessing.Process yields class pickle error on Windows
-        threadd.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits.
+    def clean():
+        threadd = threading.Thread(target=server.shutdown)  # makes main thread stall if no threading
+        threadd.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         threadd.start()
         server.server_close()
         try:
@@ -241,7 +237,6 @@ def plot_funnel(test_dir, browser=None):
             pass
         finally:
             os.chdir(cur_dir)
-
 
     cur_dir = os.getcwd()
     os.chdir(test_dir)
@@ -259,13 +254,13 @@ def plot_funnel(test_dir, browser=None):
         with open('plot.html', 'w') as f:
             f.write(content)
         webb = webbrowser.get(browser)
-        webb.open_new_tab('plot.html')  # Chrome bug (works but terminal log) if no existing window, works on Firefox
+        webb.open_new_tab('plot.html')  # Chrome bug (works but terminal log) if no existing window, Firefox OK
         wait_until(exit_test, 5, 0.1, func_stdout, list_files)
     except Exception as e:
         print('Went wrong: {}'.format(e))
         pass
     finally:
-        clean(thread)
+        clean()
 
     return
 
@@ -368,19 +363,20 @@ template_html = """
                 anchor: 'y1',
             },
             yaxis1: {
-                domain: [0.22, 1],
+                domain: [0.3, 1],
                 ticks: 'outside',
                 showline: true,
                 zeroline: false,
                 title: 'y',
             },
             yaxis2: {
-                domain: [0, 0.15],
+                domain: [0, 0.18],
                 ticks: 'outside',
                 showline: true,
                 zeroline: false,
                 title: 'error [y]',
             },
+            margin: {pad: 15}
         };
         Plotly.newPlot('myDiv', traces, layout);
     };
@@ -395,15 +391,20 @@ if __name__ == "__main__":
     import argparse
     import csv
 
-    # Configure the argument parser
-    parser = argparse.ArgumentParser(description='Run funnel library from terminal.')
+    # Configure the argument parser.
+    parser = argparse.ArgumentParser(description=
+    """Run funnel library from terminal.
+    Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values.
+    """
+    )
+    required_named = parser.add_argument_group('required named arguments')
 
-    parser.add_argument(
+    required_named.add_argument(
         "--reference",
         help="Path of CSV file with reference data",
         required=True
     )
-    parser.add_argument(
+    required_named.add_argument(
         "--test",
         help="Path of CSV file with test data",
         required=True
@@ -414,33 +415,29 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--atolx",
-        nargs='?',
         type=float,
         help="Absolute tolerance in x direction"
     )
     parser.add_argument(
         "--atoly",
-        nargs='?',
         type=float,
         help="Absolute tolerance in y direction"
     )
     parser.add_argument(
         "--rtolx",
-        nargs='?',
         type=float,
         help="Relative tolerance in x direction"
     )
     parser.add_argument(
         "--rtoly",
-        nargs='?',
         type=float,
         help="Relative tolerance in y direction"
     )
 
-    # Parse the arguments
+    # Parse the arguments.
     args = parser.parse_args()
 
-    # Check the arguments
+    # Check the arguments.
     assert (args.atolx is not None) or (args.rtolx is not None),\
         "At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values."
     assert (args.atoly is not None) or (args.rtoly is not None),\
@@ -455,7 +452,7 @@ if __name__ == "__main__":
     assert isinstance(args.output, six.string_types),\
         "Path of output directory is not a string type."    
 
-    # Extract data from files
+    # Extract data from files.
     data = dict()
     for s in ('reference', 'test'):
         data[s] = dict(x=[], y=[])
@@ -468,7 +465,7 @@ if __name__ == "__main__":
                 except:
                     pass
 
-    # Call the function
+    # Call the function.
     rc =  compareAndReport(
         xReference=data['reference']['x'],
         yReference=data['reference']['y'],
