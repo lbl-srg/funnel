@@ -10,5 +10,6 @@ tests/**/*.pdf
 tests/**/*.html
 
 .vscode
+DartConfiguration.tcl
 
 build/*
