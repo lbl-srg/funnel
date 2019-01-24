@@ -7,3 +7,8 @@ bin/*
 
 # pdf outputs
 tests/**/*.pdf
+tests/**/*.html
+
+.vscode
+
+build/*

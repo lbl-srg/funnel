@@ -1,0 +1,13 @@
+{
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+    "files.associations": {
+        "stdarg.h": "c",
+        "getopt.h": "c",
+        "ansidecl.h": "c",
+        "limits.h": "c",
+        "string.h": "c",
+        "unistd.h": "c",
+        "stdio.h": "c"
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Disabled"
+}

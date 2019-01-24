@@ -30,11 +30,11 @@
 #include "algorithmRectangle.h"
 
 #ifndef sign
-#define sign(a) ((a>0) ? 1 : ((a<0) ? -1 : 0))
+#define sign(a) (((a)>0) ? 1 : (((a)<0) ? -1 : 0))
 #endif
 
 #ifndef equ
-#define equ(a,b) (fabs(a-b) < 1e-10 ? true : false)
+#define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */ 
 #endif
 
 /*
@@ -146,7 +146,7 @@ double * getListValues(node_t* head) {
   while (current != NULL) {
     value[count] = current->val;
     if (count+1 == size) {
-      // need more space
+      /* need more space */
       size += 10;
       double *value_tmp = realloc(value, sizeof(double)*size);
       if (value_tmp == NULL) {
@@ -176,19 +176,19 @@ void lastNodeDeletion(node_t* head) {
     } else {
       toDelLast = head;
         preNode = head;
-        // Traverse to the last node of the list
+        /* Traverse to the last node of the list */
         while(toDelLast->next != NULL) {
             preNode = toDelLast;
             toDelLast = toDelLast->next;
         }
         if(toDelLast == head) {
-          // If there is only one item in the list, remove it
+          /* If there is only one item in the list, remove it */
             head = NULL;
         } else {
-            // Disconnects the link of second last node with last node
+            /* Disconnects the link of second last node with last node */
             preNode->next = NULL;
         }
-        // Delete the last node
+        /* Delete the last node */
         free(toDelLast);
     }
 }

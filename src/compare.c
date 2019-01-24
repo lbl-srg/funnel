@@ -1,6 +1,9 @@
+#include <math.h>
 #include "compare.h"
 
-#include "mkdir_p.h"
+#ifndef equ
+#define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */ 
+#endif
 
 /*
  * Function: writeToFile
@@ -11,6 +14,7 @@
  *   fileName: file name for storing base CSV data
  *   data: data to be written
  */
+
 int writeToFile(
   const char *outDir,
   const char* fileName,
@@ -25,7 +29,10 @@ int writeToFile(
     bool addSlash = (lastChar == '/') ? false : true;
   #endif
 
-  mkdir_p(outDir);
+  int rc_mkdir = mkdir_p(outDir);
+  if (rc_mkdir != 0) {
+    fprintf(stderr, "Error: Failed to create directory: %s\n", outDir);
+  }
 
   char* fname = NULL;
   if (addSlash)
@@ -146,6 +153,16 @@ int compareAndReport(
 
   struct data * baseCSV = newData(tReference, yReference, nReference);
   struct data * testCSV = newData(tTest, yTest, nTest);
+
+  if (!equ(baseCSV->x[0], testCSV->x[0])){
+    fprintf(stderr, "Error: Reference and test data minimum x values are different.\n");
+    return 1;    
+  }
+  if (!equ(baseCSV->x[baseCSV->n - 1], testCSV->x[testCSV->n - 1])){
+    fprintf(stderr, "Error: Reference and test data maximum x values are different.\n");
+    return 1;    
+  }
+
   struct tolerances tolerances;
   tolerances.atolx = atolx;
   tolerances.atoly = atoly;
@@ -167,25 +184,37 @@ int compareAndReport(
   struct reports validateReport;
 
   retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
-  if (retVal != 0)
+  if (retVal != 0){
+    fputs("Error: Failed to run validate function.\n", stderr);
     return retVal;
+  }
 
   /* Write data to files */
   retVal = writeToFile(outputDirectory, "reference.csv", baseCSV);
-  if (retVal != 0)
+  if (retVal != 0){
+    fputs("Error: Failed to write reference.csv in output directory.\n", stderr);
     return retVal;
+  }
   retVal = writeToFile(outputDirectory, "lowerBound.csv", &lowerCurve);
-  if (retVal != 0)
+  if (retVal != 0){
+    fputs("Error: Failed to write lowerBound.csv in output directory.\n", stderr);
     return retVal;
+  }
   retVal = writeToFile(outputDirectory, "upperBound.csv", &upperCurve);
-  if (retVal != 0)
+  if (retVal != 0){
+    fputs("Error: Failed to write upperBound.csv in output directory.\n", stderr);
     return retVal;
+  }
   retVal = writeToFile(outputDirectory, "test.csv", testCSV);
-  if (retVal != 0)
+  if (retVal != 0){
+    fputs("Error: Failed to write test.csv in output directory.\n", stderr);
     return retVal;
+  }
   retVal = writeToFile(outputDirectory, "errors.csv", &validateReport.errors.diff);
-  if (retVal != 0)
+  if (retVal != 0){
+    fputs("Error: Failed to write errors.csv in output directory.\n", stderr);
     return retVal;
+  }
 
   freeData(baseCSV);
   freeData(testCSV);
