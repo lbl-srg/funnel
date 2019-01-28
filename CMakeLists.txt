@@ -17,7 +17,7 @@
 #   Temporary test dir for parallel running
 
 cmake_policy(SET CMP0048 NEW)
-cmake_minimum_required(VERSION 3.12.0)  
+cmake_minimum_required(VERSION 3.11.0)  
 project(funnel VERSION 0.1.0 LANGUAGES C)
 enable_testing()
 
