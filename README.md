@@ -52,6 +52,16 @@ The error is: `max(0, y - y_up) - min(0, y - y_low)` so always positive conventi
 
 ## How to Run
 
+### System Requirements
+
+The software has been tested on the following platforms for which a library is provided in `./lib`:
+
+  * Linux x64
+  * Windows x64
+  * Mac OS X
+
+The Python binding has been tested with Python `2.7.*`: see `./requirements.txt` for required Python packages.
+
 ### Python Binding
 
 The software is primarily intended to be used by means of a Python binding.
@@ -87,21 +97,36 @@ Arguments:
   †: At least one absolute or relative tolerance parameter must be provided for each axis. 
 ```
 
+### Example
+
+From Python shell with `./tests/test_bin` as current working directory:
+```python
+>>> import os, sys
+>>> import pandas as pd
+>>> pyfunnel_dir = os.path.join(os.path.pardir, os.path.pardir, 'bin')
+>>> sys.path.append(pyfunnel_dir)
+>>> import pyfunnel as pf
+>>> ref = pd.read_csv('trended.csv')
+>>> test = pd.read_csv('simulated.csv')
+>>> pf.compareAndReport(xReference=ref.iloc(axis=1)[0], yReference=ref.iloc(axis=1)[1],
+... xTest=test.iloc(axis=1)[0], yTest=test.iloc(axis=1)[1], atolx=0.002, atoly=0.002)
+>>> pf.plot_funnel('results')
+```
+Or from terminal with `./tests/test_bin` as current working directory:
+```
+$ python ../../bin/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+```
+
+## Build from Source
+
 ### System Requirements
 
-The software has been tested on the following platforms:
+The cross-platform build system relies on CMake version `3.13.*`.
 
-  * Linux x64
-  * Windows x64
-  * Mac OS X
-
-The Python binding has been tested with Python 2.7.*.
-
-### Compile from Source
-
-The cross-platform build system relies on CMake version 3.13.*.
 The distributed binaries have been built with Microsoft Visual Studio C/C++ compiler 
 (Windows) and `gcc` (Linux and Mac).
+
+### Procedure
 
 To compile, link and install, from `./build` run the following commands:
 
@@ -110,9 +135,15 @@ cmake ../                           (add `-A x64` on Windows to compile in 64 bi
 cmake --build ./ --target install   (add `--config Release` on Windows)
 ```
 
-To run the tests, from `./build` run the following command:
+To run the tests, from `./build` run the following commands:
 ```
 ctest                               (add `-C Release` on Windows)
+python ../tests/test_summary.py ../tests
+```
+Alternatively, to run tests in batch mode with no prompt and plot, run the following commands:
+```
+ctest -E plot                       (add `-C Release` on Windows)
+python ../tests/test_summary.py ../tests -B
 ```
 
 ## License

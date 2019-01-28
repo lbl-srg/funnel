@@ -38,7 +38,6 @@ endif()
 # Output build system directories.
 message("CMake source directory is: ${CMAKE_SOURCE_DIR}")
 message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
-message("CMake test directory is: ${CMAKE_TEST_DIR}")
 
 # Set compiling and linking options (requires VERSION > 3.13.0).
 # Consider adding -std=c89 -pedantic to gcc options to improve portability.
@@ -148,10 +147,13 @@ math(EXPR len_tests "${len_tmp} - 1")
 foreach(t RANGE ${len_tests})
     list(GET TEST_CASES ${t} test_case)
     set(test_name test_numerics_${t})
+    set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
+    set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
+    file(MAKE_DIRECTORY ${tmp_dir})
     add_test(
         NAME ${test_name}
-        COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" "../${test_case}"
-        WORKING_DIRECTORY "${CMAKE_TEST_DIR}/tmp"
+        COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" ${test_name} ${test_dir} ${tmp_dir}
+        WORKING_DIRECTORY ${tmp_dir}
     )
     if (${test_case} MATCHES "fail4")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
         set_tests_properties(${test_name} PROPERTIES PASS_REGULAR_EXPRESSION "Failed to create directory")
@@ -167,3 +169,4 @@ add_test(
     COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_plot.py" "${CMAKE_TEST_DIR}/fail1/results"
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/tmp"
 )
+set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")

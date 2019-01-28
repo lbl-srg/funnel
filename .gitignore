@@ -9,6 +9,6 @@ bin/*
 tests/**/*.pdf
 tests/**/*.html
 
-.vscode
+.vscode/*
 
 build/*

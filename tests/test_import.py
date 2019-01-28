@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os, sys
@@ -17,6 +18,17 @@ def read_res(test_dir):
     return tmp
 
 
+def test_log(test_name, test_dir, tmp_dir, dif_err):
+    test_log = dict(
+        test_name=test_name,
+        test_dir=test_dir,
+        tmp_dir=tmp_dir,
+        dif_err=dif_err
+    )
+    with open(os.path.join(tmp_dir, 'test_log.json'), 'w') as f:
+        json.dump(test_log, f)
+
+
 def dif_test(test_dir):
     """Assess the differences between the current test and the reference test.
     The differences are assessed for x and y values of error.csv files between
@@ -32,8 +44,8 @@ def dif_test(test_dir):
     """
     test_ref = read_res(test_dir)
     test_new = read_res('./')
-    nb_dif_x = sum(test_ref.iloc(axis=1)[0] != test_new.iloc(axis=1)[0])
-    nb_dif_y = sum(test_ref.iloc(axis=1)[1] != test_new.iloc(axis=1)[1])
+    nb_dif_x = sum(test_ref.iloc(axis=1)[0] != test_new.iloc(axis=1)[0]) / len(test_ref)
+    nb_dif_y = sum(test_ref.iloc(axis=1)[1] != test_new.iloc(axis=1)[1]) / len(test_ref)
     
     return [nb_dif_x, nb_dif_y]
 

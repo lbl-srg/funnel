@@ -1,0 +1,5 @@
+# Requirements for pyfunnel
+six
+
+# Further requirements for running numeric tests (test cases named test_numerics_*)
+pandas

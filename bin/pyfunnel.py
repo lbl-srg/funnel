@@ -13,7 +13,7 @@ import webbrowser
 import re
 import time
 import threading
-from ctypes import cdll, POINTER, c_double, c_int, c_char_p, py_object, pythonapi, c_long
+from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 try:
     from http.server import HTTPServer, SimpleHTTPRequestHandler # Python 3
 except ImportError:
@@ -60,7 +60,7 @@ def compareAndReport(
     yReference,
     xTest,
     yTest,
-    outputDirectory,
+    outputDirectory=None,
     atolx=None,
     atoly=None,
     rtolx=None,
@@ -92,8 +92,11 @@ def compareAndReport(
     assert (atoly is not None) or (rtoly is not None),\
         "At least one of the two possible tolerance parameters (atol or rtol) must be defined for y values."
     ## Type
+    if outputDirectory is None:
+        print("Output directory not specified: results are stored in subdirectory `results` by default.")
+        outputDirectory = "results"
     assert isinstance(outputDirectory, six.string_types),\
-        "Path of output directory is not a string type." 
+        "Path of output directory is not a string type."
     ## Value
     assert len(xReference) == len(yReference),\
         "xReference and yReference must have the same length."
@@ -168,7 +171,7 @@ def compareAndReport(
     return retVal
 
 
-def plot_funnel(test_dir, browser=None):
+def plot_funnel(test_dir, browser=None, autoraise=True):
     """
     Plot funnel results stored in test_dir. Display plot in default browser.
     Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at 
@@ -191,9 +194,29 @@ def plot_funnel(test_dir, browser=None):
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
+    class MyHTTPServer(HTTPServer):
+        def __init__(self, *args):
+            # Create log file in current directory.
+            if os.path.isfile('foo.log'):
+                os.chmod('foo.log', 0o777)
+                os.remove('foo.log')
+            self.logger = os.fdopen(os.open('foo.log', os.O_CREAT | os.O_RDWR, 0), 'r+', 0)
+            HTTPServer.__init__(self, *args)
+
+        def server_close(self):
+            # Invoke to close logger and delete from disk.
+            try:
+                self.logger.close()  
+                os.chmod('foo.log', 0o777)
+                os.remove('foo.log')
+            except Exception as e:
+                print('Could not close server properly because: {}'.format(e))
+                pass
+
     class CORSRequestHandler(SimpleHTTPRequestHandler):
         def log_message(self, format, *args):
-            func_stdout.write("%s - - [%s] %s\n" %
+            # Overriden to output to server.logger.
+            self.server.logger.write("%s - - [%s] %s\n" %
                          (self.client_address[0],
                           self.log_date_time_string(),
                           format%args))        
@@ -210,7 +233,6 @@ def plot_funnel(test_dir, browser=None):
                 return True
             time.sleep(period)
         return False
-
     
     def exit_test(handler, list_files):
         handler.seek(0)
@@ -220,33 +242,24 @@ def plot_funnel(test_dir, browser=None):
             if i == 0:
                 pattern = raw_pattern.format(l)
             else:
-                pattern = '{}.*\n.*{}'.format(pattern, raw_pattern.format(l))
+                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
         return bool(re.search(pattern, content))
     
     def clean():
-        threadd = threading.Thread(target=server.shutdown)  # makes main thread stall if no threading
-        threadd.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
-        threadd.start()
+        sys.stderr = open(os.devnull, 'w')
+        threadd = threading.Thread(target=server.shutdown)  # makes execution stall on Windows if main thread
+        threadd.daemon = True
+        threadd.start()        
         server.server_close()
-        try:
-            func_stdout.close()  
-            os.chmod('foo.log', 0o777)
-            os.remove('foo.log')
-        except Exception as e:
-            print('Could not clean properly because: {}'.format(e))
-            pass
-        finally:
-            os.chdir(cur_dir)
+        sys.stderr = sys.__stderr__
+        os.chdir(cur_dir)
 
+    # Move to directory with *.csv before launching local server.
     cur_dir = os.getcwd()
     os.chdir(test_dir)
-    if os.path.isfile('foo.log'):
-        os.chmod('foo.log', 0o777)
-        os.remove('foo.log')
-    func_stdout = os.fdopen(os.open('foo.log', os.O_CREAT | os.O_RDWR, 0), 'r+', 0)
     
     try:
-        server = HTTPServer(('', 0), CORSRequestHandler)
+        server = MyHTTPServer(('', 0), CORSRequestHandler)
         thread = threading.Thread(target=server.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
         thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         thread.start()
@@ -254,10 +267,10 @@ def plot_funnel(test_dir, browser=None):
         with open('plot.html', 'w') as f:
             f.write(content)
         webb = webbrowser.get(browser)
-        webb.open_new_tab('plot.html')  # Chrome bug (works but terminal log) if no existing window, Firefox OK
-        wait_until(exit_test, 5, 0.1, func_stdout, list_files)
-    except Exception as e:
-        print('Went wrong: {}'.format(e))
+        webb.open('http://localhost:{}/plot.html'.format(server.server_port))
+        wait_until(exit_test, 5, 0.1, server.logger, list_files)
+    except Exception as e:  # especially for KeyboardInterrupt
+        print(e)
         pass
     finally:
         clean()
@@ -376,7 +389,6 @@ template_html = """
                 zeroline: false,
                 title: 'error [y]',
             },
-            margin: {pad: 15}
         };
         Plotly.newPlot('myDiv', traces, layout);
     };
@@ -446,11 +458,6 @@ if __name__ == "__main__":
         "No such file: {}".format(args.reference)
     assert os.path.isfile(args.test),\
         "No such file: {}".format(args.test)
-    if args.output is None:
-        print("Output directory not specified: results are stored in subdirectory `results` by default.")
-        args.output = "results"
-    assert isinstance(args.output, six.string_types),\
-        "Path of output directory is not a string type."    
 
     # Extract data from files.
     data = dict()
