@@ -17,7 +17,7 @@
 #   Temporary test dir for parallel running
 
 cmake_policy(SET CMP0048 NEW)
-cmake_minimum_required(VERSION 3.13.0)  # support for add_compile_options and add_link_options
+cmake_minimum_required(VERSION 3.12.0)  
 project(funnel VERSION 0.1.0 LANGUAGES C)
 enable_testing()
 
@@ -39,19 +39,17 @@ endif()
 message("CMake source directory is: ${CMAKE_SOURCE_DIR}")
 message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
 
-# Set compiling and linking options (requires VERSION > 3.13.0).
+# Set compiling and linking options.
 # Consider adding -std=c89 -pedantic to gcc options to improve portability.
-set(UNIX_COMPILE_FLAGS -Wall -Wfloat-equal -o3 -fPIC)
-set(WIN_COMPILE_FLAGS /Wall /O2)
-set(UNIX_LINK_FLAGS -fPIC)
-# set(WIN_LINK_FLAGS)
+set(UNIX_COMPILE_FLAGS "-Wall -Wfloat-equal -o3 -fPIC")
+set(WIN_COMPILE_FLAGS "/Wall /O2")
+set(UNIX_LINK_FLAGS "-fPIC")
 
-if(LINUX OR MACOSX)
-    add_compile_options(${UNIX_COMPILE_FLAGS})
-    add_link_options(${UNIX_LINK_FLAGS})
+if(LINUX OR MACOSX)  # CMake 3.13.*: support for add_compile_options and add_link_options
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${UNIX_COMPILE_FLAGS}")
+    SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${UNIX_LINK_FLAGS}")
 else()
-    add_compile_options(${WIN_COMPILE_FLAGS})
-    # add_link_options(${WIN_LINK_FLAGS})
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WIN_COMPILE_FLAGS}")
 endif()
 
 # Set target directories.
