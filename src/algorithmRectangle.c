@@ -225,96 +225,95 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while (equ(reference.x[b], reference.x[b+1]) && (equ(reference.y[b], reference.y[b+1])))
+  while ((b+1 < reference.n) && equ(reference.x[b], reference.x[b+1]) && (equ(reference.y[b], reference.y[b+1])))
     b = b+1;
-  s0 = sign(reference.y[b+1] - reference.y[b]);
-  if (!equ(reference.x[b+1], reference.x[b])) {
-    m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
-  } else {
-    if (s0 > 0) {
-      m0 = 1e+15;
-    } else {
-      m0 = -1e+15;
-    }
-  }
 
   // add down left point
   lx = addNode(lx,(reference.x[b] - xLen));
   ly = addNode(ly, (reference.y[b] - yLen));
 
-  if (equ(s0, 1)) {
-    // add down right point
-    lx = addNode(lx, (reference.x[b] + xLen));
-    ly = addNode(ly, (reference.y[b] - yLen));
-  }
+  if (b+1 < reference.n) {
+  	  // slopes of reference curve (initialization)
+  	  s0 = sign(reference.y[b+1] - reference.y[b]);
+  	  if (!equ(reference.x[b+1], reference.x[b])) {
+  		  m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
+  	  } else {
+  		  m0 = (s0>0) ? 1e+15 : -1e+15;
+  	  }
+  	  if equ(s0, 1) {
+  		  // add down right point
+  		  lx = addNode(lx,(reference.x[b] + xLen));
+  		  ly = addNode(ly, (reference.y[b] - yLen));
+  	  }
 
-  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
-  for (i = b+1; i < reference.n-1; i++) {
-    // ignore identical points
-    if (equ(reference.x[i], reference.x[i+1]) && equ(reference.y[i], reference.y[i+1]))
-      continue;
+  	  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
+  	  for (i = b+1; i < reference.n-1; i++) {
+  		  // ignore identical points
+  		  if (equ(reference.x[i], reference.x[i+1]) && equ(reference.y[i], reference.y[i+1]))
+  			  continue;
 
-    // slopes of reference curve
-    s1 = sign(reference.y[i+1] - reference.y[i]);
-    if (!equ(reference.x[i+1], reference.x[i])) {
-      m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
-    } else {
-      m1 = (s1>0) ? (1e+15) : (-1e+15);
-    }
+  		  // slopes of reference curve
+  		  s1 = sign(reference.y[i+1] - reference.y[i]);
+  		  if (!equ(reference.x[i+1], reference.x[i])) {
+  			  m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
+  		  } else {
+  			  m1 = (s1>0) ? (1e+15) : (-1e+15);
+  		  }
 
-    // add no point for equal slopes of reference curve
-    if (!equ(m0, m1)) {
-      if (!equ(s0, -1) && !equ(s1, -1)) {
-        // add down right point
-        lx = addNode(lx, (reference.x[i] + xLen));
-        ly = addNode(ly, (reference.y[i] - yLen));
-      } else if (!equ(s0, 1) && !equ(s1, 1)) {
-        // add down left point
-        lx = addNode(lx, (reference.x[i] - xLen));
-        ly = addNode(ly, (reference.y[i] - yLen));
-      } else if (equ(s0, -1) && equ(s1, 1)) {
-        // add down left point
-        lx = addNode(lx, (reference.x[i] - xLen));
-        ly = addNode(ly, (reference.y[i] - yLen));
-        // add down right point
-        lx = addNode(lx, (reference.x[i] + xLen));
-        ly = addNode(ly, (reference.y[i] - yLen));
-      } else if (equ(s0, 1) && equ(s1, -1)) {
-        // add down right point
-        lx = addNode(lx, (reference.x[i] + xLen));
-        ly = addNode(ly, (reference.y[i] - yLen));
-        // add down left point
-        lx = addNode(lx, (reference.x[i] - xLen));
-        ly = addNode(ly, (reference.y[i] - yLen));
-      }
+  		  // add no point for equal slopes of reference curve
+  		  if (!equ(m0, m1)) {
+  			  if (!equ(s0, -1) && !equ(s1, -1)) {
+  				  // add down right point
+  				  lx = addNode(lx, (reference.x[i] + xLen));
+  				  ly = addNode(ly, (reference.y[i] - yLen));
+  			  } else if (!equ(s0, 1) && !equ(s1, 1)) {
+  				  // add down left point
+  				  lx = addNode(lx, (reference.x[i] - xLen));
+  				  ly = addNode(ly, (reference.y[i] - yLen));
+  			  } else if (equ(s0, -1) && equ(s1, 1)) {
+  				  // add down left point
+  				  lx = addNode(lx, (reference.x[i] - xLen));
+  				  ly = addNode(ly, (reference.y[i] - yLen));
+  				  // add down right point
+  				  lx = addNode(lx, (reference.x[i] + xLen));
+  				  ly = addNode(ly, (reference.y[i] - yLen));
+  			  } else if (equ(s0, 1) && equ(s1, -1)) {
+  				  // add down right point
+  				  lx = addNode(lx, (reference.x[i] + xLen));
+  				  ly = addNode(ly, (reference.y[i] - yLen));
+  				  // add down left point
+  				  lx = addNode(lx, (reference.x[i] - xLen));
+  				  ly = addNode(ly, (reference.y[i] - yLen));
+  			  }
 
-      int len = listLen(ly);
-      double lastY = getNth(ly, len-1);
-      // remove the last added points in case of zero slope of tube curve
-      if equ((reference.y[i+1] - yLen), lastY) {
-        if (equ(s0 * s1, -1) && equ(getNth(ly, len-3), lastY)) {
-          // remove two points, if two points were added at last
-          // ((len-1) - 2 >= 0, because start point + two added points)
-          lastNodeDeletion(lx);
-          lastNodeDeletion(ly);
-          lastNodeDeletion(lx);
-          lastNodeDeletion(ly);
-        } else if (!equ(s0 * s1, -1) && equ(getNth(ly, len-2), lastY)) {
-          // remove one point, if one point was added at last
-            // ((len-1) - 1 >= 0, because start point + one added point)
-          lastNodeDeletion(lx);
-          lastNodeDeletion(ly);
-        }
-      }
-    }
-    s0 = s1;
-    m0 = m1;
-  }
-  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
-  if equ(s0, -1) {
-    // add down left point
-    lx = addNode(lx, (reference.x[reference.n-1] - xLen));
-    ly = addNode(ly, (reference.y[reference.n-1] - yLen));
+  			  int len = listLen(ly);
+  			  double lastY = getNth(ly, len-1);
+  			  // remove the last added points in case of zero slope of tube curve
+  			  if equ((reference.y[i+1] - yLen), lastY) {
+  				  if (equ(s0 * s1, -1) && equ(getNth(ly, len-3), lastY)) {
+  					  // remove two points, if two points were added at last
+  					  // ((len-1) - 2 >= 0, because start point + two added points)
+  					  lastNodeDeletion(lx);
+  					  lastNodeDeletion(ly);
+  					  lastNodeDeletion(lx);
+  					  lastNodeDeletion(ly);
+  				  } else if (!equ(s0 * s1, -1) && equ(getNth(ly, len-2), lastY)) {
+  					  // remove one point, if one point was added at last
+  					  // ((len-1) - 1 >= 0, because start point + one added point)
+  					  lastNodeDeletion(lx);
+  					  lastNodeDeletion(ly);
+  				  }
+  			  }
+  		  }
+  		  s0 = s1;
+  		  m0 = m1;
+  	  }
+  	  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
+  	  if equ(s0, -1) {
+  		  // add down left point
+  		  lx = addNode(lx, (reference.x[reference.n-1] - xLen));
+  		  ly = addNode(ly, (reference.y[reference.n-1] - yLen));
+  	  }
   }
   // add down right point
   lx = addNode(lx, (reference.x[reference.n-1] + xLen));
@@ -373,96 +372,94 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while (equ(reference.x[b], reference.x[b+1]) && equ(reference.y[b], reference.y[b+1]))
+  while (((b+1)< reference.n) && equ(reference.x[b], reference.x[b+1]) && equ(reference.y[b], reference.y[b+1]))
     b = b+1;
-  s0 = sign(reference.y[b+1] - reference.y[b]);
-  if (!equ(reference.x[b+1], reference.x[b])) {
-    m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
-  } else {
-    if (s0 > 0) {
-      m0 = 1e+15;
-    } else {
-      m0 = -1e+15;
-    }
-  }
-
   // add top left point
   ux = addNode(ux,(reference.x[b] - xLen));
   uy = addNode(uy, (reference.y[b] + yLen));
 
-  if equ(s0, -1) {
-    // add top right point
-    ux = addNode(ux, (reference.x[b] + xLen));
-    uy = addNode(uy, (reference.y[b] + yLen));
-  }
+  if (b+1 < reference.n) {
+	  // slopes of reference curve (initialization)
+	  s0 = sign(reference.y[b+1] - reference.y[b]);
+	  if (!equ(reference.x[b+1], reference.x[b])) {
+		  m0 = (reference.y[b+1] - reference.y[b]) / (reference.x[b+1] - reference.x[b]);
+	  } else {
+		  m0 = (s0>0) ? 1e+15 : -1e+15;
+	  }
+	  if equ(s0, -1) {
+		  // add top right point
+		  ux = addNode(ux, (reference.x[b] + xLen));
+		  uy = addNode(uy, (reference.y[b] + yLen));
+	  }
 
-  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
-  for (i = b+1; i < reference.n-1; i++) {
-    // ignore identical points
-    if (equ(reference.x[i], reference.x[i+1]) && equ(reference.y[i], reference.y[i+1]))
-      continue;
+	  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
+	  for (i = b+1; i < reference.n-1; i++) {
+		  // ignore identical points
+		  if (equ(reference.x[i], reference.x[i+1]) && equ(reference.y[i], reference.y[i+1]))
+			  continue;
 
-    // slopes of reference curve
-    s1 = sign(reference.y[i+1] - reference.y[i]);
-    if (!equ(reference.x[i+1], reference.x[i])) {
-      m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
-    } else {
-      m1 = (s1>0) ? (1e+15) : (-1e+15);
-    }
+		  // slopes of reference curve
+		  s1 = sign(reference.y[i+1] - reference.y[i]);
+		  if (!equ(reference.x[i+1], reference.x[i])) {
+			  m1 = (reference.y[i+1] - reference.y[i]) / (reference.x[i+1] - reference.x[i]);
+		  } else {
+			  m1 = (s1>0) ? (1e+15) : (-1e+15);
+		  }
 
-    // add no point for equal slopes of reference curve
-    if (!equ(m0, m1)) {
-      if (!equ(s0, -1) && !equ(s1, -1)) {
-        // add top left point
-        ux = addNode(ux, (reference.x[i] - xLen));
-        uy = addNode(uy, (reference.y[i] + yLen));
-      } else if (!equ(s0, 1) && !equ(s1, 1)) {
-        // add top right point
-        ux = addNode(ux, (reference.x[i] + xLen));
-        uy = addNode(uy, (reference.y[i] + yLen));
-      } else if (equ(s0, 1) && equ(s1, -1)) {
-        // add top left point
-        ux = addNode(ux, (reference.x[i] - xLen));
-        uy = addNode(uy, (reference.y[i] + yLen));
-        // add top right point
-        ux = addNode(ux, (reference.x[i] + xLen));
-        uy = addNode(uy, (reference.y[i] + yLen));
-      } else if (equ(s0, -1) && equ(s1, 1)) {
-        // add top right point
-        ux = addNode(ux, (reference.x[i] + xLen));
-        uy = addNode(uy, (reference.y[i] + yLen));
-        // add top left point
-        ux = addNode(ux, (reference.x[i] - xLen));
-        uy = addNode(uy, (reference.y[i] + yLen));
-      }
+		  // add no point for equal slopes of reference curve
+		  if (!equ(m0, m1)) {
+			  if (!equ(s0, -1) && !equ(s1, -1)) {
+				  // add top left point
+				  ux = addNode(ux, (reference.x[i] - xLen));
+				  uy = addNode(uy, (reference.y[i] + yLen));
+			  } else if (!equ(s0, 1) && !equ(s1, 1)) {
+				  // add top right point
+				  ux = addNode(ux, (reference.x[i] + xLen));
+				  uy = addNode(uy, (reference.y[i] + yLen));
+			  } else if (equ(s0, 1) && equ(s1, -1)) {
+				  // add top left point
+				  ux = addNode(ux, (reference.x[i] - xLen));
+				  uy = addNode(uy, (reference.y[i] + yLen));
+				  // add top right point
+				  ux = addNode(ux, (reference.x[i] + xLen));
+				  uy = addNode(uy, (reference.y[i] + yLen));
+			  } else if (equ(s0, -1) && equ(s1, 1)) {
+				  // add top right point
+				  ux = addNode(ux, (reference.x[i] + xLen));
+				  uy = addNode(uy, (reference.y[i] + yLen));
+				  // add top left point
+				  ux = addNode(ux, (reference.x[i] - xLen));
+				  uy = addNode(uy, (reference.y[i] + yLen));
+			  }
 
-      int len = listLen(uy);
-      double lastY = getNth(uy, len-1);
-      // remove the last added points in case of zero slope of tube curve
-      if equ((reference.y[i+1] + yLen), lastY) {
-        if (equ(s0 * s1, -1) && equ(getNth(uy, len-3), lastY)) {
-          // remove two points, if two points were added at last
-          // ((len-1) - 2 >= 0, because start point + two added points)
-          lastNodeDeletion(ux);
-          lastNodeDeletion(uy);
-          lastNodeDeletion(ux);
-          lastNodeDeletion(uy);
-        } else if (!equ(s0 * s1, -1) && equ(getNth(uy, len-2), lastY)) {
-          // remove one point, if one point was added at last
-            // ((len-1) - 1 >= 0, because start point + one added point)
-          lastNodeDeletion(ux);
-          lastNodeDeletion(uy);
-        }
-      }
-    }
-    s0 = s1;
-    m0 = m1;
-  }
-  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
-  if equ(s0, 1) {
-    // add top left point
-    ux = addNode(ux, (reference.x[reference.n-1] - xLen));
-    uy = addNode(uy, (reference.y[reference.n-1] + yLen));
+			  int len = listLen(uy);
+			  double lastY = getNth(uy, len-1);
+			  // remove the last added points in case of zero slope of tube curve
+			  if equ((reference.y[i+1] + yLen), lastY) {
+				  if (equ(s0 * s1, -1) && equ(getNth(uy, len-3), lastY)) {
+					  // remove two points, if two points were added at last
+					  // ((len-1) - 2 >= 0, because start point + two added points)
+					  lastNodeDeletion(ux);
+					  lastNodeDeletion(uy);
+					  lastNodeDeletion(ux);
+					  lastNodeDeletion(uy);
+				  } else if (!equ(s0 * s1, -1) && equ(getNth(uy, len-2), lastY)) {
+					  // remove one point, if one point was added at last
+					  // ((len-1) - 1 >= 0, because start point + one added point)
+					  lastNodeDeletion(ux);
+					  lastNodeDeletion(uy);
+				  }
+			  }
+		  }
+		  s0 = s1;
+		  m0 = m1;
+	  }
+	  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
+	  if equ(s0, 1) {
+		  // add top left point
+		  ux = addNode(ux, (reference.x[reference.n-1] - xLen));
+		  uy = addNode(uy, (reference.y[reference.n-1] + yLen));
+	  }
   }
   // add top right point
   ux = addNode(ux, (reference.x[reference.n-1] + xLen));
