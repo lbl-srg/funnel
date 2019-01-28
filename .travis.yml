@@ -13,12 +13,22 @@ notifications:
 git:
   depth: 10
 
+dist: xenial
+
 compiler:
   - gcc
 
-# Execute tests
+install:
+  - pip install -r requirements.txt
+
+before_script:
+  - mkdir build && cd build && cmake ..
+
 script:
-  - make build
-  - make test
+  # Compile, link, install.
+  - cmake --build . --target install
+  # Test and clean.
+  - ctest -E plot && python ../tests/test_summary.py ../tests -B
+  # Compare.
   - git status tests
   - git diff --exit-code tests
