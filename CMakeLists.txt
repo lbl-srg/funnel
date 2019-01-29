@@ -165,6 +165,16 @@ endforeach()
 add_test(
     NAME test_plot
     COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_plot.py" "${CMAKE_TEST_DIR}/fail1/results"
-    WORKING_DIRECTORY "${CMAKE_TEST_DIR}/tmp"
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
+
+## Configure post test
+set(content "set(CTEST_CUSTOM_POST_TEST
+    ${CTEST_CUSTOM_POST_TEST}
+    \"${PYTHON_EXECUTABLE} ${CMAKE_TEST_DIR}/test_summary.py ${CMAKE_TEST_DIR}\")"
+)
+file(WRITE 
+    "${CMAKE_BINARY_DIR}/CTestCustom.cmake" 
+    "${content}"
+)

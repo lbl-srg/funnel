@@ -12,12 +12,14 @@ import pyfunnel as pf
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
-    batch = False
+
+    # Batch mode if running on Travis or -B option from terminal
+    is_travis = 'TRAVIS' in os.environ
+    batch = is_travis
     try:
         argv_2 = sys.argv[2]
         if argv_2 == '-B':
             batch = True
-            print('Running in batch mode.')
     except:
         pass
 

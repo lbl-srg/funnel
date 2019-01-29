@@ -28,7 +28,7 @@ script:
   # Compile, link, install.
   - cmake --build . --target install
   # Test and clean.
-  - ctest -E plot && python ../tests/test_summary.py ../tests -B
+  - ctest
   # Compare.
   - git status tests
   - git diff --exit-code tests
