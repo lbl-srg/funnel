@@ -138,6 +138,7 @@ cmake --build ./ --target install   (add `--config Release` on Windows)
 To run the tests, from `./build` run the following commands:
 ```
 ctest                               (add `-C Release` on Windows)
+python ../tests/test_summary.py ../tests
 ```
 
 ## License

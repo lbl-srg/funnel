@@ -171,7 +171,7 @@ def compareAndReport(
     return retVal
 
 
-def plot_funnel(test_dir, browser=None, autoraise=True):
+def plot_funnel(test_dir, title="", browser=None, autoraise=True):
     """
     Plot funnel results stored in test_dir. Display plot in default browser.
     Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at 
@@ -264,6 +264,7 @@ def plot_funnel(test_dir, browser=None, autoraise=True):
         thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         thread.start()
         content = re.sub('\$SERVER_PORT', str(server.server_port), template_html)
+        content = re.sub('\$TITLE', title, content)
         with open('plot.html', 'w') as f:
             f.write(content)
         webb = webbrowser.get(browser)
@@ -367,6 +368,7 @@ template_html = """
             },   
         ];
         var layout = {
+            title: {text: '$TITLE'},
             grid: {rows: 2, columns: 1, subplots: [['xy1'], ['xy2']]},
             xaxis1: {
                 ticks: 'outside',

@@ -134,6 +134,7 @@ add_test(
 set_tests_properties(test_py_3 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
 
 ## Numerics testing.
+
 file(
     GLOB TEST_CASES 
     LIST_DIRECTORIES true 
@@ -147,7 +148,9 @@ foreach(t RANGE ${len_tests})
     set(test_name test_numerics_${t})
     set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
     set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
-    file(MAKE_DIRECTORY ${tmp_dir})
+    set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST} 
+        \"${CMAKE_COMMAND} -E make_directory ${tmp_dir}\""
+    )
     add_test(
         NAME ${test_name}
         COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" ${test_name} ${test_dir} ${tmp_dir}
@@ -169,10 +172,10 @@ add_test(
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
-## Configure post test
-set(content "set(CTEST_CUSTOM_POST_TEST
-    ${CTEST_CUSTOM_POST_TEST}
-    \"${PYTHON_EXECUTABLE} ${CMAKE_TEST_DIR}/test_summary.py ${CMAKE_TEST_DIR}\")"
+## Configure pre/post test.
+set(content "# Numerics testing configuration file
+    set(CTEST_CUSTOM_PRE_TEST
+        ${CTEST_CUSTOM_PRE_TEST})"
 )
 file(WRITE 
     "${CMAKE_BINARY_DIR}/CTestCustom.cmake" 
