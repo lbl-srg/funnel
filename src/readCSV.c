@@ -12,9 +12,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "data_structure.h"
 #include "readCSV.h"
+
+
+/*
+ * Function: file_exist
+ * -----------------
+ *  Test if file is in file system (with no dependency to unistd.h (access()): not available on Windows).
+ *  
+ *  filename: path to file
+ *  
+ *  returns: TRUE if exists
+ */
+int file_exist (const char *filename)
+{
+  struct stat buffer;   
+  return (stat(filename, &buffer) == 0);
+}
 
 /*
  * Function: readCSV
@@ -35,12 +52,23 @@ struct data readCSV(const char * filename, int skipLines) {
   int rowCount = 0;
   char buf[100];
 
-  FILE *fp = fopen(filename, "r");
+  FILE *fp;
 
+  if (file_exist(filename))
+  {
+    fp = fopen(filename, "r");
+    if (!(fp))
+    {
+      fprintf(stderr, "Cannot open file: %s\n", filename);
+    }
+  } else {
+    fprintf(stderr, "No such file: %s\n", filename);
+  }
+  
   time = malloc(sizeof(double) * arraySize);
   if (time == NULL){
-  	  fputs("Error: Failed to allocate memory for time.\n", stderr);
-  	  exit(1);
+    fputs("Error: Failed to allocate memory for time.\n", stderr);
+    exit(1);
   }
   value = malloc(sizeof(double) * arraySize);
   if (value == NULL){

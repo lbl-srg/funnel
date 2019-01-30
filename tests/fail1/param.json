@@ -1,0 +1,1 @@
+{"test": "simulated.csv", "reference": "trended.csv", "output": "results", "rtolx": 0.002, "rtoly": 0.002, "atoly": 0.0, "atolx": 0.0}
