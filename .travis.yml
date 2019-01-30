@@ -28,7 +28,7 @@ matrix:
       env: ARCH_OPTION="-A x64"
 
 install:
-  - pip install --user -r requirements.txt
+  - python -m pip install --user -r requirements.txt
 
 before_script:
   - mkdir build && cd build && cmake .. $ARCH_OPTION
