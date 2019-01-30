@@ -121,7 +121,7 @@ $ python ../../bin/pyfunnel.py --reference trended.csv --test simulated.csv --at
 
 ### System Requirements
 
-The cross-platform build system relies on CMake version `3.13.*`.
+The cross-platform build system relies on CMake version `3.11.*`.
 
 The distributed binaries have been built with Microsoft Visual Studio C/C++ compiler
 (Windows) and `gcc` (Linux and Mac).
@@ -141,11 +141,6 @@ To run the tests, from `./build` run the following commands:
 ```
 ctest                               (add `-C Release` on Windows)
 python ../tests/test_summary.py ../tests
-```
-Alternatively, to run tests in batch mode with no prompt and plot, run the following commands:
-```
-ctest -E plot                       (add `-C Release` on Windows)
-python ../tests/test_summary.py ../tests -B
 ```
 
 ## License

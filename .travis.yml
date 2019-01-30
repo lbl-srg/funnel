@@ -1,8 +1,4 @@
-os:
-  - linux
-  - osx
-
-language: C
+language: c
 
 python:
   - "2.7"
@@ -15,20 +11,32 @@ git:
 
 dist: xenial
 
-compiler:
-  - gcc
+matrix:
+  include:
+    - os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+    - os: osx
+      env: ARCH_OPTION=""
+      compiler: gcc
+    - os: windows
+      env: ARCH_OPTION="-A x64"
+      before_install:
+        - choco install python2
+        - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
+        - python -m pip install --upgrade pip wheel
 
 install:
   - pip install --user -r requirements.txt
 
 before_script:
-  - mkdir build && cd build && cmake ..
+  - mkdir build && cd build && cmake .. $ARCH_OPTION
 
 script:
   # Compile, link, install.
-  - cmake --build . --target install
+  - cmake --build . --target install --config Release
   # Test and clean.
-  - ctest -E plot && python ../tests/test_summary.py ../tests -B
+  - ctest -C Release && python ../tests/test_summary.py ../tests
   # Compare.
   - git status tests
   - git diff --exit-code tests

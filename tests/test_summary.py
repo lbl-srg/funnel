@@ -12,12 +12,14 @@ import pyfunnel as pf
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
-    batch = False
+
+    # Batch mode if running on Travis or -B option from terminal
+    is_travis = 'TRAVIS' in os.environ
+    batch = is_travis
     try:
         argv_2 = sys.argv[2]
         if argv_2 == '-B':
             batch = True
-            print('Running in batch mode.')
     except:
         pass
 
@@ -40,8 +42,9 @@ if __name__ == "__main__":
                 if not batch:
                     print(
 """Test {} with data from {} failed on:
-{:%} x points and {:%} y points.""".format(test_log['test_name'], test_log['test_dir'], dif_err[0], dif_err[1]))         
-                    pf.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), autoraise=False)
+{:%} x points and {:%} y points.""".format(test_log['test_name'], test_log['test_dir'], dif_err[0], dif_err[1]))
+                    pf.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original', autoraise=False)
+                    pf.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New', autoraise=False)
                     
                     replace = six.moves.input(
 """Do you want to keep new results from {} and replace results stored in {}?
