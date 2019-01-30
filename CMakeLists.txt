@@ -17,7 +17,7 @@
 #   Temporary test dir for parallel running
 
 cmake_policy(SET CMP0048 NEW)
-cmake_minimum_required(VERSION 3.11.0)  
+cmake_minimum_required(VERSION 3.11.0)
 project(funnel VERSION 0.1.0 LANGUAGES C)
 enable_testing()
 
@@ -70,7 +70,7 @@ elseif(MACOSX)
     set(PLATFORM_INSTALL_PREFIX darwin64)
 endif()
 
-set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}") 
+set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}")
 set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}")
 set(RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(PUBLIC_INCLUDE_DIRECTORY "${CMAKE_SOURCE_DIR}/include")
@@ -136,8 +136,8 @@ set_tests_properties(test_py_3 PROPERTIES PASS_REGULAR_EXPRESSION "Output direct
 ## Numerics testing.
 
 file(
-    GLOB TEST_CASES 
-    LIST_DIRECTORIES true 
+    GLOB TEST_CASES
+    LIST_DIRECTORIES true
     RELATIVE ${CMAKE_TEST_DIR}
     ${CMAKE_TEST_DIR}/fail* ${CMAKE_TEST_DIR}/success*
 )
@@ -148,7 +148,7 @@ foreach(t RANGE ${len_tests})
     set(test_name test_numerics_${t})
     set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
     set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
-    set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST} 
+    set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST}
         \"${CMAKE_COMMAND} -E make_directory ${tmp_dir}\""
     )
     add_test(
@@ -177,7 +177,7 @@ set(content "# Numerics testing configuration file
     set(CTEST_CUSTOM_PRE_TEST
         ${CTEST_CUSTOM_PRE_TEST})"
 )
-file(WRITE 
-    "${CMAKE_BINARY_DIR}/CTestCustom.cmake" 
+file(WRITE
+    "${CMAKE_BINARY_DIR}/CTestCustom.cmake"
     "${content}"
 )
