@@ -25,7 +25,7 @@ except ImportError:
 def get_lib_path(project_name):
 
     """
-    Guess the library absolute path. 
+    Guess the library absolute path.
 
     Args:
         project_name (str): project name
@@ -51,8 +51,8 @@ def get_lib_path(project_name):
         lib_path = os.path.join(lib_path, 'darwin64', 'lib{}.dylib'.format(project_name))
     else:
         raise RuntimeError('Could not detect standard (system, architecture).')
-    
-    return lib_path
+
+    return os.path.abspath(lib_path)
 
 
 def compareAndReport(
@@ -67,7 +67,7 @@ def compareAndReport(
     rtoly=None):
     """
     Call funnel binary with list-like objects as x, y reference and test values.
-    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` 
+    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
     into the output directory (`./results` by default).
     Note: at least one absolute or relative tolerance parameter must be provided for each axis.
 
@@ -126,6 +126,9 @@ def compareAndReport(
             if tol[k] < 0:
                 raise ValueError("Tolerance {} must be positive.".format(k))
 
+    # Encode string arguments (in Python 3 c_char_p takes bytes object).
+    outputDirectory = outputDirectory.encode('utf-8')
+
     # Load library.
     try:
         lib_path = get_lib_path('funnel')
@@ -174,8 +177,8 @@ def compareAndReport(
 def plot_funnel(test_dir, title="", browser=None, autoraise=True):
     """
     Plot funnel results stored in test_dir. Display plot in default browser.
-    Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at 
-    function call, an error log is output to the terminal. 
+    Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at
+    function call, an error log is output to the terminal.
     Use option `browser="firefox"` or `browser="safari"` as a workaround if needed.
 
     Args:
@@ -206,7 +209,7 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
         def server_close(self):
             # Invoke to close logger and delete from disk.
             try:
-                self.logger.close()  
+                self.logger.close()
                 os.chmod('foo.log', 0o777)
                 os.remove('foo.log')
             except Exception as e:
@@ -219,13 +222,13 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
             self.server.logger.write("%s - - [%s] %s\n" %
                          (self.client_address[0],
                           self.log_date_time_string(),
-                          format%args))        
+                          format%args))
 
         def end_headers(self):
             self.send_header('Access-Control-Allow-Origin', '*')
             SimpleHTTPRequestHandler.end_headers(self)
 
-    # based on https://stackoverflow.com/a/2785908/1056345                                                                                                                                                                                                                                                                         
+    # based on https://stackoverflow.com/a/2785908/1056345
     def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
         must_end = time.time() + timeout
         while time.time() < must_end:
@@ -233,7 +236,7 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
                 return True
             time.sleep(period)
         return False
-    
+
     def exit_test(handler, list_files):
         handler.seek(0)
         content = handler.read()
@@ -244,12 +247,12 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
             else:
                 pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
         return bool(re.search(pattern, content))
-    
+
     def clean():
         sys.stderr = open(os.devnull, 'w')
         threadd = threading.Thread(target=server.shutdown)  # makes execution stall on Windows if main thread
         threadd.daemon = True
-        threadd.start()        
+        threadd.start()
         server.server_close()
         sys.stderr = sys.__stderr__
         os.chdir(cur_dir)
@@ -257,7 +260,7 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
     # Move to directory with *.csv before launching local server.
     cur_dir = os.getcwd()
     os.chdir(test_dir)
-    
+
     try:
         server = MyHTTPServer(('', 0), CORSRequestHandler)
         thread = threading.Thread(target=server.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
@@ -330,27 +333,27 @@ template_html = """
         var plotDiv = document.getElementById("plot");
         var traces = [
             {
-                x: data['err'].x, 
+                x: data['err'].x,
                 y: data['err'].y,
                 name: 'error',
                 xaxis: 'x',
                 yaxis: 'y2',
-            }, 
+            },
             {
-                x: data['test'].x, 
+                x: data['test'].x,
                 y: data['test'].y,
                 name: 'test',
-            }, 
+            },
             {
                 name: 'lower bound',
-                x: data['low'].x, 
+                x: data['low'].x,
                 y: data['low'].y,
                 showlegend: false,
                 line: {width: 0},
                 mode: 'lines'
             },
             {
-                x: data['ref'].x, 
+                x: data['ref'].x,
                 y: data['ref'].y,
                 name: 'reference',
                 fillcolor: 'rgba(68, 68, 68, 0.3)',
@@ -358,14 +361,14 @@ template_html = """
             },
             {
                 name: 'upper bound',
-                x: data['upp'].x, 
+                x: data['upp'].x,
                 y: data['upp'].y,
                 showlegend: false,
                 fillcolor: 'rgba(68, 68, 68, 0.3)',
                 fill: 'tonexty',
                 line: {width: 0},
                 mode: 'lines'
-            },   
+            },
         ];
         var layout = {
             title: {text: '$TITLE'},
@@ -488,5 +491,3 @@ if __name__ == "__main__":
     )
 
     sys.exit(rc)
-
-    
