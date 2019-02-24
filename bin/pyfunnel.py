@@ -1,31 +1,36 @@
 #!/usr/bin/env python
+# coding: utf-8
 #######################################################
 # Python binding for funnel library: compareAndReport
 # Function that plots results: plot_funnel
 #######################################################
 from __future__ import absolute_import, division, print_function, unicode_literals
-
-import os
-import sys
-import platform
-import six
-import webbrowser
-import re
-import time
-import threading
+# Python standard library imports.
 from ctypes import cdll, POINTER, c_double, c_int, c_char_p
+import io
+import os
+import platform
+import re
+import StringIO
+import sys
+import tempfile
+import textwrap
+import threading
+import time
+import webbrowser
 try:
     from http.server import HTTPServer, SimpleHTTPRequestHandler # Python 3
 except ImportError:
     from SimpleHTTPServer import BaseHTTPServer
     HTTPServer = BaseHTTPServer.HTTPServer
     from SimpleHTTPServer import SimpleHTTPRequestHandler # Python 2
+# Third-party module or package imports.
+import six
+# Code repository sub-package imports.
 
 
-def get_lib_path(project_name):
-
-    """
-    Guess the library absolute path.
+def _get_lib_path(project_name):
+    """Infer the library absolute path.
 
     Args:
         project_name (str): project name
@@ -33,7 +38,6 @@ def get_lib_path(project_name):
     Returns:
         str: guessed library path e.g. ~/project_name/lib/darwin64/lib{project_name}.so
     """
-
     lib_path = os.path.join(os.path.dirname(__file__), os.path.pardir, 'lib')
     os_name = platform.system()
     os_machine = platform.machine()
@@ -65,11 +69,10 @@ def compareAndReport(
     atoly=None,
     rtolx=None,
     rtoly=None):
-    """
-    Call funnel binary with list-like objects as x, y reference and test values.
-    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
-    into the output directory (`./results` by default).
-    Note: at least one absolute or relative tolerance parameter must be provided for each axis.
+    """Run funnel binary with list-like objects as x, y reference and test values.
+
+    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
+    `test.csv` into the output directory (`./results` by default).
 
     Args:
         xReference (list-like): x reference values
@@ -84,7 +87,13 @@ def compareAndReport(
 
     Returns:
         None
+
+    Note: At least one absolute or relative tolerance parameter must be provided for each axis.
+    Relative tolerance is relative to the range of x or y values.
+
+    Full documentation at https://github.com/lbl-srg/funnel
     """
+
     # Check arguments.
     ## Logic
     assert (atolx is not None) or (rtolx is not None),\
@@ -131,7 +140,7 @@ def compareAndReport(
 
     # Load library.
     try:
-        lib_path = get_lib_path('funnel')
+        lib_path = _get_lib_path('funnel')
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
         raise RuntimeError("Could not load funnel library with this path: {}. {}".format(lib_path, e))
@@ -174,9 +183,90 @@ def compareAndReport(
     return retVal
 
 
+class MyHTTPServer(HTTPServer):
+    """Derive from HTTPServer to handle specific log file."""
+    def __init__(self, html_content, *args):
+        # Create log file.
+        log_file = tempfile.NamedTemporaryFile(mode='r+')  # delete is true (default): the file is deleted as soon as it is closed
+        self.logger = log_file
+        HTTPServer.__init__(self, *args)
+        self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), html_content)
+
+    def server_launch(self):
+        self.thread = threading.Thread(target=self.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
+        self.thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
+        self.thread.start()
+
+    def server_close(self):
+        # Invoke to close log file. (Name of function is standard in HTTPServer: aimed at being overridden.)
+        sys.stderr = open(os.devnull, 'w')
+        threadd = threading.Thread(target=self.shutdown)  # makes execution stall on Windows if main thread
+        threadd.daemon = True
+        threadd.start()
+        try:
+            self.logger.close()
+        except Exception as e:
+            print('Could not close log file: {}'.format(e))
+        sys.stderr = sys.__stderr__
+
+
+class CORSRequestHandler(SimpleHTTPRequestHandler):
+    """Derive from SimpleHTTPRequestHandler to log message on log file and modify response header."""
+    def log_message(self, format, *args):
+        # Overridden to output to server.logger.
+        try:
+            self.server.logger.write("%s - - [%s] %s\n" %
+                            (self.client_address[0],
+                            self.log_date_time_string(),
+                            format%args))
+        except ValueError:  # logger closed
+            pass
+
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
+        SimpleHTTPRequestHandler.end_headers(self)
+
+    def send_head(self):
+        if self.translate_path(self.path).endswith('/funnel'):
+            body = self.server._STR_HTML
+            self.send_response(200)
+            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            return StringIO.StringIO(body)
+        else:
+            return SimpleHTTPRequestHandler.send_head(self)
+
+# based on https://stackoverflow.com/a/2785908/1056345
+def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
+    """Wait until some predicate is true."""
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        if somepredicate(*args, **kwargs):
+            return True
+        time.sleep(period)
+
+    return False
+
+
+def exit_test(handler, list_files):
+    handler.seek(0)
+    content = handler.read()
+    raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
+    for i, l in enumerate(list_files):
+        if i == 0:
+            pattern = raw_pattern.format(l)
+        else:
+            pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
+
+    return bool(re.search(pattern, content))
+
+
 def plot_funnel(test_dir, title="", browser=None, autoraise=True):
-    """
-    Plot funnel results stored in test_dir. Display plot in default browser.
+    """Plot funnel results stored in test_dir. Display plot in default browser.
+
     Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at
     function call, an error log is output to the terminal.
     Use option `browser="firefox"` or `browser="safari"` as a workaround if needed.
@@ -191,98 +281,32 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
     @todo:
         HTTPServer class extension with __init__ to specify STDERR handle (hard coded in current version)
     """
-
     list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
     for f in list_files:
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
-
-    class MyHTTPServer(HTTPServer):
-        def __init__(self, *args):
-            # Create log file in current directory.
-            if os.path.isfile('foo.log'):
-                os.chmod('foo.log', 0o777)
-                os.remove('foo.log')
-            self.logger = os.fdopen(os.open('foo.log', os.O_CREAT | os.O_RDWR, 0), 'r+', 0)
-            HTTPServer.__init__(self, *args)
-
-        def server_close(self):
-            # Invoke to close logger and delete from disk.
-            try:
-                self.logger.close()
-                os.chmod('foo.log', 0o777)
-                os.remove('foo.log')
-            except Exception as e:
-                print('Could not close server properly because: {}'.format(e))
-                pass
-
-    class CORSRequestHandler(SimpleHTTPRequestHandler):
-        def log_message(self, format, *args):
-            # Overriden to output to server.logger.
-            self.server.logger.write("%s - - [%s] %s\n" %
-                         (self.client_address[0],
-                          self.log_date_time_string(),
-                          format%args))
-
-        def end_headers(self):
-            self.send_header('Access-Control-Allow-Origin', '*')
-            SimpleHTTPRequestHandler.end_headers(self)
-
-    # based on https://stackoverflow.com/a/2785908/1056345
-    def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
-        must_end = time.time() + timeout
-        while time.time() < must_end:
-            if somepredicate(*args, **kwargs):
-                return True
-            time.sleep(period)
-        return False
-
-    def exit_test(handler, list_files):
-        handler.seek(0)
-        content = handler.read()
-        raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
-        for i, l in enumerate(list_files):
-            if i == 0:
-                pattern = raw_pattern.format(l)
-            else:
-                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
-        return bool(re.search(pattern, content))
-
-    def clean():
-        sys.stderr = open(os.devnull, 'w')
-        threadd = threading.Thread(target=server.shutdown)  # makes execution stall on Windows if main thread
-        threadd.daemon = True
-        threadd.start()
-        server.server_close()
-        sys.stderr = sys.__stderr__
-        os.chdir(cur_dir)
 
     # Move to directory with *.csv before launching local server.
     cur_dir = os.getcwd()
     os.chdir(test_dir)
 
     try:
-        server = MyHTTPServer(('', 0), CORSRequestHandler)
-        thread = threading.Thread(target=server.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
-        thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
-        thread.start()
-        content = re.sub('\$SERVER_PORT', str(server.server_port), template_html)
-        content = re.sub('\$TITLE', title, content)
-        with open('plot.html', 'w') as f:
-            f.write(content)
+        content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+        server = MyHTTPServer(content, ('', 0), CORSRequestHandler)
+        server.server_launch()
         webb = webbrowser.get(browser)
-        webb.open('http://localhost:{}/plot.html'.format(server.server_port))
+        webb.open('http://localhost:{}/funnel'.format(server.server_port))
         wait_until(exit_test, 5, 0.1, server.logger, list_files)
-    except Exception as e:  # especially for KeyboardInterrupt
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+    except Exception as e:
         print(e)
-        pass
     finally:
-        clean()
+        server.server_close()
+        os.chdir(cur_dir)
 
-    return
 
-
-template_html = """
+_TEMPLATE_HTML = """
 <html>
 <head>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -404,15 +428,25 @@ template_html = """
 </html>
 """
 
+
 if __name__ == "__main__":
     import argparse
     import csv
 
     # Configure the argument parser.
-    parser = argparse.ArgumentParser(description=
-    """Run funnel library from terminal.
-    Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values.
-    """
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent("""\
+            Run funnel binary from terminal.\n
+            Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
+        """),
+        epilog=textwrap.dedent("""\
+            Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for each axis.
+            Relative tolerance is relative to the range of x or y values.\n
+            Typical use from terminal:
+            $ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results\n
+            Full documentation at https://github.com/lbl-srg/funnel
+        """)
     )
     required_named = parser.add_argument_group('required named arguments')
 
@@ -433,22 +467,22 @@ if __name__ == "__main__":
     parser.add_argument(
         "--atolx",
         type=float,
-        help="Absolute tolerance in x direction"
+        help="Absolute tolerance along x axis"
     )
     parser.add_argument(
         "--atoly",
         type=float,
-        help="Absolute tolerance in y direction"
+        help="Absolute tolerance along y axis"
     )
     parser.add_argument(
         "--rtolx",
         type=float,
-        help="Relative tolerance in x direction"
+        help="Relative tolerance along x axis"
     )
     parser.add_argument(
         "--rtoly",
         type=float,
-        help="Relative tolerance in y direction"
+        help="Relative tolerance along y axis"
     )
 
     # Parse the arguments.
