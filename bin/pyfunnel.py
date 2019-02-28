@@ -247,7 +247,6 @@ def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
         if somepredicate(*args, **kwargs):
             return True
         time.sleep(period)
-
     return False
 
 
@@ -419,7 +418,7 @@ _TEMPLATE_HTML = """
                 title: 'error [y]',
             },
         };
-        Plotly.newPlot('myDiv', traces, layout);
+        Plotly.newPlot('myDiv', traces, layout, {responsive: true});
     };
 
     makeplot();
