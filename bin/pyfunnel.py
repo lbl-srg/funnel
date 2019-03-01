@@ -1,17 +1,28 @@
 #!/usr/bin/env python
 # coding: utf-8
+#
+# TODO
+#   Create proper package with setup.py so that funnel can be included in other packages with:
+#   setup(dependency_links=['https://github.com/lbl-srg/funnel/tarball/master#egg=package-1.0')
+#
+# TODO
+#   Cf. Kun test case with time series: raise error
+#
 #######################################################
 # Python binding for funnel library: compareAndReport
 # Function that plots results: plot_funnel
 #######################################################
 from __future__ import absolute_import, division, print_function, unicode_literals
 # Python standard library imports.
+from contextlib import contextmanager
 from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 import io
+import logging
 import os
 import platform
 import re
 import StringIO
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -27,6 +38,15 @@ except ImportError:
 # Third-party module or package imports.
 import six
 # Code repository sub-package imports.
+
+
+@contextmanager
+def redirect_stderr(new_target):
+    old_target, sys.stderr = sys.stderr, new_target # replace sys.stdout
+    try:
+        yield new_target # run some code with the replaced stdout
+    finally:
+        sys.stderr = old_target # restore to the previous value
 
 
 def _get_lib_path(project_name):
@@ -184,13 +204,20 @@ def compareAndReport(
 
 
 class MyHTTPServer(HTTPServer):
-    """Derive from HTTPServer to handle specific log file."""
-    def __init__(self, html_content, *args):
-        # Create log file.
-        log_file = tempfile.NamedTemporaryFile(mode='r+')  # delete is true (default): the file is deleted as soon as it is closed
-        self.logger = log_file
+    """Derive from HTTPServer to handle specific log file.
+
+        str_html (str): HTML content to serve if URL ends with url_html
+        url_html (str): pattern used to serve str_html if URL ends with it
+    """
+    def __init__(self, *args, **kwargs):
+        str_html = kwargs.pop('str_html', None)
+        url_html = kwargs.pop('url_html', None)
+        browse_dir = kwargs.pop('browse_dir', None)
         HTTPServer.__init__(self, *args)
-        self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), html_content)
+        self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), str_html)
+        self._URL_HTML = url_html
+        self._BROWSE_DIR = browse_dir
+        self.logger = StringIO.StringIO()
 
     def server_launch(self):
         self.thread = threading.Thread(target=self.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
@@ -199,15 +226,38 @@ class MyHTTPServer(HTTPServer):
 
     def server_close(self):
         # Invoke to close log file. (Name of function is standard in HTTPServer: aimed at being overridden.)
-        sys.stderr = open(os.devnull, 'w')
         threadd = threading.Thread(target=self.shutdown)  # makes execution stall on Windows if main thread
         threadd.daemon = True
         threadd.start()
         try:
             self.logger.close()
         except Exception as e:
-            print('Could not close log file: {}'.format(e))
-        sys.stderr = sys.__stderr__
+            print('Could not close logger: {}'.format(e))
+
+    def browse(self, *args, **kwargs):
+        browser = kwargs.pop('browser', None)
+        timeout = kwargs.pop('timeout', None)
+        # Move to directory with *.csv before launching local server.
+        cur_dir = os.getcwd()
+        os.chdir(self._BROWSE_DIR)
+        try:
+            self.server_launch()
+            if browser is not None:
+                webbrowser.get(browser)  # to throw exception in case of missing browser
+                browser = '"{}"'.format(browser)
+            webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error thrown to terminal
+                'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
+                    browser, self.server_port)]
+            proc = subprocess.Popen(webbrowser_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            wait_until(exit_test, timeout, 0.1, self.logger, *args)
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt")
+        except Exception as e:
+            print(e)
+        finally:
+            self.server_close()
+            proc.kill()
+            os.chdir(cur_dir)
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
@@ -229,13 +279,16 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
         SimpleHTTPRequestHandler.end_headers(self)
 
     def send_head(self):
-        if self.translate_path(self.path).endswith('/funnel'):
-            body = self.server._STR_HTML
+        if (self.server._URL_HTML is not None) and (self.translate_path(self.path).endswith(self.server._URL_HTML)):
+            f = StringIO.StringIO()
+            f.write(self.server._STR_HTML)
+            length = f.tell()
+            f.seek(0)
             self.send_response(200)
-            self.send_header("Content-type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Content-type", "text/html")
+            self.send_header("Content-Length", str(length))
             self.end_headers()
-            return StringIO.StringIO(body)
+            return f
         else:
             return SimpleHTTPRequestHandler.send_head(self)
 
@@ -250,17 +303,19 @@ def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
     return False
 
 
-def exit_test(handler, list_files):
-    handler.seek(0)
-    content = handler.read()
-    raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
-    for i, l in enumerate(list_files):
-        if i == 0:
-            pattern = raw_pattern.format(l)
-        else:
-            pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
+def exit_test(logger, list_files=None):
+    content = logger.getvalue()
+    if list_files is not None:
+        raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
+        for i, l in enumerate(list_files):
+            if i == 0:
+                pattern = raw_pattern.format(l)
+            else:
+                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
 
-    return bool(re.search(pattern, content))
+        return bool(re.search(pattern, content))
+    else:
+        return False
 
 
 def plot_funnel(test_dir, title="", browser=None, autoraise=True):
@@ -285,29 +340,17 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
-    # Move to directory with *.csv before launching local server.
-    cur_dir = os.getcwd()
-    os.chdir(test_dir)
 
-    try:
-        content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
-        server = MyHTTPServer(content, ('', 0), CORSRequestHandler)
-        server.server_launch()
-        webb = webbrowser.get(browser)
-        webb.open('http://localhost:{}/funnel'.format(server.server_port))
-        wait_until(exit_test, 5, 0.1, server.logger, list_files)
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt")
-    except Exception as e:
-        print(e)
-    finally:
-        server.server_close()
-        os.chdir(cur_dir)
+    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+    server = MyHTTPServer(('', 0), CORSRequestHandler, str_html=content, url_html='funnel', browse_dir=test_dir)
+    server.browse(list_files, browser=browser, timeout=5)
 
 
 _TEMPLATE_HTML = """
 <html>
 <head>
+  <meta charset="utf-8"/>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
