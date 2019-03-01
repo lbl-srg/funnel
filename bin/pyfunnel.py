@@ -21,7 +21,6 @@ import logging
 import os
 import platform
 import re
-import StringIO
 import subprocess
 import sys
 import tempfile
@@ -50,7 +49,7 @@ def redirect_stderr(new_target):
 
 
 def _get_lib_path(project_name):
-    """Infer the library absolute path.
+    """Infers the library absolute path.
 
     Args:
         project_name (str): project name
@@ -88,17 +87,18 @@ def compareAndReport(
     atolx=None,
     atoly=None,
     rtolx=None,
-    rtoly=None):
-    """Run funnel binary with list-like objects as x, y reference and test values.
+    rtoly=None
+):
+    """Runs funnel binary with list-like objects as x, y reference and test values.
 
-    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
+    Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
     `test.csv` into the output directory (`./results` by default).
 
     Args:
-        xReference (list-like): x reference values
-        yReference (list-like): y reference values
-        xTest (list-like): x test values
-        yTest (list-like): y test values
+        xReference (list-like of floats): x reference values
+        yReference (list-like of floats): y reference values
+        xTest (list-like of floats): x test values
+        yTest (list-like of floats): y test values
         outputDirectory (str): path of directory to store output files
         atolx (float): absolute tolerance along x axis
         atoly (float): absolute tolerance along y axis
@@ -111,7 +111,7 @@ def compareAndReport(
     Note: At least one absolute or relative tolerance parameter must be provided for each axis.
     Relative tolerance is relative to the range of x or y values.
 
-    Full documentation at https://github.com/lbl-srg/funnel
+    Full documentation at https://github.com/lbl-srg/funnel.
     """
 
     # Check arguments.
@@ -132,14 +132,14 @@ def compareAndReport(
     assert len(xTest) == len(yTest),\
         "xTest and yTest must have the same length."
 
-    # Convert arrays to lists (to support np.array and pd.Series).
+    # Convert arrays into lists of floats (to support np.array and pd.Series).
     try:
-        xReference = list(xReference)
-        yReference = list(yReference)
-        xTest = list(xTest)
-        yTest = list(yTest)
+        xReference = [float (x) for x in xReference]
+        yReference = [float (x) for x in yReference]
+        xTest = [float (x) for x in xTest]
+        yTest = [float (x) for x in yTest]
     except Exception as e:
-        raise TypeError("Input data arrays could not be converted to lists: {}".format(e))
+        raise TypeError("Input data could not be converted into lists of floats: {}".format(e))
 
     # Convert None tolerance to 0.
     tol = dict()
@@ -204,12 +204,15 @@ def compareAndReport(
 
 
 class MyHTTPServer(HTTPServer):
-    """Derive from HTTPServer to handle specific log file.
+    """Adds custom server_launch, server_close and browse methods."""
+
+    def __init__(self, *args, **kwargs):
+        """Args:
 
         str_html (str): HTML content to serve if URL ends with url_html
         url_html (str): pattern used to serve str_html if URL ends with it
-    """
-    def __init__(self, *args, **kwargs):
+        browse_dir (str): path of directory where to launch the server
+        """
         str_html = kwargs.pop('str_html', None)
         url_html = kwargs.pop('url_html', None)
         browse_dir = kwargs.pop('browse_dir', None)
@@ -217,15 +220,15 @@ class MyHTTPServer(HTTPServer):
         self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), str_html)
         self._URL_HTML = url_html
         self._BROWSE_DIR = browse_dir
-        self.logger = StringIO.StringIO()
+        self.logger = io.BytesIO()
 
     def server_launch(self):
-        self.thread = threading.Thread(target=self.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
+        self.thread = threading.Thread(target=self.serve_forever)
         self.thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         self.thread.start()
 
     def server_close(self):
-        # Invoke to close log file. (Name of function is standard in HTTPServer: aimed at being overridden.)
+        # Invoke to close logger.
         threadd = threading.Thread(target=self.shutdown)  # makes execution stall on Windows if main thread
         threadd.daemon = True
         threadd.start()
@@ -243,58 +246,71 @@ class MyHTTPServer(HTTPServer):
         try:
             self.server_launch()
             if browser is not None:
-                webbrowser.get(browser)  # to throw exception in case of missing browser
+                webbrowser.get(browser)  # throws exception in case of missing browser
                 browser = '"{}"'.format(browser)
-            webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error thrown to terminal
+            webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error into terminal
                 'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
-                    browser, self.server_port)]
+                browser, self.server_port)]
             proc = subprocess.Popen(webbrowser_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            wait_until(exit_test, timeout, 0.1, self.logger, *args)
+            wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
-            print("KeyboardInterrupt")
+            print('KeyboardInterrupt')
         except Exception as e:
             print(e)
         finally:
             self.server_close()
             proc.kill()
             os.chdir(cur_dir)
+            try:
+                if not wait_status:
+                    print('Communication between browser and server failed: '
+                    'check that the browser is not running in private mode.')
+            except:
+                pass
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
-    """Derive from SimpleHTTPRequestHandler to log message on log file and modify response header."""
+    """Enables to log message on logger and modify response header."""
     def log_message(self, format, *args):
-        # Overridden to output to server.logger.
         try:
-            self.server.logger.write("%s - - [%s] %s\n" %
-                            (self.client_address[0],
-                            self.log_date_time_string(),
-                            format%args))
+            to_send = "{} - - [{}] {}\n".format(
+                self.client_address[0],
+                self.log_date_time_string(),
+                format%args
+            )
+            self.server.logger.write(to_send.encode('utf8'))
         except ValueError:  # logger closed
             pass
+        except Exception as e:
+            print(e)
 
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
+        self.send_header('Access-Control-Allow-Origin'.encode('utf8'),
+            '*'.encode('utf8'))
+        self.send_header('Access-Control-Allow-Methods'.encode('utf8'),
+            'GET, POST, OPTIONS'.encode('utf8'))
+        self.send_header('Access-Control-Allow-Headers'.encode('utf8'),
+            'X-Requested-With'.encode('utf8'))
         SimpleHTTPRequestHandler.end_headers(self)
 
     def send_head(self):
-        if (self.server._URL_HTML is not None) and (self.translate_path(self.path).endswith(self.server._URL_HTML)):
-            f = StringIO.StringIO()
-            f.write(self.server._STR_HTML)
+        if (self.server._URL_HTML is not None) and \
+           (self.translate_path(self.path).endswith(self.server._URL_HTML)):
+            f = io.BytesIO()
+            f.write(self.server._STR_HTML.encode('utf8'))
             length = f.tell()
             f.seek(0)
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.send_header("Content-Length", str(length))
+            self.send_header("Content-type".encode('utf8'), "text/html".encode('utf8'))
+            self.send_header("Content-Length".encode('utf8'), str(length).encode('utf8'))
             self.end_headers()
             return f
         else:
             return SimpleHTTPRequestHandler.send_head(self)
 
-# based on https://stackoverflow.com/a/2785908/1056345
+
 def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
-    """Wait until some predicate is true."""
+    """Waits until some predicate is true."""
     must_end = time.time() + timeout
     while time.time() < must_end:
         if somepredicate(*args, **kwargs):
@@ -304,7 +320,7 @@ def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
 
 
 def exit_test(logger, list_files=None):
-    content = logger.getvalue()
+    content = logger.getvalue().decode('utf8')
     if list_files is not None:
         raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
         for i, l in enumerate(list_files):
@@ -312,18 +328,13 @@ def exit_test(logger, list_files=None):
                 pattern = raw_pattern.format(l)
             else:
                 pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
-
         return bool(re.search(pattern, content))
     else:
         return False
 
 
 def plot_funnel(test_dir, title="", browser=None, autoraise=True):
-    """Plot funnel results stored in test_dir. Display plot in default browser.
-
-    Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at
-    function call, an error log is output to the terminal.
-    Use option `browser="firefox"` or `browser="safari"` as a workaround if needed.
+    """Plots funnel results stored in test_dir and displays in default browser.
 
     Args:
         test_dir (str): path of directory where output files are stored
@@ -331,19 +342,15 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
 
     Returns:
         None
-
-    @todo:
-        HTTPServer class extension with __init__ to specify STDERR handle (hard coded in current version)
     """
     list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
     for f in list_files:
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
-
     content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
-    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
-    server = MyHTTPServer(('', 0), CORSRequestHandler, str_html=content, url_html='funnel', browse_dir=test_dir)
+    server = MyHTTPServer((''.encode('utf8'), 0), CORSRequestHandler,
+        str_html=content, url_html='funnel', browse_dir=test_dir)
     server.browse(list_files, browser=browser, timeout=5)
 
 

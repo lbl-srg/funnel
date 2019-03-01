@@ -76,11 +76,7 @@ The module `./bin/pyfunnel.py` provides the following functions:
     See function docstring for further details.
 
   * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
-    Displays plot in default browser.
-    Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at
-    function call, an error log is output to the terminal.
-    You might use option `browser="firefox"` as a workaround or call function with a
-    web browser window already open. See function docstring for further details.
+    Displays plot in default browser. See function docstring for further details.
 
 The module might also be called directly from terminal:
 ```
@@ -118,16 +114,17 @@ Full documentation at https://github.com/lbl-srg/funnel
 
 From a Python shell with `./tests/test_bin` as the current working directory, type
 ```python
->>> import os, sys
+>>> import os
+>>> import sys
 >>> import pandas as pd
 >>> pyfunnel_dir = os.path.join(os.path.pardir, os.path.pardir, 'bin')
 >>> sys.path.append(pyfunnel_dir)
->>> import pyfunnel as pf
+>>> import pyfunnel
 >>> ref = pd.read_csv('trended.csv')
 >>> test = pd.read_csv('simulated.csv')
->>> pf.compareAndReport(xReference=ref.iloc(axis=1)[0], yReference=ref.iloc(axis=1)[1],
+>>> pyfunnel.compareAndReport(xReference=ref.iloc(axis=1)[0], yReference=ref.iloc(axis=1)[1],
 ... xTest=test.iloc(axis=1)[0], yTest=test.iloc(axis=1)[1], atolx=0.002, atoly=0.002)
->>> pf.plot_funnel('results')
+>>> pyfunnel.plot_funnel('results')
 ```
 Or from a terminal with `./tests/test_bin` as the current working directory, type
 ```
