@@ -14,16 +14,13 @@
 #######################################################
 from __future__ import absolute_import, division, print_function, unicode_literals
 # Python standard library imports.
-from contextlib import contextmanager
 from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 import io
-import logging
 import os
 import platform
 import re
 import subprocess
 import sys
-import tempfile
 import textwrap
 import threading
 import time
@@ -37,15 +34,6 @@ except ImportError:
 # Third-party module or package imports.
 import six
 # Code repository sub-package imports.
-
-
-@contextmanager
-def redirect_stderr(new_target):
-    old_target, sys.stderr = sys.stderr, new_target # replace sys.stdout
-    try:
-        yield new_target # run some code with the replaced stdout
-    finally:
-        sys.stderr = old_target # restore to the previous value
 
 
 def _get_lib_path(project_name):
@@ -207,11 +195,11 @@ class MyHTTPServer(HTTPServer):
     """Adds custom server_launch, server_close and browse methods."""
 
     def __init__(self, *args, **kwargs):
-        """Args:
+        """kwargs:
 
-        str_html (str): HTML content to serve if URL ends with url_html
-        url_html (str): pattern used to serve str_html if URL ends with it
-        browse_dir (str): path of directory where to launch the server
+            str_html (str): HTML content to serve if URL ends with url_html
+            url_html (str): pattern used to serve str_html if URL ends with it
+            browse_dir (str): path of directory where to launch the server
         """
         str_html = kwargs.pop('str_html', None)
         url_html = kwargs.pop('url_html', None)
@@ -238,6 +226,7 @@ class MyHTTPServer(HTTPServer):
             print('Could not close logger: {}'.format(e))
 
     def browse(self, *args, **kwargs):
+        # TODOC
         browser = kwargs.pop('browser', None)
         timeout = kwargs.pop('timeout', None)
         # Move to directory with *.csv before launching local server.
@@ -258,13 +247,13 @@ class MyHTTPServer(HTTPServer):
         except Exception as e:
             print(e)
         finally:
-            self.server_close()
-            proc.kill()
             os.chdir(cur_dir)
-            try:
+            try:  # objects may not be defined in case of exception
+                self.server_close()
+                proc.kill()
                 if not wait_status:
                     print('Communication between browser and server failed: '
-                    'check that the browser is not running in private mode.')
+                        'check that the browser is not running in private mode.')
             except:
                 pass
 
@@ -349,7 +338,7 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
     content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
-    server = MyHTTPServer((''.encode('utf8'), 0), CORSRequestHandler,
+    server = MyHTTPServer(('', 0), CORSRequestHandler,
         str_html=content, url_html='funnel', browse_dir=test_dir)
     server.browse(list_files, browser=browser, timeout=5)
 
