@@ -16,6 +16,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 # Python standard library imports.
 from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 import io
+import numbers
 import os
 import platform
 import re
@@ -120,14 +121,22 @@ def compareAndReport(
     assert len(xTest) == len(yTest),\
         "xTest and yTest must have the same length."
 
-    # Convert arrays into lists of floats (to support np.array and pd.Series).
+    # Convert arrays into lists (to support np.array and pd.Series).
     try:
-        xReference = [float (x) for x in xReference]
-        yReference = [float (x) for x in yReference]
-        xTest = [float (x) for x in xTest]
-        yTest = [float (x) for x in yTest]
+        xReference = list(xReference)
+        yReference = list(yReference)
+        xTest = list(xTest)
+        yTest = list(yTest)
     except Exception as e:
-        raise TypeError("Input data could not be converted into lists of floats: {}".format(e))
+        raise TypeError("Input data could not be converted into lists: {}".format(e))
+    # Test numeric type.
+    all_data = xReference + yReference + xTest + yTest
+    num_check = [isinstance(x, numbers.Real) for x in all_data]
+    if not min(num_check):
+        idx = filter(lambda i: not num_check[i], range(len(num_check)))
+        raise TypeError("The following input values are not numeric: {}".format(
+            [all_data[i] for i in idx]
+        ))
 
     # Convert None tolerance to 0.
     tol = dict()
@@ -203,7 +212,7 @@ class MyHTTPServer(HTTPServer):
         """
         str_html = kwargs.pop('str_html', None)
         url_html = kwargs.pop('url_html', None)
-        browse_dir = kwargs.pop('browse_dir', None)
+        browse_dir = kwargs.pop('browse_dir', os.getcwd())
         HTTPServer.__init__(self, *args)
         self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), str_html)
         self._URL_HTML = url_html
@@ -228,7 +237,7 @@ class MyHTTPServer(HTTPServer):
     def browse(self, *args, **kwargs):
         # TODOC
         browser = kwargs.pop('browser', None)
-        timeout = kwargs.pop('timeout', None)
+        timeout = kwargs.pop('timeout', 5)
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
@@ -240,7 +249,10 @@ class MyHTTPServer(HTTPServer):
             webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error into terminal
                 'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
                 browser, self.server_port)]
-            proc = subprocess.Popen(webbrowser_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            with open(os.devnull, 'w') as pipe:
+                proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+            if timeout >= 10:
+                print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
             wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
@@ -259,7 +271,7 @@ class MyHTTPServer(HTTPServer):
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
-    """Enables to log message on logger and modify response header."""
+    """Enables to log message on logger and modifies response header."""
     def log_message(self, format, *args):
         try:
             to_send = "{} - - [{}] {}\n".format(
@@ -322,15 +334,13 @@ def exit_test(logger, list_files=None):
         return False
 
 
-def plot_funnel(test_dir, title="", browser=None, autoraise=True):
+def plot_funnel(test_dir, title="", browser=None):
     """Plots funnel results stored in test_dir and displays in default browser.
 
     Args:
         test_dir (str): path of directory where output files are stored
-        browser (str): (optional) web browser to use for displaying plot
-
-    Returns:
-        None
+        [title] (str): plot title
+        [browser] (str): web browser to use for displaying plot
     """
     list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
     for f in list_files:
