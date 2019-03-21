@@ -1,6 +1,6 @@
 # Binaries
 bin/*
-!bin/pyfunnel.py
+!bin/*.py
 
 # Object files
 *.o
