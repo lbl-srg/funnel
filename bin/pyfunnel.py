@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 #
-# TODO
-#   Create proper package with setup.py so that funnel can be included in other packages with:
-#   setup(dependency_links=['https://github.com/lbl-srg/funnel/tarball/master#egg=package-1.0')
-#
-# TODO
-#   Cf. Kun test case with time series: raise error
-#
 #######################################################
 # Python binding for funnel library: compareAndReport
 # Function that plots results: plot_funnel
