@@ -40,8 +40,7 @@
 static inline double mean(double* arr, int n) {
     double sum = 0;
 
-    for (int i = 0; i < n; i++)
-    sum += arr[i];
+    for (int i = 0; i < n; i++) {sum += arr[i];}
 
     return sum / n;
 }
