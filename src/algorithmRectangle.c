@@ -213,7 +213,6 @@ struct data normalizeData(struct data df, double mx, double my) {
       df_norm.x[i] = df.x[i];
     } else {
       df_norm.x[i] = df.x[i] / mx;
-      printf("%f\n", df_norm.x[i]);
     }
     if equ(my, 0.0) {
       df_norm.y[i] = df.y[i];
