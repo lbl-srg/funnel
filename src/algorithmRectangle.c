@@ -278,8 +278,8 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   double yLen;
 
   // Normalize data.
-  mx = mean(reference.x, reference.n);
-  my = mean(reference.y, reference.n);
+  mx = fabs(mean(reference.x, reference.n));
+  my = fabs(mean(reference.y, reference.n));
   ref_norm = normalizeData(reference, mx, my);
   if equ(mx, 0.0) {
     xLen = tubeSize[0];
@@ -441,8 +441,8 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   double yLen;
 
   // Normalize data.
-  mx = mean(reference.x, reference.n);
-  my = mean(reference.y, reference.n);
+  mx = fabs(mean(reference.x, reference.n));
+  my = fabs(mean(reference.y, reference.n));
   ref_norm = normalizeData(reference, mx, my);
   if equ(mx, 0.0) {
     xLen = tubeSize[0];
