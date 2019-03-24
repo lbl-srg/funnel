@@ -18,6 +18,7 @@ import sys
 import textwrap
 import threading
 import time
+import warnings
 import webbrowser
 try:
     from http.server import HTTPServer, SimpleHTTPRequestHandler # Python 3
@@ -183,12 +184,12 @@ def compareAndReport(
             tol['atolx'],
             tol['atoly'],
             tol['rtolx'],
-            tol['rtoly'])
+            tol['rtoly']
+        )
     except Exception as e:
-        raise RuntimeError("Library call raises exception: {}".format(e))
-
-    sys.stderr.flush()
-    assert retVal == 0, "Binary status code is: {}.".format(retVal)
+        raise RuntimeError("Library call raises exception: {}.".format(e))
+    if retVal != 0:
+        warnings.warn("funnel binary status code is: {}.".format(retVal), RuntimeWarning)
 
     return retVal
 

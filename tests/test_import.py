@@ -71,6 +71,12 @@ def run_pyfunnel(test_dir):
     test = pd.read_csv(os.path.join(test_dir, par['test']))
     par['outputDirectory'] = par['output']
 
+    for t in ['atolx', 'atoly', 'rtolx', 'rtoly']:
+        try:
+            par[t]
+        except KeyError:
+            par[t] = None
+
     rc = pf.compareAndReport(
         ref.iloc(axis=1)[0],
         ref.iloc(axis=1)[1],
