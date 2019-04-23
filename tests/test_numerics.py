@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from test_import import *
 
 if __name__ == "__main__":
@@ -16,4 +17,3 @@ if __name__ == "__main__":
     assert max(dif_err) == 0,\
         "Number of discrepancies between current and reference error values ({}): {} on x, {} on y.".format(
         test_dir, dif_err[0], dif_err[1])
-
