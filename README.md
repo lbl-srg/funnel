@@ -60,8 +60,7 @@ The software has been tested on the following platforms for which a library is p
   * Windows x64
   * Mac OS X
 
-The Python binding has been tested with Python `2.7.*`.
-!!!!! update
+The Python binding has been tested with Python `2.7.*` and `3.7.*`.
 See `requirements.txt` for the required Python packages.
 
 ### Python Binding
