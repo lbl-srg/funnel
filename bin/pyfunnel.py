@@ -171,6 +171,7 @@ def compareAndReport(
     lib.compareAndReport.restype = c_int
 
     # Run
+    log_path = os.path.join(outputDirectory, 'c_funnel.log')
     try:
         retVal = lib.compareAndReport(
             (c_double * len(xReference))(*xReference),
@@ -188,10 +189,10 @@ def compareAndReport(
     except Exception as e:
         raise RuntimeError("Library call raises exception: {}.".format(e))
     if retVal != 0:
-        with open('c_funnel.log') as f:
+        with open(log_path) as f:
             c_stream = f.read()
         print("*** Warning: Funnel binary status code is: {}.\n{}".format(retVal, c_stream))
-    os.unlink('c_funnel.log')
+    # os.unlink(log_path)
 
     return retVal
 

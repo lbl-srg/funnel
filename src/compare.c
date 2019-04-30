@@ -5,6 +5,58 @@
 #define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
 #endif
 
+char *buildPath(
+  const char *outDir,
+  const char *fileName
+) {
+  const char lastChar = outDir[(strlen(outDir)-1)];
+  #ifdef _WIN32
+  /* Windows supports forward and backward slash */
+    bool addSlash = (lastChar == '/' || lastChar == '\\') ? false : true;
+  #else
+    bool addSlash = (lastChar == '/') ? false : true;
+  #endif
+
+  char *fname = NULL;
+  if (addSlash)
+    fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 2) * sizeof(char));
+  else
+    fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
+
+  if (fname == NULL){
+    perror("Error: Failed to allocate memory for fname in writeToFile.");
+  }
+
+  strcpy(fname, outDir);
+
+  #ifdef _WIN32
+  if (addSlash)
+    strcat(fname, "\\");
+  #else
+  if (addSlash)
+    strcat(fname, "/");
+  #endif
+
+  strcat(fname, fileName);
+
+  return fname;
+}
+
+FILE *init_log(
+  const char *outDir,
+  const char *fileName
+) {
+  char *fname = buildPath(outDir, fileName);
+  FILE *fil = fopen(fname, "w+");
+  free(fname);
+
+  if (fil == NULL){
+    perror("Error: Failed to open log.\n");
+  }
+
+  return fil;
+}
+
 /*
  * Function: writeToFile
  * -----------------------
@@ -20,45 +72,9 @@ int writeToFile(
   const char *fileName,
   struct data *data
 ) {
-
   int i = 0;
-  const char lastChar = outDir[(strlen(outDir)-1)];
-  #ifdef _WIN32
-  /* Windows supports forward and backward slash */
-    bool addSlash = (lastChar == '/' || lastChar == '\\') ? false : true;
-  #else
-    bool addSlash = (lastChar == '/') ? false : true;
-  #endif
 
-  int rc_mkdir = mkdir_p(outDir);
-  if (rc_mkdir != 0) {
-    fprintf(log_file, "Error: Failed to create directory: %s\n", outDir);
-    return -1;
-  }
-
-  char* fname = NULL;
-  if (addSlash)
-    fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 2) * sizeof(char));
-  else
-    fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
-
-  if (fname == NULL){
-    fprintf(log_file, "Error: Failed to allocate memory for fname in writeToFile.\n");
-    return -1;
-  }
-
-  strcpy(fname, outDir);
-
-  #ifdef _WIN32
-  if (addSlash)
-    strcat(fname, "\\");
-  #else
-  if (addSlash)
-    strcat(fname, "/");
-  #endif
-
-  strcat(fname, fileName);
-
+  char *fname = buildPath(outDir, fileName);
   FILE *fil = fopen(fname, "w+");
   free(fname);
 
@@ -72,18 +88,6 @@ int writeToFile(
     fprintf(fil, "%lf,%lf\n", data->x[i], data->y[i]);
   }
 
-/*  if (data.validateReport.errors.original.n != 0) {
-    fprintf(f5, "The test result is invalid.\n");
-    fprintf(f5, "There are errors at %zu points.\n", data.validateReport.errors.original.n);
-    for (i =0; i < data.validateReport.errors.diff.n; i++){
-      fprintf(f5, "%lf,%lf\n",
-          data.validateReport.errors.diff.x[i],
-          data.validateReport.errors.diff.y[i]);
-    }
-  }
-  else
-    fprintf(f5, "The test result is valid.\n");
-*/
   fclose(fil);
 
   return 0;
@@ -140,24 +144,28 @@ void freeData (struct data *dat) {
  *   is not needed.
  */
 int compareAndReport(
-  const double* tReference,
-  const double* yReference,
+  const double *tReference,
+  const double *yReference,
   const size_t nReference,
-  const double* tTest,
-  const double* yTest,
+  const double *tTest,
+  const double *yTest,
   const size_t nTest,
-  const char * outputDirectory,
+  const char *outputDirectory,
   const double atolx,
   const double atoly,
   const double rtolx,
-  const double rtoly){
-
-  init_log();
-
+  const double rtoly
+) {
   int retVal;
-
+  int rc_mkdir = mkdir_p(outputDirectory);
   struct data * baseCSV = newData(tReference, yReference, nReference);
   struct data * testCSV = newData(tTest, yTest, nTest);
+
+  if (rc_mkdir != 0) {
+    fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
+    return -1;
+  }
+  log_file = init_log(outputDirectory, "c_funnel.log");
 
   if (!equ(baseCSV->x[0], testCSV->x[0])){
     fprintf(log_file, "Error: Reference and test data minimum x values are different.\n");
