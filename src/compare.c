@@ -227,6 +227,6 @@ int compareAndReport(
   end:
     freeData(baseCSV);
     freeData(testCSV);
-    close_log();
+    fclose(log_file);
     return retVal;
 }

@@ -8,6 +8,4 @@ extern FILE *log_file;
 
 int init_log(void);
 
-int close_log(void);
-
 #endif /* COMMONS_H_ */

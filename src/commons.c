@@ -11,10 +11,3 @@ int init_log(void) {
     }
     return 0;
 }
-
-int close_log(void) {
-    if (log_file != NULL){
-        fclose(log_file);
-    }
-    return 0;
-}
