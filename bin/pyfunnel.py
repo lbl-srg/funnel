@@ -192,7 +192,7 @@ def compareAndReport(
         with open(log_path) as f:
             c_stream = f.read()
         print("*** Warning: Funnel binary status code is: {}.\n{}".format(retVal, c_stream))
-    # os.unlink(log_path)
+    os.unlink(log_path)
 
     return retVal
 
