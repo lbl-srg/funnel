@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os, sys, shutil
@@ -33,7 +34,7 @@ if __name__ == "__main__":
         try:
             with open(os.path.join(cmake_test_dir, d, 'test_log.json'), 'r') as f:
                 test_log = json.load(f)
-        
+
             dif_err = test_log['dif_err']
 
             if max(dif_err) != 0:
@@ -45,11 +46,11 @@ if __name__ == "__main__":
 {:%} x points and {:%} y points.""".format(test_log['test_name'], test_log['test_dir'], dif_err[0], dif_err[1]))
                     pf.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original', autoraise=False)
                     pf.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New', autoraise=False)
-                    
+
                     replace = six.moves.input(
 """Do you want to keep new results from {} and replace results stored in {}?
 Yes (y) or no (n):""".format(test_log['test_name'], test_log['test_dir']))
-                    
+
                     if re.match('y', replace,re.I):
                         file_names = ['errors.csv', 'lowerBound.csv', 'reference.csv', 'test.csv', 'upperBound.csv']
                         for f in file_names:

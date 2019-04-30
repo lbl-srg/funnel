@@ -60,7 +60,8 @@ The software has been tested on the following platforms for which a library is p
   * Windows x64
   * Mac OS X
 
-The Python binding has been tested with Python `2.7.*`. See `requirements.txt` for the required Python packages.
+The Python binding has been tested with Python `2.7.*` and `3.7.*`.
+See `requirements.txt` for the required Python packages.
 
 ### Python Binding
 
@@ -70,47 +71,59 @@ The module `./bin/pyfunnel.py` provides the following functions:
   * `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
     Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
     into the output directory (`./results` by default).
-    Note: at least one absolute or relative tolerance parameter must be provided for each axis.
+    Note: At least one absolute or relative tolerance parameter must be provided for each axis.
     See function docstring for further details.
 
   * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
-    Displays plot in default browser.
-    Note: on Linux with Chrome as default browser, if there is no existing Chrome window open at
-    function call, an error log is output to the terminal.
-    You might use option `browser="firefox"` as a workaround or call function with a
-    web browser window already open. See function docstring for further details.
+    Displays plot in default browser. See function docstring for further details.
 
 The module might also be called directly from terminal:
 ```
-Usage (from terminal): {python interpreter} {path to pyfunnel.py} [arguments]
-Run funnel library from terminal.
+usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT]
+                   [--atolx ATOLX] [--atoly ATOLY] [--rtolx RTOLX]
+                   [--rtoly RTOLY]
 
-Arguments:
-  --reference (str)   (req.)  Path of CSV file with reference data
-  --test      (str)   (req.)  Path of CSV file with test data
-  --output    (str)   (opt.)  Path of directory to store output data (default ./results)
-  --atolx     (float) (opt.†) Absolute tolerance in x direction
-  --atoly     (float) (opt.†) Absolute tolerance in y direction
-  --rtolx     (float) (opt.†) Relative tolerance in x direction
-  --rtoly     (float) (opt.†) Relative tolerance in y direction
+Run funnel binary from terminal.
 
-  †: At least one absolute or relative tolerance parameter must be provided for each axis.
+Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Path of directory to store output data
+  --atolx ATOLX         Absolute tolerance along x axis
+  --atoly ATOLY         Absolute tolerance along y axis
+  --rtolx RTOLX         Relative tolerance along x axis
+  --rtoly RTOLY         Relative tolerance along y axis
+
+required named arguments:
+  --reference REFERENCE
+                        Path of CSV file with reference data
+  --test TEST           Path of CSV file with test data
+
+Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for each axis.
+Relative tolerance is relative to the range of x or y values.
+
+Typical use from terminal:
+$ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results
+
+Full documentation at https://github.com/lbl-srg/funnel
 ```
 
 ### Example
 
 From a Python shell with `./tests/test_bin` as the current working directory, type
 ```python
->>> import os, sys
+>>> import os
+>>> import sys
 >>> import pandas as pd
 >>> pyfunnel_dir = os.path.join(os.path.pardir, os.path.pardir, 'bin')
 >>> sys.path.append(pyfunnel_dir)
->>> import pyfunnel as pf
+>>> import pyfunnel
 >>> ref = pd.read_csv('trended.csv')
 >>> test = pd.read_csv('simulated.csv')
->>> pf.compareAndReport(xReference=ref.iloc(axis=1)[0], yReference=ref.iloc(axis=1)[1],
+>>> pyfunnel.compareAndReport(xReference=ref.iloc(axis=1)[0], yReference=ref.iloc(axis=1)[1],
 ... xTest=test.iloc(axis=1)[0], yTest=test.iloc(axis=1)[1], atolx=0.002, atoly=0.002)
->>> pf.plot_funnel('results')
+>>> pyfunnel.plot_funnel('results')
 ```
 Or from a terminal with `./tests/test_bin` as the current working directory, type
 ```

@@ -1,31 +1,38 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
 #######################################################
 # Python binding for funnel library: compareAndReport
 # Function that plots results: plot_funnel
 #######################################################
 from __future__ import absolute_import, division, print_function, unicode_literals
-
-import os
-import sys
-import platform
-import six
-import webbrowser
-import re
-import time
-import threading
+# Python standard library imports.
 from ctypes import cdll, POINTER, c_double, c_int, c_char_p
+import io
+import numbers
+import os
+import platform
+import re
+import subprocess
+import sys
+import textwrap
+import threading
+import time
+import warnings
+import webbrowser
 try:
     from http.server import HTTPServer, SimpleHTTPRequestHandler # Python 3
 except ImportError:
     from SimpleHTTPServer import BaseHTTPServer
     HTTPServer = BaseHTTPServer.HTTPServer
     from SimpleHTTPServer import SimpleHTTPRequestHandler # Python 2
+# Third-party module or package imports.
+import six
+# Code repository sub-package imports.
 
 
-def get_lib_path(project_name):
-
-    """
-    Guess the library absolute path. 
+def _get_lib_path(project_name):
+    """Infers the library absolute path.
 
     Args:
         project_name (str): project name
@@ -33,7 +40,6 @@ def get_lib_path(project_name):
     Returns:
         str: guessed library path e.g. ~/project_name/lib/darwin64/lib{project_name}.so
     """
-
     lib_path = os.path.join(os.path.dirname(__file__), os.path.pardir, 'lib')
     os_name = platform.system()
     os_machine = platform.machine()
@@ -51,8 +57,8 @@ def get_lib_path(project_name):
         lib_path = os.path.join(lib_path, 'darwin64', 'lib{}.dylib'.format(project_name))
     else:
         raise RuntimeError('Could not detect standard (system, architecture).')
-    
-    return lib_path
+
+    return os.path.abspath(lib_path)
 
 
 def compareAndReport(
@@ -64,18 +70,18 @@ def compareAndReport(
     atolx=None,
     atoly=None,
     rtolx=None,
-    rtoly=None):
-    """
-    Call funnel binary with list-like objects as x, y reference and test values.
-    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` 
-    into the output directory (`./results` by default).
-    Note: at least one absolute or relative tolerance parameter must be provided for each axis.
+    rtoly=None
+):
+    """Runs funnel binary with list-like objects as x, y reference and test values.
+
+    Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
+    `test.csv` into the output directory (`./results` by default).
 
     Args:
-        xReference (list-like): x reference values
-        yReference (list-like): y reference values
-        xTest (list-like): x test values
-        yTest (list-like): y test values
+        xReference (list-like of floats): x reference values
+        yReference (list-like of floats): y reference values
+        xTest (list-like of floats): x test values
+        yTest (list-like of floats): y test values
         outputDirectory (str): path of directory to store output files
         atolx (float): absolute tolerance along x axis
         atoly (float): absolute tolerance along y axis
@@ -84,7 +90,13 @@ def compareAndReport(
 
     Returns:
         None
+
+    Note: At least one absolute or relative tolerance parameter must be provided for each axis.
+    Relative tolerance is relative to the range of x or y values.
+
+    Full documentation at https://github.com/lbl-srg/funnel.
     """
+
     # Check arguments.
     ## Logic
     assert (atolx is not None) or (rtolx is not None),\
@@ -103,14 +115,22 @@ def compareAndReport(
     assert len(xTest) == len(yTest),\
         "xTest and yTest must have the same length."
 
-    # Convert arrays to lists (to support np.array and pd.Series).
+    # Convert arrays into lists (to support np.array and pd.Series).
     try:
         xReference = list(xReference)
         yReference = list(yReference)
         xTest = list(xTest)
         yTest = list(yTest)
     except Exception as e:
-        raise TypeError("Input data arrays could not be converted to lists: {}".format(e))
+        raise TypeError("Input data could not be converted into lists: {}".format(e))
+    # Test numeric type.
+    all_data = xReference + yReference + xTest + yTest
+    num_check = [isinstance(x, numbers.Real) for x in all_data]
+    if not min(num_check):
+        idx = filter(lambda i: not num_check[i], range(len(num_check)))
+        raise TypeError("The following input values are not numeric: {}".format(
+            [all_data[i] for i in idx]
+        ))
 
     # Convert None tolerance to 0.
     tol = dict()
@@ -126,9 +146,12 @@ def compareAndReport(
             if tol[k] < 0:
                 raise ValueError("Tolerance {} must be positive.".format(k))
 
+    # Encode string arguments (in Python 3 c_char_p takes bytes object).
+    outputDirectory = outputDirectory.encode('utf-8')
+
     # Load library.
     try:
-        lib_path = get_lib_path('funnel')
+        lib_path = _get_lib_path('funnel')
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
         raise RuntimeError("Could not load funnel library with this path: {}. {}".format(lib_path, e))
@@ -161,82 +184,139 @@ def compareAndReport(
             tol['atolx'],
             tol['atoly'],
             tol['rtolx'],
-            tol['rtoly'])
+            tol['rtoly']
+        )
     except Exception as e:
-        raise RuntimeError("Library call raises exception: {}".format(e))
-
-    sys.stderr.flush()
-    assert retVal == 0, "Binary status code is: {}.".format(retVal)
+        raise RuntimeError("Library call raises exception: {}.".format(e))
+    if retVal != 0:
+        warnings.warn("funnel binary status code is: {}.".format(retVal), RuntimeWarning)
 
     return retVal
 
 
-def plot_funnel(test_dir, title="", browser=None, autoraise=True):
-    """
-    Plot funnel results stored in test_dir. Display plot in default browser.
-    Note: On Linux with Chrome as default browser, if there is no existing Chrome window open at 
-    function call, an error log is output to the terminal. 
-    Use option `browser="firefox"` or `browser="safari"` as a workaround if needed.
+class MyHTTPServer(HTTPServer):
+    """Adds custom server_launch, server_close and browse methods."""
 
-    Args:
-        test_dir (str): path of directory where output files are stored
-        browser (str): (optional) web browser to use for displaying plot
+    def __init__(self, *args, **kwargs):
+        """kwargs:
 
-    Returns:
-        None
+            str_html (str): HTML content to serve if URL ends with url_html
+            url_html (str): pattern used to serve str_html if URL ends with it
+            browse_dir (str): path of directory where to launch the server
+        """
+        str_html = kwargs.pop('str_html', None)
+        url_html = kwargs.pop('url_html', None)
+        browse_dir = kwargs.pop('browse_dir', os.getcwd())
+        HTTPServer.__init__(self, *args)
+        self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), str_html)
+        self._URL_HTML = url_html
+        self._BROWSE_DIR = browse_dir
+        self.logger = io.BytesIO()
 
-    @todo:
-        HTTPServer class extension with __init__ to specify STDERR handle (hard coded in current version)
-    """
+    def server_launch(self):
+        self.thread = threading.Thread(target=self.serve_forever)
+        self.thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
+        self.thread.start()
 
-    list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
-    for f in list_files:
-        file_path = os.path.join(test_dir, f)
-        assert os.path.isfile(file_path), "No such file: {}".format(file_path)
+    def server_close(self):
+        # Invoke to close logger.
+        threadd = threading.Thread(target=self.shutdown)  # makes execution stall on Windows if main thread
+        threadd.daemon = True
+        threadd.start()
+        try:
+            self.logger.close()
+        except Exception as e:
+            print('Could not close logger: {}'.format(e))
 
-    class MyHTTPServer(HTTPServer):
-        def __init__(self, *args):
-            # Create log file in current directory.
-            if os.path.isfile('foo.log'):
-                os.chmod('foo.log', 0o777)
-                os.remove('foo.log')
-            self.logger = os.fdopen(os.open('foo.log', os.O_CREAT | os.O_RDWR, 0), 'r+', 0)
-            HTTPServer.__init__(self, *args)
-
-        def server_close(self):
-            # Invoke to close logger and delete from disk.
-            try:
-                self.logger.close()  
-                os.chmod('foo.log', 0o777)
-                os.remove('foo.log')
-            except Exception as e:
-                print('Could not close server properly because: {}'.format(e))
+    def browse(self, *args, **kwargs):
+        # TODOC
+        browser = kwargs.pop('browser', None)
+        timeout = kwargs.pop('timeout', 5)
+        # Move to directory with *.csv before launching local server.
+        cur_dir = os.getcwd()
+        os.chdir(self._BROWSE_DIR)
+        try:
+            self.server_launch()
+            if browser is not None:
+                webbrowser.get(browser)  # throws exception in case of missing browser
+                browser = '"{}"'.format(browser)
+            webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error into terminal
+                'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
+                browser, self.server_port)]
+            with open(os.devnull, 'w') as pipe:
+                proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+            if timeout >= 10:
+                print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
+            wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
+        except KeyboardInterrupt:
+            print('KeyboardInterrupt')
+        except Exception as e:
+            print(e)
+        finally:
+            os.chdir(cur_dir)
+            try:  # objects may not be defined in case of exception
+                self.server_close()
+                proc.kill()
+                if not wait_status:
+                    print('Communication between browser and server failed: '
+                        'check that the browser is not running in private mode.')
+            except:
                 pass
 
-    class CORSRequestHandler(SimpleHTTPRequestHandler):
-        def log_message(self, format, *args):
-            # Overriden to output to server.logger.
-            self.server.logger.write("%s - - [%s] %s\n" %
-                         (self.client_address[0],
-                          self.log_date_time_string(),
-                          format%args))        
 
-        def end_headers(self):
-            self.send_header('Access-Control-Allow-Origin', '*')
-            SimpleHTTPRequestHandler.end_headers(self)
+class CORSRequestHandler(SimpleHTTPRequestHandler):
+    """Enables to log message on logger and modifies response header."""
+    def log_message(self, format, *args):
+        try:
+            to_send = "{} - - [{}] {}\n".format(
+                self.client_address[0],
+                self.log_date_time_string(),
+                format%args
+            )
+            self.server.logger.write(to_send.encode('utf8'))
+        except ValueError:  # logger closed
+            pass
+        except Exception as e:
+            print(e)
 
-    # based on https://stackoverflow.com/a/2785908/1056345                                                                                                                                                                                                                                                                         
-    def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
-        must_end = time.time() + timeout
-        while time.time() < must_end:
-            if somepredicate(*args, **kwargs):
-                return True
-            time.sleep(period)
-        return False
-    
-    def exit_test(handler, list_files):
-        handler.seek(0)
-        content = handler.read()
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin'.encode('utf8'),
+            '*'.encode('utf8'))
+        self.send_header('Access-Control-Allow-Methods'.encode('utf8'),
+            'GET, POST, OPTIONS'.encode('utf8'))
+        self.send_header('Access-Control-Allow-Headers'.encode('utf8'),
+            'X-Requested-With'.encode('utf8'))
+        SimpleHTTPRequestHandler.end_headers(self)
+
+    def send_head(self):
+        if (self.server._URL_HTML is not None) and \
+           (self.translate_path(self.path).endswith(self.server._URL_HTML)):
+            f = io.BytesIO()
+            f.write(self.server._STR_HTML.encode('utf8'))
+            length = f.tell()
+            f.seek(0)
+            self.send_response(200)
+            self.send_header("Content-type".encode('utf8'), "text/html".encode('utf8'))
+            self.send_header("Content-Length".encode('utf8'), str(length).encode('utf8'))
+            self.end_headers()
+            return f
+        else:
+            return SimpleHTTPRequestHandler.send_head(self)
+
+
+def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
+    """Waits until some predicate is true."""
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        if somepredicate(*args, **kwargs):
+            return True
+        time.sleep(period)
+    return False
+
+
+def exit_test(logger, list_files=None):
+    content = logger.getvalue().decode('utf8')
+    if list_files is not None:
         raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
         for i, l in enumerate(list_files):
             if i == 0:
@@ -244,44 +324,33 @@ def plot_funnel(test_dir, title="", browser=None, autoraise=True):
             else:
                 pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
         return bool(re.search(pattern, content))
-    
-    def clean():
-        sys.stderr = open(os.devnull, 'w')
-        threadd = threading.Thread(target=server.shutdown)  # makes execution stall on Windows if main thread
-        threadd.daemon = True
-        threadd.start()        
-        server.server_close()
-        sys.stderr = sys.__stderr__
-        os.chdir(cur_dir)
-
-    # Move to directory with *.csv before launching local server.
-    cur_dir = os.getcwd()
-    os.chdir(test_dir)
-    
-    try:
-        server = MyHTTPServer(('', 0), CORSRequestHandler)
-        thread = threading.Thread(target=server.serve_forever)  # multiprocessing.Process yields class pickle error on Windows
-        thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
-        thread.start()
-        content = re.sub('\$SERVER_PORT', str(server.server_port), template_html)
-        content = re.sub('\$TITLE', title, content)
-        with open('plot.html', 'w') as f:
-            f.write(content)
-        webb = webbrowser.get(browser)
-        webb.open('http://localhost:{}/plot.html'.format(server.server_port))
-        wait_until(exit_test, 5, 0.1, server.logger, list_files)
-    except Exception as e:  # especially for KeyboardInterrupt
-        print(e)
-        pass
-    finally:
-        clean()
-
-    return
+    else:
+        return False
 
 
-template_html = """
+def plot_funnel(test_dir, title="", browser=None):
+    """Plots funnel results stored in test_dir and displays in default browser.
+
+    Args:
+        test_dir (str): path of directory where output files are stored
+        [title] (str): plot title
+        [browser] (str): web browser to use for displaying plot
+    """
+    list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
+    for f in list_files:
+        file_path = os.path.join(test_dir, f)
+        assert os.path.isfile(file_path), "No such file: {}".format(file_path)
+
+    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+    server = MyHTTPServer(('', 0), CORSRequestHandler,
+        str_html=content, url_html='funnel', browse_dir=test_dir)
+    server.browse(list_files, browser=browser, timeout=5)
+
+
+_TEMPLATE_HTML = """
 <html>
 <head>
+  <meta charset="utf-8"/>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
@@ -330,27 +399,27 @@ template_html = """
         var plotDiv = document.getElementById("plot");
         var traces = [
             {
-                x: data['err'].x, 
+                x: data['err'].x,
                 y: data['err'].y,
                 name: 'error',
                 xaxis: 'x',
                 yaxis: 'y2',
-            }, 
+            },
             {
-                x: data['test'].x, 
+                x: data['test'].x,
                 y: data['test'].y,
                 name: 'test',
-            }, 
+            },
             {
                 name: 'lower bound',
-                x: data['low'].x, 
+                x: data['low'].x,
                 y: data['low'].y,
                 showlegend: false,
                 line: {width: 0},
                 mode: 'lines'
             },
             {
-                x: data['ref'].x, 
+                x: data['ref'].x,
                 y: data['ref'].y,
                 name: 'reference',
                 fillcolor: 'rgba(68, 68, 68, 0.3)',
@@ -358,14 +427,14 @@ template_html = """
             },
             {
                 name: 'upper bound',
-                x: data['upp'].x, 
+                x: data['upp'].x,
                 y: data['upp'].y,
                 showlegend: false,
                 fillcolor: 'rgba(68, 68, 68, 0.3)',
                 fill: 'tonexty',
                 line: {width: 0},
                 mode: 'lines'
-            },   
+            },
         ];
         var layout = {
             title: {text: '$TITLE'},
@@ -392,7 +461,7 @@ template_html = """
                 title: 'error [y]',
             },
         };
-        Plotly.newPlot('myDiv', traces, layout);
+        Plotly.newPlot('myDiv', traces, layout, {responsive: true});
     };
 
     makeplot();
@@ -401,15 +470,25 @@ template_html = """
 </html>
 """
 
+
 if __name__ == "__main__":
     import argparse
     import csv
 
     # Configure the argument parser.
-    parser = argparse.ArgumentParser(description=
-    """Run funnel library from terminal.
-    Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values.
-    """
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent("""\
+            Run funnel binary from terminal.\n
+            Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
+        """),
+        epilog=textwrap.dedent("""\
+            Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for each axis.
+            Relative tolerance is relative to the range of x or y values.\n
+            Typical use from terminal:
+            $ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results\n
+            Full documentation at https://github.com/lbl-srg/funnel
+        """)
     )
     required_named = parser.add_argument_group('required named arguments')
 
@@ -430,22 +509,22 @@ if __name__ == "__main__":
     parser.add_argument(
         "--atolx",
         type=float,
-        help="Absolute tolerance in x direction"
+        help="Absolute tolerance along x axis"
     )
     parser.add_argument(
         "--atoly",
         type=float,
-        help="Absolute tolerance in y direction"
+        help="Absolute tolerance along y axis"
     )
     parser.add_argument(
         "--rtolx",
         type=float,
-        help="Relative tolerance in x direction"
+        help="Relative tolerance along x axis"
     )
     parser.add_argument(
         "--rtoly",
         type=float,
-        help="Relative tolerance in y direction"
+        help="Relative tolerance along y axis"
     )
 
     # Parse the arguments.
@@ -488,5 +567,3 @@ if __name__ == "__main__":
     )
 
     sys.exit(rc)
-
-    

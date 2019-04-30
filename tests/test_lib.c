@@ -54,12 +54,12 @@ int main() {
         fprintf(stderr, "GetProcAddress failed with message: %d\n", GetLastError());
         return 1;
     }
-    
+
     #else                   /* Mac or Linux                */
 
-    #if defined(__linux__)  /* Linux */ 
+    #if defined(__linux__)  /* Linux */
     libname = "libfunnel.so";
-    #else                   /* Mac */ 
+    #else                   /* Mac */
     libname = "libfunnel.dylib";
     #endif
 
@@ -86,7 +86,7 @@ int main() {
     struct data baseCSV = read_csv("trended.csv", 1);
     struct data testCSV = read_csv("simulated.csv", 1);
 
-    int exiVal = compareAndReport(
+    int exiVal = compare_func(
         baseCSV.x,
         baseCSV.y,
         baseCSV.n,
@@ -103,12 +103,12 @@ int main() {
     if (exiVal != 0)  {
         fprintf(stderr, "Return code from compareAndReport: %i\n", exiVal);
         return exiVal;
-    }    
-    
+    }
+
     #if defined(_WIN32)     /* Win32 or Win64              */
     CloseHandle(handle);
     #else
-    dlclose(handle); 
+    dlclose(handle);
     #endif
 
     return 0;

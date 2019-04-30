@@ -25,6 +25,10 @@ double * getListValues(node_t* head);
 
 void lastNodeDeletion(node_t* head);
 
+struct data normalizeData(struct data df, double mx, double my);
+
+struct data denormalizeData(struct data df, double mx, double my);
+
 struct data calculateLower(struct data reference, double* tubeSize);
 
 struct data calculateUpper(struct data reference, double* tubeSize);
