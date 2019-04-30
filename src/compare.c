@@ -232,10 +232,9 @@ int compareAndReport(
     goto end;
   }
 
-  freeData(baseCSV);
-  freeData(testCSV);
-
   end:
+    freeData(baseCSV);
+    freeData(testCSV);
     fclose(log_file);
     return retVal;
 }
