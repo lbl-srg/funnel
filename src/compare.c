@@ -5,6 +5,15 @@
 #define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
 #endif
 
+/*
+ * Function: buildPath
+ * -----------------------
+ *   constructs a file path
+ *
+ *   outDir: directory of file
+ *   fileName: file name
+ */
+
 char *buildPath(
   const char *outDir,
   const char *fileName
@@ -41,6 +50,17 @@ char *buildPath(
 
   return fname;
 }
+
+/*
+ * Function: init_log
+ * -----------------------
+ *   opens a file for logging the numerical processing errors
+ *   (all other errors like memory, file access, bad argument...
+ *   are still output to stderr.)
+ *
+ *   outDir: directory of logging file
+ *   fileName: logging file name
+ */
 
 FILE *init_log(
   const char *outDir,
