@@ -2,7 +2,7 @@
 #include "compare.h"
 
 #ifndef equ
-#define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */ 
+#define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
 #endif
 
 /*
@@ -17,8 +17,9 @@
 
 int writeToFile(
   const char *outDir,
-  const char* fileName,
-  struct data* data) {
+  const char *fileName,
+  struct data *data
+) {
 
   int i = 0;
   const char lastChar = outDir[(strlen(outDir)-1)];
@@ -31,7 +32,8 @@ int writeToFile(
 
   int rc_mkdir = mkdir_p(outDir);
   if (rc_mkdir != 0) {
-    fprintf(stderr, "Error: Failed to create directory: %s\n", outDir);
+    fprintf(log_file, "Error: Failed to create directory: %s\n", outDir);
+    return -1;
   }
 
   char* fname = NULL;
@@ -41,7 +43,7 @@ int writeToFile(
     fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
 
   if (fname == NULL){
-    fprintf(stderr, "Error: Failed to allocate memory for fname in writeToFile.\n");
+    fprintf(log_file, "Error: Failed to allocate memory for fname in writeToFile.\n");
     return -1;
   }
 
@@ -61,7 +63,7 @@ int writeToFile(
   free(fname);
 
   if (fil == NULL){
-    fprintf(stderr, "Error: Failed to open '%s' in writeToFile.\n", fname);
+    fprintf(log_file, "Error: Failed to open '%s' in writeToFile.\n", fname);
     return -1;
   }
 
@@ -90,18 +92,19 @@ int writeToFile(
 struct data *newData(
   const double x[],
   const double y[],
-  size_t n) {
+  size_t n
+) {
 
   struct data *retVal = malloc (sizeof (struct data));
   if (retVal == NULL){
-    fputs("Error: Failed to allocate memory for data.\n", stderr);
+    fputs("Error: Failed to allocate memory for data.\n", log_file);
     return NULL;
   }
   // Try to allocate vector data, free structure if fail.
 
   retVal->x = malloc (n * sizeof (double));
   if (retVal->x == NULL) {
-    fputs("Error: Failed to allocate memory for data.x.\n", stderr);
+    fputs("Error: Failed to allocate memory for data.x.\n", log_file);
     free (retVal);
     return NULL;
   }
@@ -109,7 +112,7 @@ struct data *newData(
 
   retVal->y = malloc (n * sizeof (double));
   if (retVal->y == NULL) {
-    fputs("Error: Failed to allocate memory for data.y.\n", stderr);
+    fputs("Error: Failed to allocate memory for data.y.\n", log_file);
     free (retVal->x);
     free (retVal);
     return NULL;
@@ -149,18 +152,22 @@ int compareAndReport(
   const double rtolx,
   const double rtoly){
 
+  init_log();
+
   int retVal;
 
   struct data * baseCSV = newData(tReference, yReference, nReference);
   struct data * testCSV = newData(tTest, yTest, nTest);
 
   if (!equ(baseCSV->x[0], testCSV->x[0])){
-    fprintf(stderr, "Error: Reference and test data minimum x values are different.\n");
-    return 1;    
+    fprintf(log_file, "Error: Reference and test data minimum x values are different.\n");
+    retVal = 1;
+    goto end;
   }
   if (!equ(baseCSV->x[baseCSV->n - 1], testCSV->x[testCSV->n - 1])){
-    fprintf(stderr, "Error: Reference and test data maximum x values are different.\n");
-    return 1;    
+    fprintf(log_file, "Error: Reference and test data maximum x values are different.\n");
+    retVal = 1;
+    goto end;
   }
 
   struct tolerances tolerances;
@@ -178,46 +185,48 @@ int compareAndReport(
 
   // Validate test curve and generate error report
   if (lowerCurve.n == 0 || upperCurve.n == 0){
-    fputs("Error: lower or upper curve has 0 elements.\n", stderr);
-    return 1;
+    fputs("Error: lower or upper curve has 0 elements.\n", log_file);
+    retVal = 1;
+    goto end;
   }
   struct reports validateReport;
 
   retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
   if (retVal != 0){
-    fputs("Error: Failed to run validate function.\n", stderr);
-    return retVal;
+    fputs("Error: Failed to run validate function.\n", log_file);
+    goto end;
   }
 
   /* Write data to files */
   retVal = writeToFile(outputDirectory, "reference.csv", baseCSV);
   if (retVal != 0){
-    fputs("Error: Failed to write reference.csv in output directory.\n", stderr);
-    return retVal;
+    fputs("Error: Failed to write reference.csv in output directory.\n", log_file);
+    goto end;
   }
   retVal = writeToFile(outputDirectory, "lowerBound.csv", &lowerCurve);
   if (retVal != 0){
-    fputs("Error: Failed to write lowerBound.csv in output directory.\n", stderr);
-    return retVal;
+    fputs("Error: Failed to write lowerBound.csv in output directory.\n", log_file);
+    goto end;
   }
   retVal = writeToFile(outputDirectory, "upperBound.csv", &upperCurve);
   if (retVal != 0){
-    fputs("Error: Failed to write upperBound.csv in output directory.\n", stderr);
-    return retVal;
+    fputs("Error: Failed to write upperBound.csv in output directory.\n", log_file);
+    goto end;
   }
   retVal = writeToFile(outputDirectory, "test.csv", testCSV);
   if (retVal != 0){
-    fputs("Error: Failed to write test.csv in output directory.\n", stderr);
-    return retVal;
+    fputs("Error: Failed to write test.csv in output directory.\n", log_file);
+    goto end;
   }
   retVal = writeToFile(outputDirectory, "errors.csv", &validateReport.errors.diff);
   if (retVal != 0){
-    fputs("Error: Failed to write errors.csv in output directory.\n", stderr);
-    return retVal;
+    fputs("Error: Failed to write errors.csv in output directory.\n", log_file);
+    goto end;
   }
 
-  freeData(baseCSV);
-  freeData(testCSV);
-
-  return retVal;
+  end:
+    freeData(baseCSV);
+    freeData(testCSV);
+    close_log();
+    return retVal;
 }

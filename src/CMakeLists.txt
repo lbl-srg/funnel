@@ -1,11 +1,11 @@
 # CMakeLists.txt in root/src
 
-set(src_files algorithmRectangle.c compare.c main.c mkdir_p.c readCSV.c tube.c tubeSize.c)
-set(hdr_files algorithmRectangle.h compare.h mkdir_p.h readCSV.h tube.h tubeSize.h)
+set(src_files algorithmRectangle.c compare.c main.c mkdir_p.c readCSV.c tube.c tubeSize.c commons.c)
+set(hdr_files algorithmRectangle.h compare.h mkdir_p.h readCSV.h tube.h tubeSize.h commons.h)
 
 message("Project will be compiled from the following source and header files:")
 foreach(f ${src_files} ${hdr_files})
-    message(${f})   
+    message(${f})
 endforeach()
 
 # Add library with both header and source files.

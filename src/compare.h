@@ -12,6 +12,7 @@
 #include "tube.h"
 #include "tubeSize.h"
 #include "mkdir_p.h"
+#include "commons.h"
 
 #define MAX 100
 
@@ -33,6 +34,9 @@ int compareAndReport(
   const double atolx,
   const double atoly,
   const double rtolx,
-  const double rtoly);
+  const double rtoly
+);
+
+FILE *log_file;
 
 #endif /* COMPARE_H_ */
