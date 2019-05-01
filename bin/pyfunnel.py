@@ -259,7 +259,7 @@ class MyHTTPServer(HTTPServer):
             os.chdir(cur_dir)
             try:  # objects may not be defined in case of exception
                 self.server_close()
-                proc.kill()
+                proc.terminate()
                 if not wait_status:
                     print('Communication between browser and server failed: '
                         'check that the browser is not running in private mode.')
