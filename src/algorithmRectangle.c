@@ -55,7 +55,7 @@ node_t * createNode() {
   temp = malloc(sizeof(node_t));
   if (temp == NULL){
 	  fputs("Error: Failed to allocate memory for temp.\n", stderr);
-      exit(1);
+    exit(1);
   }
   temp->next = NULL;
   return temp;
@@ -145,7 +145,7 @@ double * getListValues(node_t* head) {
   double *value = malloc(sizeof(double) * size);
   if (value == NULL){
 	  fputs("Error: Failed to allocate memory for value.\n", stderr);
-      exit(1);
+    exit(1);
   }
   memset(value,0,sizeof(double)*size);
 
@@ -180,7 +180,7 @@ void lastNodeDeletion(node_t* head) {
   node_t* toDelLast;
   node_t* preNode;
     if(head == NULL) {
-        printf(" There is no element in the list.");
+        printf("There is no element in the list.");
     } else {
       toDelLast = head;
         preNode = head;

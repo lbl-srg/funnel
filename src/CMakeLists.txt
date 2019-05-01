@@ -5,7 +5,7 @@ set(hdr_files algorithmRectangle.h compare.h mkdir_p.h readCSV.h tube.h tubeSize
 
 message("Project will be compiled from the following source and header files:")
 foreach(f ${src_files} ${hdr_files})
-    message(${f})   
+    message(${f})
 endforeach()
 
 # Add library with both header and source files.
