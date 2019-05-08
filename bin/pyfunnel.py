@@ -145,6 +145,9 @@ def compareAndReport(
             if tol[k] < 0:
                 raise ValueError("Tolerance {} must be positive.".format(k))
 
+    # Configure log file path.
+    log_path = os.path.join(outputDirectory, 'c_funnel.log')
+
     # Encode string arguments (in Python 3 c_char_p takes bytes object).
     outputDirectory = outputDirectory.encode('utf-8')
 
@@ -171,7 +174,6 @@ def compareAndReport(
     lib.compareAndReport.restype = c_int
 
     # Run
-    log_path = os.path.join(outputDirectory, 'c_funnel.log')
     try:
         retVal = lib.compareAndReport(
             (c_double * len(xReference))(*xReference),
@@ -259,7 +261,7 @@ class MyHTTPServer(HTTPServer):
             os.chdir(cur_dir)
             try:  # objects may not be defined in case of exception
                 self.server_close()
-                proc.kill()
+                proc.terminate()
                 if not wait_status:
                     print('Communication between browser and server failed: '
                         'check that the browser is not running in private mode.')
