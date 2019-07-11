@@ -37,6 +37,10 @@
 #define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
 #endif
 
+#if defined(_MSC_VER)
+#define inline __inline
+#endif
+
 static inline double mean(double* arr, int n) {
     double sum = 0;
 
