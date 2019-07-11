@@ -1,4 +1,6 @@
 #include <errno.h>
+#include <stdlib.h>
+#include "compare.h"
 
 #if defined(_WIN32)     /* Win32 or Win64                */
 
