@@ -1,3 +1,5 @@
+#include <errno.h>
+
 #if defined(_WIN32)     /* Win32 or Win64                */
 
 #include <windows.h>
@@ -13,7 +15,6 @@
 #include <string.h>
 #include <limits.h>     /* PATH_MAX */
 #include <sys/stat.h>   /* mkdir(2) */
-#include <errno.h>
 
 #endif
 

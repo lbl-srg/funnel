@@ -146,8 +146,8 @@ To compile, link and install, from the top-level directory, run the following co
 ```
 mkdir build
 cd build
-cmake ../                           (add `-A x64` on Windows to compile in 64 bits)
-cmake --build ./ --target install   (add `--config Release` on Windows)
+cmake ..                           (add `-A x64` on Windows to compile in 64 bits)
+cmake --build . --target install   (add `--config Release` on Windows)
 ```
 
 To run the tests, from `./build` run the following commands:
