@@ -41,7 +41,8 @@ message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
 
 # Set compiling and linking options.
 # Consider adding -std=c89 -pedantic to gcc options to improve portability.
-set(UNIX_COMPILE_FLAGS "-Wall -Wfloat-equal -o3 -fPIC")
+# Note: -std=c99 is to support the for loops syntax when compiling with gcc on centOS.
+set(UNIX_COMPILE_FLAGS "-Wall -Wfloat-equal -o3 -fPIC -std=c99")
 set(WIN_COMPILE_FLAGS "/Wall /O2")
 set(UNIX_LINK_FLAGS "-fPIC")
 
