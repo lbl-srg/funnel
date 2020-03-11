@@ -60,8 +60,15 @@ The software has been tested on the following platforms for which a library is p
   * Windows x64
   * Mac OS X
 
-The Python binding is delivered as a package (`funnel`) which is compatible with Python 2 and 3.
-The package is not published on PyPI. To install run `pip [-u] git+https://github.com/lbl-srg/funnel.git`.
+A Python binding is available to access the library. It is compatible with Python 2 and 3.
+
+### Installing
+
+The Python binding is delivered as a package named `funnel`.
+
+The package is not published on PyPI but can be installed from GitHub with `pip git+https://github.com/lbl-srg/funnel.git`.
+
+For development, additional dependencies are needed and can be installed with `pip install -r requirements.txt`.
 
 ### Python Binding
 
