@@ -260,13 +260,14 @@ class MyHTTPServer(HTTPServer):
             # Launch browser.
             with open(os.devnull, 'w') as pipe:
                 proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+                time.sleep(1)
             # Terminate if error count increased.
             if syslog_error_count(browser=browser) > error_count:
                 proc.terminate()
                 # Prompt user to continue.
                 inp = 'y'
                 while True:
-                    inp = input(('Launching {} yields syslog errors, '
+                    inp = input(('Launching browser yields syslog errors, '
                         'probably because display entered screensaver mode. '
                         'Do you want to retry ([y]/n)?'))
                     if inp not in ['y', 'n']:
@@ -274,7 +275,8 @@ class MyHTTPServer(HTTPServer):
                     else:
                         break
                 if inp == 'y':
-                    proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+                    with open(os.devnull, 'w') as pipe:
+                        proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
                 else:
                     raise KeyboardInterrupt
             if timeout >= 10:  # Do not pollute terminal if HTML page is served only for a short time.
@@ -345,12 +347,13 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
 
 def syslog_error_count(*args, **kwargs):
     browser = kwargs.pop('browser', None)
-    message = kwargs.pop('message', 'ContextResult::kFatalFailure: Could not allocate offscreen buffer storage')
+    message = kwargs.pop('message', 'opt/google/chrome/chrome')  #'ContextResult::kFatalFailure: Could not allocate offscreen buffer storage')
     if platform.system() == 'Linux' and 'chrome' in webbrowser.get(browser).name:
         try:
             with open('/var/log/syslog') as f:
                 log = f.read()
             error_count = log.count(message)
+            print(error_count)
         except:
             error_count = 0
     else:

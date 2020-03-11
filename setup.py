@@ -8,7 +8,7 @@ from funnel import __version__
 
 
 os_name = platform.system()
-lib_data = 'funnel/lib'
+lib_data = 'lib'
 if os_name == 'Windows':
     lib_data = '{}/win64/*.dll'.format(lib_data)
 elif os_name == 'Linux':
