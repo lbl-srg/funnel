@@ -1,5 +1,5 @@
 # Core
-six
+six==1.14.0
 
 # Test and documentation
-pandas
+pandas==1.0.1
