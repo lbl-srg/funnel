@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os, sys, shutil
@@ -7,9 +8,13 @@ import json
 import six
 import re
 
-pyfunnel_dir = os.path.join(os.path.dirname(__file__), os.path.pardir, 'funnel')
-sys.path.append(pyfunnel_dir)
-import pyfunnel as pf
+try:  # CI tool
+    import pyfunnel as pf
+except ModuleNotFoundError:  # ctest with no previous `pip install .`
+    pyfunnel_dir = os.path.join(os.path.dirname(__file__), os.path.pardir, 'funnel')
+    sys.path.append(pyfunnel_dir)
+    import pyfunnel as pf
+
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
