@@ -1,5 +1,5 @@
-# Requirements for pyfunnel
+# Core
 six
 
-# Further requirements for running numeric tests (test cases named test_numerics_*)
+# Test and documentation
 pandas

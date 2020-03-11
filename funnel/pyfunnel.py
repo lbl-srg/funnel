@@ -233,8 +233,13 @@ class MyHTTPServer(HTTPServer):
         except Exception as e:
             print('Could not close logger: {}'.format(e))
 
-    def browse(self, *args, **kwargs):
-        # TODOC
+    def browse(self, *args, attempt=1, **kwargs):
+        """Launch server and web browser.
+
+        kwargs:
+            browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
+            timeout (float): time (s) before server shutdown
+        """
         browser = kwargs.pop('browser', None)
         timeout = kwargs.pop('timeout', 5)
         # Move to directory with *.csv before launching local server.
@@ -243,14 +248,34 @@ class MyHTTPServer(HTTPServer):
         try:
             self.server_launch()
             if browser is not None:
-                webbrowser.get(browser)  # throws exception in case of missing browser
+                webbrowser.get(browser)  # Throw exception in case of missing browser.
                 browser = '"{}"'.format(browser)
-            webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error into terminal
+            webbrowser_cmd = [sys.executable, '-c',  # Use subprocess to avoid web browser error into terminal.
                 'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
                 browser, self.server_port)]
+            # Get initial error count from syslog.
+            error_count = syslog_error_count(browser=browser)
+            # Launch browser.
             with open(os.devnull, 'w') as pipe:
                 proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
-            if timeout >= 10:
+            # Terminate if error count increased.
+            if syslog_error_count(browser=browser) > error_count:
+                proc.terminate()
+                # Prompt user to continue.
+                inp = 'y'
+                while True:
+                    inp = input(('Launching {} yields syslog errors, '
+                        'probably because display entered screensaver mode. '
+                        'Do you want to continue ([y]/n)?'))
+                    if inp not in ['y', 'n']:
+                        continue
+                    else:
+                        break
+                if inp == 'y':
+                    proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+                else:
+                    raise KeyboardInterrupt
+            if timeout >= 10:  # Do not pollute terminal if HTML page is served only for a short time.
                 print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
             wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
@@ -259,11 +284,14 @@ class MyHTTPServer(HTTPServer):
             print(e)
         finally:
             os.chdir(cur_dir)
-            try:  # objects may not be defined in case of exception
+            try:  # Objects may not be defined in case of exception.
                 self.server_close()
                 proc.terminate()
                 if not wait_status:
-                    print('Communication between browser and server failed: '
+                    if attempt > 0:  # Communication between browser and server failed: retrying once.
+                        self.browse(args=args, attempt=attempt-1, kwargs=kwargs)
+                    else:
+                        print('Communication between browser and server failed after two attempts: '
                         'check that the browser is not running in private mode.')
             except:
                 pass
@@ -309,6 +337,26 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             return SimpleHTTPRequestHandler.send_head(self)
 
 
+##################
+# Free functions #
+##################
+
+def syslog_error_count(*args, **kwargs):
+    browser = kwargs.pop('browser', None)
+    message = kwargs.pop('message', 'ContextResult::kFatalFailure: Could not allocate offscreen buffer storage')
+    if platform.system() == 'Linux' and 'chrome' in webbrowser.get(browser).name:
+        try:
+            with open('/var/log/syslog') as f:
+                log = f.read()
+            error_count = log.count(message)
+        except:
+            error_count = 0
+    else:
+        error_count = 0
+
+    return error_count
+
+
 def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
     """Waits until some predicate is true."""
     must_end = time.time() + timeout
@@ -346,134 +394,14 @@ def plot_funnel(test_dir, title="", browser=None):
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
+    with open(os.path.join(
+        os.path.dirname(__file__), os.path.pardir, 'templates', 'plot.html')) as f:
+        _TEMPLATE_HTML = f.read()
+
     content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
     server = MyHTTPServer(('', 0), CORSRequestHandler,
         str_html=content, url_html='funnel', browse_dir=test_dir)
     server.browse(list_files, browser=browser, timeout=5)
-
-
-_TEMPLATE_HTML = """
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-</head>
-<body>
-  <div id="myDiv" style="height: 100%; width: 100%;" class="plotly-graph-div"></div>
-  <script>
-    function makeplot() {
-        Plotly.d3.csv("http://localhost:$SERVER_PORT/reference.csv", function(data_ref){
-            Plotly.d3.csv("http://localhost:$SERVER_PORT/test.csv", function(data_test){
-                Plotly.d3.csv("http://localhost:$SERVER_PORT/errors.csv", function(data_err){
-                    Plotly.d3.csv("http://localhost:$SERVER_PORT/lowerBound.csv", function(data_low){
-                        Plotly.d3.csv("http://localhost:$SERVER_PORT/upperBound.csv", function(data_upp){
-                            var data_raw = {
-                                'ref': data_ref,
-                                'test': data_test,
-                                'err': data_err,
-                                'low': data_low,
-                                'upp': data_upp
-                            };
-                            processAll(data_raw);
-                        });
-                    });
-                });
-            });
-        });
-    };
-
-    function processAll(dataIn) {
-        data = {};
-        for(var index in dataIn) {
-            data[index] = processData(dataIn[index]);
-        }
-        makePlotly(data);
-    };
-
-    function processData(allRows) {
-        var x = [], y = [];
-        for (var i=0; i<allRows.length; i++) {
-            row = allRows[i];
-            x.push(row['x']);
-            y.push(row['y']);
-        }
-        return {x: x, y:y};
-    };
-
-    function makePlotly(data){
-        var plotDiv = document.getElementById("plot");
-        var traces = [
-            {
-                x: data['err'].x,
-                y: data['err'].y,
-                name: 'error',
-                xaxis: 'x',
-                yaxis: 'y2',
-            },
-            {
-                x: data['test'].x,
-                y: data['test'].y,
-                name: 'test',
-            },
-            {
-                name: 'lower bound',
-                x: data['low'].x,
-                y: data['low'].y,
-                showlegend: false,
-                line: {width: 0},
-                mode: 'lines'
-            },
-            {
-                x: data['ref'].x,
-                y: data['ref'].y,
-                name: 'reference',
-                fillcolor: 'rgba(68, 68, 68, 0.3)',
-                fill: 'tonexty',
-            },
-            {
-                name: 'upper bound',
-                x: data['upp'].x,
-                y: data['upp'].y,
-                showlegend: false,
-                fillcolor: 'rgba(68, 68, 68, 0.3)',
-                fill: 'tonexty',
-                line: {width: 0},
-                mode: 'lines'
-            },
-        ];
-        var layout = {
-            title: {text: '$TITLE'},
-            grid: {rows: 2, columns: 1, subplots: [['xy1'], ['xy2']]},
-            xaxis1: {
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'x',
-                anchor: 'y1',
-            },
-            yaxis1: {
-                domain: [0.3, 1],
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'y',
-            },
-            yaxis2: {
-                domain: [0, 0.18],
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'error [y]',
-            },
-        };
-        Plotly.newPlot('myDiv', traces, layout, {responsive: true});
-    };
-
-    makeplot();
-    </script>
-</body>
-</html>
-"""
 
 
 if __name__ == "__main__":
