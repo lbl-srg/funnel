@@ -35,10 +35,6 @@ else()
     message(WARNING "OS unknown!")
 endif()
 
-# Output build system directories.
-message("CMake source directory is: ${CMAKE_SOURCE_DIR}")
-message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
-
 # Set compiling and linking options.
 # Consider adding -std=c89 -pedantic to gcc options to improve portability.
 set(UNIX_COMPILE_FLAGS "-Wall -Wfloat-equal -o3 -fPIC")
@@ -70,10 +66,14 @@ elseif(MACOSX)
     set(PLATFORM_INSTALL_PREFIX darwin64)
 endif()
 
-set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}")
-set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}")
-set(RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set(PUBLIC_INCLUDE_DIRECTORY "${CMAKE_SOURCE_DIR}/include")
+set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/funnel/lib/${PLATFORM_INSTALL_PREFIX}")
+set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/funnel/lib/${PLATFORM_INSTALL_PREFIX}")
+
+# Print build system directories.
+message("CMake source directory is: ${CMAKE_SOURCE_DIR}")
+message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
+message("CMake archive directory is: ${ARCHIVE_OUTPUT_DIRECTORY}")
+message("CMake library directory is: ${LIBRARY_OUTPUT_DIRECTORY}")
 
 # Manage subdirectories.
 add_subdirectory(src)

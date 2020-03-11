@@ -31,7 +31,7 @@ import six
 
 
 def _get_lib_path(project_name):
-    """Infers the library absolute path.
+    """Infer the library absolute path.
 
     Args:
         project_name (str): project name
@@ -39,7 +39,7 @@ def _get_lib_path(project_name):
     Returns:
         str: guessed library path e.g. ~/project_name/lib/darwin64/lib{project_name}.so
     """
-    lib_path = os.path.join(os.path.dirname(__file__), os.path.pardir, 'lib')
+    lib_path = os.path.join(os.path.dirname(__file__), 'lib')
     os_name = platform.system()
     os_machine = platform.machine()
     if os_name == 'Windows':
@@ -399,8 +399,7 @@ def plot_funnel(test_dir, title="", browser=None):
         file_path = os.path.join(test_dir, f)
         assert os.path.isfile(file_path), "No such file: {}".format(file_path)
 
-    with open(os.path.join(
-        os.path.dirname(__file__), os.path.pardir, 'templates', 'plot.html')) as f:
+    with open(os.path.join(os.path.dirname(__file__), 'templates', 'plot.html')) as f:
         _TEMPLATE_HTML = f.read()
 
     content = re.sub('\$TITLE', title, _TEMPLATE_HTML)

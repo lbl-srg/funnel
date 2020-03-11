@@ -3,9 +3,8 @@
 
 import platform
 import os
-from distutils.core import setup
+from setuptools import setup
 from funnel import __version__
-
 
 os_name = platform.system()
 lib_data = 'lib'
@@ -36,9 +35,8 @@ setup(
     install_requires=['six>=1.11'],
     packages=['funnel'],
     package_data={
-        '': ['templates/*', lib_data],
+        'funnel': ['templates/*', lib_data],
     },
-    include_package_data=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
