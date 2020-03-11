@@ -10,7 +10,7 @@ import subprocess
 import pandas as pd
 
 try:  # CI tool
-    import pyfunnel as pf
+    from funnel import pyfunnel as pf
 except ModuleNotFoundError:  # ctest with no previous `pip install .`
     pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'funnel'))
     sys.path.append(pyfunnel_dir)

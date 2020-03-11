@@ -9,7 +9,7 @@ import six
 import re
 
 try:  # CI tool
-    import pyfunnel as pf
+    from funnel import pyfunnel as pf
 except ModuleNotFoundError:  # ctest with no previous `pip install .`
     pyfunnel_dir = os.path.join(os.path.dirname(__file__), os.path.pardir, 'funnel')
     sys.path.append(pyfunnel_dir)
