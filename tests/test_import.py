@@ -8,7 +8,7 @@ import json
 import subprocess
 import pandas as pd
 
-pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'bin'))
+pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'funnel'))
 sys.path.append(pyfunnel_dir)
 import pyfunnel as pf
 

@@ -123,7 +123,7 @@ From a Python shell with `./tests/test_bin` as the current working directory, ru
 ```
 Or from a terminal with `./tests/test_bin` as the current working directory, run
 ```
-$ python ../../bin/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+$ python ../../funnel/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 ```
 
 ## Build from Source

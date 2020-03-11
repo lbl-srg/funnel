@@ -237,6 +237,8 @@ class MyHTTPServer(HTTPServer):
         """Launch server and web browser.
 
         kwargs:
+            attempt (int): attempt index: the function will try to establish connection with server
+                           as long as attempt is not 0, then an info log (no exception) is printed.
             browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
             timeout (float): time (s) before server shutdown
         """
@@ -266,7 +268,7 @@ class MyHTTPServer(HTTPServer):
                 while True:
                     inp = input(('Launching {} yields syslog errors, '
                         'probably because display entered screensaver mode. '
-                        'Do you want to continue ([y]/n)?'))
+                        'Do you want to retry ([y]/n)?'))
                     if inp not in ['y', 'n']:
                         continue
                     else:
