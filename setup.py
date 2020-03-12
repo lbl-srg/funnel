@@ -23,11 +23,11 @@ with open('README.md', encoding='utf-8') as f:
 setup(
     name='funnel',
     version=__version__,
-    author='A. Gautier, J. Hu',
+    author='A. Gautier',
     author_email='agautier@lbl.gov',
     url='https://github.com/lbl-srg/funnel',
     description=('Comparison tool for two (x, y) data sets '
-        'given tolerances in x and y directions.'),
+        'given tolerances in x and y directions'),
     long_description=long_description,
     long_description_content_type='text/markdown',
     license="3-clause BSD",

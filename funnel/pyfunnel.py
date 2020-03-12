@@ -30,6 +30,9 @@ import six
 # Code repository sub-package imports.
 
 
+__all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
+
+
 def _get_lib_path(project_name):
     """Infer the library absolute path.
 
@@ -71,9 +74,9 @@ def compareAndReport(
     rtolx=None,
     rtoly=None
 ):
-    """Runs funnel binary with list-like objects as x, y reference and test values.
+    """Run funnel binary with list-like objects as x, y reference and test values.
 
-    Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
+    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
     `test.csv` into the output directory (`./results` by default).
 
     Args:
@@ -200,7 +203,7 @@ def compareAndReport(
 
 
 class MyHTTPServer(HTTPServer):
-    """Adds custom server_launch, server_close and browse methods."""
+    """Add custom server_launch, server_close and browse methods."""
 
     def __init__(self, *args, **kwargs):
         """kwargs:
@@ -267,7 +270,6 @@ class MyHTTPServer(HTTPServer):
                         if 'ERROR:gles2_cmd_decoder' in l:
                             chrome_error = True
                             break
-                    del lg
             if chrome_error:
                 proc.terminate()
                 # Prompt user to retry.
@@ -310,7 +312,7 @@ class MyHTTPServer(HTTPServer):
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
-    """Enables to log message on logger and modifies response header."""
+    """Enable logging message and modify response header."""
     def log_message(self, format, *args):
         try:
             to_send = "{} - - [{}] {}\n".format(
@@ -354,18 +356,19 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
 ##################
 
 def follow(filehandler, timeout):
-    filehandler.seek(0,2)  # Go to the end of the file.
+    """Generator yielding lines appended to filehandler until timeout is over."""
+    filehandler.seek(0, 2)  # Go to the end of the file.
     must_end = time.time() + timeout
     while time.time() < must_end:
         line = filehandler.readline()
-        if not line:
-            time.sleep(0.1)  # Sleep briefly.
+        if not line:  # If no new line: iterate.
+            time.sleep(0.1)
             continue
-        yield line
+        yield line  # Else: yield line.
 
 
 def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
-    """Waits until some predicate is true."""
+    """Waits until some predicate is true or timeout is over."""
     must_end = time.time() + timeout
     while time.time() < must_end:
         if somepredicate(*args, **kwargs):
@@ -375,6 +378,12 @@ def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
 
 
 def exit_test(logger, list_files=None):
+    """Test if listed files have been loaded by server.
+
+    Based on log of HTTP response status codes:
+        200: request received
+        304: requested resource not modified since previous transmission
+    """
     content = logger.getvalue().decode('utf8')
     if list_files is not None:
         raw_pattern = 'GET.*?{}.*?(200|304)'  # *? for non-greedy search
@@ -389,7 +398,7 @@ def exit_test(logger, list_files=None):
 
 
 def plot_funnel(test_dir, title="", browser=None):
-    """Plots funnel results stored in test_dir and displays in default browser.
+    """Plot funnel results stored in test_dir and display in default browser.
 
     Args:
         test_dir (str): path of directory where output files are stored
