@@ -70,7 +70,7 @@ The package is not published on PyPI but can be installed from GitHub with `pip 
 
 For development, additional dependencies are needed and can be installed with `pip install -r requirements.txt`.
 
-### Python Binding
+### Main Functions
 
 The software is primarily intended to be used by means of a Python binding.
 The module `pyfunnel` provides the following functions:
