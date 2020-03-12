@@ -255,26 +255,34 @@ class MyHTTPServer(HTTPServer):
             webbrowser_cmd = [sys.executable, '-c',  # Use subprocess to avoid web browser error into terminal.
                 'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
                 browser, self.server_port)]
-            # Get initial error count from syslog.
-            error_count = syslog_error_count(browser=browser)
             # Launch browser.
             with open(os.devnull, 'w') as pipe:
                 proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
-                time.sleep(1)
-            # Terminate if error count increased.
-            if syslog_error_count(browser=browser) > error_count:
+            # Watch syslog for error.
+            chrome_error = False
+            if platform.system() == 'Linux' and 'chrome' in webbrowser.get(browser).name:
+                with open('/var/log/syslog') as f:
+                    lg = follow(f, 1)
+                    for l in lg:
+                        if 'ERROR:gles2_cmd_decoder' in l:
+                            chrome_error = True
+                            break
+                    del lg
+            if chrome_error:
                 proc.terminate()
-                # Prompt user to continue.
+                # Prompt user to retry.
                 inp = 'y'
                 while True:
                     inp = input(('Launching browser yields syslog errors, '
                         'probably because display entered screensaver mode. '
-                        'Do you want to retry ([y]/n)?'))
+                        'Do you want to retry ([y]/n)? '))
                     if inp not in ['y', 'n']:
                         continue
                     else:
                         break
                 if inp == 'y':
+                    # Re initialize logger so wait_until is effective.
+                    self.logger = io.BytesIO()
                     with open(os.devnull, 'w') as pipe:
                         proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
                 else:
@@ -345,21 +353,15 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
 # Free functions #
 ##################
 
-def syslog_error_count(*args, **kwargs):
-    browser = kwargs.pop('browser', None)
-    message = kwargs.pop('message', 'opt/google/chrome/chrome')  #'ContextResult::kFatalFailure: Could not allocate offscreen buffer storage')
-    if platform.system() == 'Linux' and 'chrome' in webbrowser.get(browser).name:
-        try:
-            with open('/var/log/syslog') as f:
-                log = f.read()
-            error_count = log.count(message)
-            print(error_count)
-        except:
-            error_count = 0
-    else:
-        error_count = 0
-
-    return error_count
+def follow(filehandler, timeout):
+    filehandler.seek(0,2)  # Go to the end of the file.
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        line = filehandler.readline()
+        if not line:
+            time.sleep(0.1)  # Sleep briefly.
+            continue
+        yield line
 
 
 def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
@@ -375,7 +377,7 @@ def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
 def exit_test(logger, list_files=None):
     content = logger.getvalue().decode('utf8')
     if list_files is not None:
-        raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
+        raw_pattern = 'GET.*?{}.*?(200|304)'  # *? for non-greedy search
         for i, l in enumerate(list_files):
             if i == 0:
                 pattern = raw_pattern.format(l)
@@ -405,7 +407,7 @@ def plot_funnel(test_dir, title="", browser=None):
     content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
     server = MyHTTPServer(('', 0), CORSRequestHandler,
         str_html=content, url_html='funnel', browse_dir=test_dir)
-    server.browse(list_files, browser=browser, timeout=5)
+    server.browse(list_files, browser=browser)
 
 
 if __name__ == "__main__":
