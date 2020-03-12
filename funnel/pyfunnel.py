@@ -265,18 +265,18 @@ class MyHTTPServer(HTTPServer):
             chrome_error = False
             if platform.system() == 'Linux' and 'chrome' in webbrowser.get(browser).name:
                 with open('/var/log/syslog') as f:
-                    lg = follow(f, 1)
-                    for l in lg:
+                    for l in follow(f, 1):
                         if 'ERROR:gles2_cmd_decoder' in l:
                             chrome_error = True
                             break
             if chrome_error:
-                proc.terminate()
-                # Prompt user to retry.
+                proc.terminate()  # Terminating the process does not stop Chrome in background.
+                subprocess.check_call(['pkill', 'chrome'])  # This does.
                 inp = 'y'
-                while True:
+                while True:  # Prompt user to retry.
                     inp = input(('Launching browser yields syslog errors, '
-                        'probably because display entered screensaver mode. '
+                        'probably because display entered screensaver mode.\n'
+                        'All related processes have been killed by precaution.\n'
                         'Do you want to retry ([y]/n)? '))
                     if inp not in ['y', 'n']:
                         continue
