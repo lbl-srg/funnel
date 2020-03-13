@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import io
 import platform
 import os
 from setuptools import setup
@@ -17,8 +18,8 @@ elif os_name == 'Darwin':
 else:
     raise RuntimeError('Could not detect standard (system, architecture).')
 
-with open('README.md', encoding='utf-8') as f:
-    long_description = f.read()
+with io.open('README.md', encoding='utf-8') as f:  # io.open for Python 2 support with encoding
+    README = f.read()
 
 setup(
     name='funnel',
@@ -28,10 +29,10 @@ setup(
     url='https://github.com/lbl-srg/funnel',
     description=('Comparison tool for two (x, y) data sets '
         'given tolerances in x and y directions'),
-    long_description=long_description,
+    long_description=README,
     long_description_content_type='text/markdown',
     license="3-clause BSD",
-    python_requires='>=2.7, >=3.6',
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=['six>=1.11'],
     packages=['funnel'],
     package_data={

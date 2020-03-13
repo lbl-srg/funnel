@@ -236,7 +236,7 @@ class MyHTTPServer(HTTPServer):
         except Exception as e:
             print('Could not close logger: {}'.format(e))
 
-    def browse(self, *args, attempt=1, **kwargs):
+    def browse(self, *args, **kwargs):
         """Launch server and web browser.
 
         kwargs:
@@ -245,6 +245,7 @@ class MyHTTPServer(HTTPServer):
             browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
             timeout (float): time (s) before server shutdown
         """
+        attempt = kwargs.pop('attempt', 1)
         browser = kwargs.pop('browser', None)
         timeout = kwargs.pop('timeout', 5)
         # Move to directory with *.csv before launching local server.
