@@ -25,7 +25,7 @@ matrix:
       before_install:
         - choco install python2
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
-        - python -m pip install --upgrade pip wheel
+        - python -m pip install --user --upgrade pip
 
 install:
   - pip install --user -r requirements.txt
