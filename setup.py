@@ -34,7 +34,7 @@ else:
     raise RuntimeError('Could not detect standard (system, architecture).')
 
 setup(
-    name='pyfunnel',
+    name=MAIN_PACKAGE,
     version=VERSION,
     author='A. Gautier',
     author_email='agautier@lbl.gov',
@@ -46,9 +46,9 @@ setup(
     license="3-clause BSD",
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=['six>=1.11'],
-    packages=['pyfunnel'],
+    packages=[MAIN_PACKAGE],
     package_data={
-        'pyfunnel': [lib_data],
+        MAIN_PACKAGE: ['VERSION', lib_data],
     },
     include_package_data=True,
     classifiers=[
