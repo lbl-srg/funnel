@@ -50,7 +50,7 @@ setup(
     install_requires=['six>=1.11'],
     packages=['pyfunnel'],
     package_data={
-        'pyfunnel': ['templates/*', lib_data],
+        'pyfunnel': [lib_data],
     },
     include_package_data=True,
     classifiers=[
