@@ -54,7 +54,7 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 ### System Requirements
 
-The software has been tested on the following platforms for which a library is provided in `./lib`:
+The software has been tested on the following platforms.
 
   * Linux x64
   * Windows x64
@@ -66,14 +66,18 @@ A Python binding is available to access the library. It is compatible with Pytho
 
 The Python binding is delivered as a package named `pyfunnel`.
 
-The package is not published on PyPI but can be installed from GitHub with `pip git+https://github.com/lbl-srg/funnel.git@master`.
+The package is not published on PyPI but can be installed from GitHub with
 
-For development, additional dependencies are needed and can be installed with `pip install -r requirements.txt`.
+`pip git+https://github.com/lbl-srg/funnel.git@master`
+
+For development, additional dependencies are needed and can be installed with
+
+`pip install -r requirements.txt`
 
 ### Main Functions
 
 The software is primarily intended to be used by means of a Python binding.
-The package `pyfunnel` provides the following functions:
+The package `pyfunnel` provides the following functions.
 
   * `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
     Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
