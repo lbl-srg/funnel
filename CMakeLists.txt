@@ -18,7 +18,7 @@
 
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.11.0)
-file(READ "${CMAKE_SOURCE_DIR}/VERSION" VERSION)
+file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
 project(funnel VERSION ${VERSION} LANGUAGES C)
 enable_testing()
 

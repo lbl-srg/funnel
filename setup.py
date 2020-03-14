@@ -8,14 +8,22 @@ import os
 import re
 from setuptools import setup
 
+MAIN_PACKAGE = 'pyfunnel'
+PACKAGE_PATH =  os.path.abspath(os.path.join(os.path.dirname(__file__), MAIN_PACKAGE))
+
 # Version.
-version_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'VERSION'))
+version_path = os.path.join(PACKAGE_PATH, 'VERSION')
 with open(version_path) as f:
-    version = f.read().strip()
+    VERSION = f.read().strip()
+
+# Readme.
+readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md'))
+with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
+    README = f.read()
 
 # Library path.
 os_name = platform.system()
-lib_data = 'lib'
+lib_data = 'lib'  # Relative path in MAIN_PACKAGE.
 if os_name == 'Windows':
     lib_data = '{}/win64/*.dll'.format(lib_data)
 elif os_name == 'Linux':
@@ -24,16 +32,6 @@ elif os_name == 'Darwin':
     lib_data = '{}/darwin64/*.dylib'.format(lib_data)
 else:
     raise RuntimeError('Could not detect standard (system, architecture).')
-
-# Version.
-version_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'VERSION'))
-with open(version_path) as f:
-    VERSION = f.read().strip()
-
-# Readme.
-readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md'))
-with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
-    README = f.read()
 
 setup(
     name='pyfunnel',
