@@ -2,6 +2,7 @@ language: c
 
 python:
   - "2.7"
+  - "3.6"
 
 notifications:
   email: false
@@ -37,7 +38,7 @@ script:
   # Compile, link, install.
   - cmake --build . --target install --config Release
   # Test and clean.
-  - ctest -C Release && python ../tests/test_summary.py ../tests
+  - ctest -C Release
   # Compare.
   - git status tests
   - git diff --exit-code tests
