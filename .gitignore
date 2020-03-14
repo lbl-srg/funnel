@@ -1,7 +1,5 @@
 # Binaries
-pyfunnel/*
-!pyfunnel/*/
-!pyfunnel/*.py
+*.py[cod]
 
 # Object files
 *.o

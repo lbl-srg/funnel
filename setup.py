@@ -48,7 +48,7 @@ setup(
     install_requires=['six>=1.11'],
     packages=[MAIN_PACKAGE],
     package_data={
-        MAIN_PACKAGE: ['VERSION', lib_data],
+        MAIN_PACKAGE: [lib_data],
     },
     include_package_data=True,
     classifiers=[
