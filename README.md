@@ -64,16 +64,16 @@ A Python binding is available to access the library. It is compatible with Pytho
 
 ### Installing
 
-The Python binding is delivered as a package named `funnel`.
+The Python binding is delivered as a package named `pyfunnel`.
 
-The package is not published on PyPI but can be installed from GitHub with `pip git+https://github.com/lbl-srg/funnel.git`.
+The package is not published on PyPI but can be installed from GitHub with `pip git+https://github.com/lbl-srg/funnel.git@master`.
 
 For development, additional dependencies are needed and can be installed with `pip install -r requirements.txt`.
 
 ### Main Functions
 
 The software is primarily intended to be used by means of a Python binding.
-The module `pyfunnel` provides the following functions:
+The package `pyfunnel` provides the following functions:
 
   * `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
     Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
@@ -121,7 +121,7 @@ Full documentation at https://github.com/lbl-srg/funnel
 From a Python shell with `./tests/test_bin` as the current working directory, run
 ```python
 >>> import pandas as pd
->>> from funnel import pyfunnel
+>>> import pyfunnel
 >>> ref = pd.read_csv('trended.csv')
 >>> test = pd.read_csv('simulated.csv')
 >>> pyfunnel.compareAndReport(xReference=ref.iloc(axis=1)[0], yReference=ref.iloc(axis=1)[1],
@@ -130,7 +130,7 @@ From a Python shell with `./tests/test_bin` as the current working directory, ru
 ```
 Or from a terminal with `./tests/test_bin` as the current working directory, run
 ```
-$ python ../../funnel/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+$ python ../../pyfunnel/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 ```
 
 ## Build from Source

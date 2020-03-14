@@ -5,7 +5,7 @@ import io
 import platform
 import os
 from setuptools import setup
-from funnel import __version__
+from pyfunnel import __version__
 
 os_name = platform.system()
 lib_data = 'lib'
@@ -22,7 +22,7 @@ with io.open('README.md', encoding='utf-8') as f:  # io.open for Python 2 suppor
     README = f.read()
 
 setup(
-    name='funnel',
+    name='pyfunnel',
     version=__version__,
     author='A. Gautier',
     author_email='agautier@lbl.gov',
@@ -34,9 +34,9 @@ setup(
     license="3-clause BSD",
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=['six>=1.11'],
-    packages=['funnel'],
+    packages=['pyfunnel'],
     package_data={
-        'funnel': ['templates/*', lib_data],
+        'pyfunnel': ['templates/*', lib_data],
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
