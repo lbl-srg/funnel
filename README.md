@@ -4,9 +4,6 @@
 
 A cross-platform C-based software for comparing two `(x, y)` data sets given tolerances in `x` and `y` directions.
 
-Handles: different time (`x`) scales, time events offsets, relative and absolute tolerances
-in `x` and `y` directions.
-
 ## Principles
 
 ### Overall
