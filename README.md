@@ -84,7 +84,8 @@ The package `pyfunnel` provides the following functions:
   * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
     Displays plot in default browser. See function docstring for further details.
 
-The module might also be called directly from terminal.
+The module `pyfunnel.py` might also be called directly from terminal.
+
 ```
 usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT]
                    [--atolx ATOLX] [--atoly ATOLY] [--rtolx RTOLX]
