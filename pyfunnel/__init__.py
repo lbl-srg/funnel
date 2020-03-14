@@ -6,7 +6,13 @@
 """
 
 from __future__ import absolute_import
+
+import os
+
 from .core import compareAndReport, MyHTTPServer, CORSRequestHandler, plot_funnel
 
-__version__ = '0.1.0'
+# Version.
+version_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'VERSION'))
+with open(version_path) as f:
+    __version__ = f.read().strip()
 

@@ -1,12 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import codecs
 import io
 import platform
 import os
+import re
 from setuptools import setup
-from pyfunnel import __version__
 
+# Version.
+version_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'VERSION'))
+with open(version_path) as f:
+    version = f.read().strip()
+
+# Library path.
 os_name = platform.system()
 lib_data = 'lib'
 if os_name == 'Windows':
@@ -18,12 +25,19 @@ elif os_name == 'Darwin':
 else:
     raise RuntimeError('Could not detect standard (system, architecture).')
 
-with io.open('README.md', encoding='utf-8') as f:  # io.open for Python 2 support with encoding
+# Version.
+version_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'VERSION'))
+with open(version_path) as f:
+    VERSION = f.read().strip()
+
+# Readme.
+readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md'))
+with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
     README = f.read()
 
 setup(
     name='pyfunnel',
-    version=__version__,
+    version=VERSION,
     author='A. Gautier',
     author_email='agautier@lbl.gov',
     url='https://github.com/lbl-srg/funnel',
@@ -38,6 +52,7 @@ setup(
     package_data={
         'pyfunnel': ['templates/*', lib_data],
     },
+    include_package_data=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

@@ -10,11 +10,11 @@ import subprocess
 import pandas as pd
 
 try:  # CI tool
-    import pyfunnel as pf
+    import pyfunnel
 except ModuleNotFoundError:  # ctest with no previous `pip install .`
     pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
     sys.path.append(pyfunnel_dir)
-    import pyfunnel as pf
+    import pyfunnel
 
 
 def read_res(test_dir):
@@ -82,7 +82,7 @@ def run_pyfunnel(test_dir):
         except KeyError:
             par[t] = None
 
-    rc = pf.compareAndReport(
+    rc = pyfunnel.compareAndReport(
         ref.iloc(axis=1)[0],
         ref.iloc(axis=1)[1],
         test.iloc(axis=1)[0],
