@@ -239,14 +239,11 @@ class MyHTTPServer(HTTPServer):
         """Launch server and web browser.
 
         kwargs:
-            attempt (int): attempt index: the function will try to establish connection with server
-                           as long as attempt is not 0, then an info log (no exception) is printed.
             browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
-            timeout (float): time (s) before server shutdown
+            timeout (float): maximum time (s) before server shutdown
         """
-        attempt = kwargs.pop('attempt', 1)
         browser = kwargs.pop('browser', None)
-        timeout = kwargs.pop('timeout', 5)
+        timeout = kwargs.pop('timeout', 10)
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
@@ -289,7 +286,7 @@ class MyHTTPServer(HTTPServer):
                         proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
                 else:
                     raise KeyboardInterrupt
-            if timeout >= 10:  # Do not pollute terminal if HTML page is served only for a short time.
+            if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
                 print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
             wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
@@ -302,10 +299,7 @@ class MyHTTPServer(HTTPServer):
                 self.server_close()
                 proc.terminate()
                 if not wait_status:
-                    if attempt > 0:  # Communication between browser and server failed: retrying once.
-                        self.browse(args=args, attempt=attempt-1, kwargs=kwargs)
-                    else:
-                        print('Communication between browser and server failed after two attempts: '
+                    print('Communication between browser and server failed: '
                         'check that the browser is not running in private mode.')
             except:
                 pass
