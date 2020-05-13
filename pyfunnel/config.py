@@ -28,7 +28,7 @@ def save_config(**kwargs):
             target = r'\1{}\n'.format(kwargs[k])
             if kwargs[k] is not None:
                 target = r'\1"{}"\n'.format(kwargs[k])  # Add quotes for strings.
-            content = re.sub(f'({k} = )(.*)\n', target, content)
+            content = re.sub('({} = )(.*)\n'.format(k), target, content)
         with open(__file__, 'w') as f:
             f.write(content)
 
