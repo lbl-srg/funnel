@@ -28,17 +28,119 @@ except ImportError:
 # Third-party module or package imports.
 import six
 # Code repository sub-package imports.
-from pyfunnel import config
 
 
 __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
 
 
-BROWSER = config.BROWSER
-try:  # To guard against webbrowser.get(browser).name that may return 'xdg-open' on Ubuntu.
-    LINUX_DEFAULT = subprocess.check_output('xdg-settings get default-web-browser', shell=True)
+#########################################
+# Configuration functions and variables #
+#########################################
+
+CONFIG_PATH = os.path.join(os.environ.get('HOME'), '.pyfunnel')
+CONFIG_DEFAULT = dict(
+    BROWSER=None,
+)
+try:  # Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Ubuntu.
+    LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
 except:
     LINUX_DEFAULT = None
+
+
+def read_config(config_path=CONFIG_PATH, config_default=CONFIG_DEFAULT):
+    """Read configuration file and return default values for variables not assigned."""
+    try:
+        with open(config_path, 'r') as f:
+            cfg = f.readlines()
+    except FileNotFoundError:
+        return config_default
+    toreturn = dict()
+    for e in cfg:
+        (k, v) = re.split('\s*=\s*', e)
+        toreturn[k] = v
+    for k in config_default.keys():
+        if k not in toreturn.keys():
+            toreturn[k] = config_default[k]
+    return toreturn
+
+
+CONFIG = read_config()
+
+
+def save_config(config_path=CONFIG_PATH, config=CONFIG):
+    """Save configuration variables in configuration file."""
+    with open(config_path, 'w') as f:
+        for k in config.keys():
+            f.write('{}={}'.format(k, config[k]))
+
+
+##################
+# Free functions #
+##################
+
+
+def follow(filehandler, timeout):
+    """Generator yielding lines appended to filehandler until timeout is over."""
+    filehandler.seek(0, 2)  # Go to the end of the file.
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        line = filehandler.readline()
+        if not line:  # If no new line: iterate.
+            time.sleep(0.1)
+            continue
+        yield line  # Else: yield line.
+
+
+def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
+    """Waits until some predicate is true or timeout is over."""
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        if somepredicate(*args, **kwargs):
+            return True
+        time.sleep(period)
+    return False
+
+
+def exit_test(logger, list_files=None):
+    """Test if listed files have been loaded by server.
+
+    Based on log of HTTP response status codes:
+        200: request received
+        304: requested resource not modified since previous transmission
+    """
+    content = logger.getvalue().decode('utf8')
+    if list_files is not None:
+        raw_pattern = 'GET.*?{}.*?(200|304)'  # *? for non-greedy search
+        for i, l in enumerate(list_files):
+            if i == 0:
+                pattern = raw_pattern.format(l)
+            else:
+                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
+        return bool(re.search(pattern, content))
+    else:
+        return False
+
+
+def plot_funnel(test_dir, title="", browser=None):
+    """Plot funnel results stored in test_dir and display in default browser.
+
+    Args:
+        test_dir (str): path of directory where output files are stored
+        [title] (str): plot title
+        [browser] (str): web browser to use for displaying plot
+    """
+    list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
+    for f in list_files:
+        file_path = os.path.join(test_dir, f)
+        assert os.path.isfile(file_path), "No such file: {}".format(file_path)
+
+    with open(os.path.join(os.path.dirname(__file__), 'templates', 'plot.html')) as f:
+        _TEMPLATE_HTML = f.read()
+
+    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+    server = MyHTTPServer(('', 0), CORSRequestHandler,
+        str_html=content, url_html='funnel', browse_dir=test_dir)
+    server.browse(list_files, browser=browser)
 
 
 def _get_lib_path(project_name):
@@ -210,6 +312,11 @@ def compareAndReport(
     return retVal
 
 
+#####################
+# Class definitions #
+#####################
+
+
 class MyHTTPServer(HTTPServer):
     """Add custom server_launch, server_close and browse methods."""
 
@@ -251,7 +358,7 @@ class MyHTTPServer(HTTPServer):
             browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
             timeout (float): maximum time (s) before server shutdown
         """
-        global BROWSER
+        global CONFIG
         global LINUX_DEFAULT
         browser = kwargs.pop('browser', None)
         timeout = kwargs.pop('timeout', 10)
@@ -260,12 +367,12 @@ class MyHTTPServer(HTTPServer):
             self.server_port
         )
         if browser is None:
-            # This assignment cannot be done with browser = kwargs.pop('browser', BROWSER)
+            # This assignment cannot be done with browser = kwargs.pop('browser', CONFIG['BROWSER'])
             # as another module can call browse(browser=None).
-            browser = BROWSER
+            browser = CONFIG['BROWSER']
         if browser is not None:
             webbrowser.get(browser)  # Throw exception in case of missing browser.
-            cmd = re.sub('get\(\)', 'get("{}")'.format(browser), cmd)  # Add quotes for strings.
+            cmd = re.sub('get\(\)', 'get("{}")'.format(browser), cmd)  # Pass browser name within quotes.
         webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
@@ -277,12 +384,14 @@ class MyHTTPServer(HTTPServer):
                 proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
             # Watch syslog for error.
             chrome_error = False
-            if platform.system() == 'Linux' and 'chrome' in LINUX_DEFAULT+webbrowser.get(browser).name:
-                with open('/var/log/syslog') as f:
-                    for l in follow(f, 2):
-                        if 'ERROR:gles2_cmd_decoder' in l:
-                            chrome_error = True
-                            break
+            if platform.system() == 'Linux':
+                if (browser is None and 'chrome' in LINUX_DEFAULT) or (
+                    browser is not None and 'chrome' in browser):
+                    with open('/var/log/syslog') as f:
+                        for l in follow(f, 2):
+                            if 'ERROR:gles2_cmd_decoder' in l:
+                                chrome_error = True
+                                break
             if chrome_error:
                 proc.terminate()  # Terminating the process does not stop Chrome in background.
                 subprocess.check_call(['pkill', 'chrome'])  # This does.
@@ -298,8 +407,8 @@ class MyHTTPServer(HTTPServer):
                     else:
                         break
                 if inp == 'Y':  # Configure Firefox as default browser.
-                    config.save_config(BROWSER='firefox')  # Configuration file for future imports.
-                    BROWSER = 'firefox'  # Current module for future calls to the function.
+                    CONFIG['BROWSER'] = 'firefox'  # Current module for future calls to the function.
+                    save_config()  # Configuration file for future imports.
                     browser = 'firefox'  # Current function for immediate retry.
                     cmd = re.sub('get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
@@ -368,71 +477,4 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
         else:
             return SimpleHTTPRequestHandler.send_head(self)
 
-
-##################
-# Free functions #
-##################
-
-def follow(filehandler, timeout):
-    """Generator yielding lines appended to filehandler until timeout is over."""
-    filehandler.seek(0, 2)  # Go to the end of the file.
-    must_end = time.time() + timeout
-    while time.time() < must_end:
-        line = filehandler.readline()
-        if not line:  # If no new line: iterate.
-            time.sleep(0.1)
-            continue
-        yield line  # Else: yield line.
-
-
-def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
-    """Waits until some predicate is true or timeout is over."""
-    must_end = time.time() + timeout
-    while time.time() < must_end:
-        if somepredicate(*args, **kwargs):
-            return True
-        time.sleep(period)
-    return False
-
-
-def exit_test(logger, list_files=None):
-    """Test if listed files have been loaded by server.
-
-    Based on log of HTTP response status codes:
-        200: request received
-        304: requested resource not modified since previous transmission
-    """
-    content = logger.getvalue().decode('utf8')
-    if list_files is not None:
-        raw_pattern = 'GET.*?{}.*?(200|304)'  # *? for non-greedy search
-        for i, l in enumerate(list_files):
-            if i == 0:
-                pattern = raw_pattern.format(l)
-            else:
-                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
-        return bool(re.search(pattern, content))
-    else:
-        return False
-
-
-def plot_funnel(test_dir, title="", browser=None):
-    """Plot funnel results stored in test_dir and display in default browser.
-
-    Args:
-        test_dir (str): path of directory where output files are stored
-        [title] (str): plot title
-        [browser] (str): web browser to use for displaying plot
-    """
-    list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
-    for f in list_files:
-        file_path = os.path.join(test_dir, f)
-        assert os.path.isfile(file_path), "No such file: {}".format(file_path)
-
-    with open(os.path.join(os.path.dirname(__file__), 'templates', 'plot.html')) as f:
-        _TEMPLATE_HTML = f.read()
-
-    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
-    server = MyHTTPServer(('', 0), CORSRequestHandler,
-        str_html=content, url_html='funnel', browse_dir=test_dir)
-    server.browse(list_files, browser=browser)
 
