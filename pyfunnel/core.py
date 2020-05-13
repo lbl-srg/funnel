@@ -256,14 +256,16 @@ class MyHTTPServer(HTTPServer):
         browser = kwargs.pop('browser', None)
         timeout = kwargs.pop('timeout', 10)
         # Manage browser command using configuration file.
-        cmd = f'import webbrowser; webbrowser.get().open("http://localhost:{self.server_port}/funnel")'
+        cmd = 'import webbrowser; webbrowser.get().open("http://localhost:{}/funnel")'.format(
+            self.server_port
+        )
         if browser is None:
             # This assignment cannot be done with browser = kwargs.pop('browser', BROWSER)
             # as another module can call browse(browser=None).
             browser = BROWSER
         if browser is not None:
             webbrowser.get(browser)  # Throw exception in case of missing browser.
-            cmd = re.sub('get\(\)', f'get("{browser}")', cmd)  # Add quotes for strings.
+            cmd = re.sub('get\(\)', 'get("{}")'.format(browser), cmd)  # Add quotes for strings.
         webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
@@ -299,7 +301,7 @@ class MyHTTPServer(HTTPServer):
                     config.save_config(BROWSER='firefox')  # Configuration file for future imports.
                     BROWSER = 'firefox'  # Current module for future calls to the function.
                     browser = 'firefox'  # Current function for immediate retry.
-                    cmd = re.sub('get\(.*?\)', f'get("{browser}")', cmd)
+                    cmd = re.sub('get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
                 if inp == 'y' or inp == 'Y':
                     # Re initialize logger so wait_until is effective.
