@@ -52,7 +52,7 @@ def read_config(config_path=CONFIG_PATH, config_default=CONFIG_DEFAULT):
     try:
         with open(config_path, 'r') as f:
             cfg = f.readlines()
-    except FileNotFoundError:
+    except IOError:
         return config_default
     toreturn = dict()
     for e in cfg:

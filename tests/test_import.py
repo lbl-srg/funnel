@@ -11,7 +11,7 @@ import pandas as pd
 
 try:  # CI tool
     import pyfunnel
-except ModuleNotFoundError:  # ctest with no previous `pip install .`
+except ImportError:  # ctest with no previous `pip install .`
     pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
     sys.path.append(pyfunnel_dir)
     import pyfunnel
