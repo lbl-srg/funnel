@@ -400,19 +400,19 @@ class MyHTTPServer(HTTPServer):
                     inp = input(('Launching browser yields syslog errors, '
                         'probably because Chrome is used and the display entered screensaver mode.\n'
                         'All related processes have been killed by precaution.\n'
-                        'If you have Firefox installed and want to use it persistently, enter Y\n'
-                        'Otherwise, do you simply want to retry ([y]/n)? '))
-                    if inp not in ['y', 'Y', 'n']:
+                        'If you have Firefox installed and want to use it persistently, enter p\n'
+                        'Otherwise, do you simply want to retry ([y]/n/p)? '))
+                    if inp not in ['y', 'n', 'p']:
                         continue
                     else:
                         break
-                if inp == 'Y':  # Configure Firefox as default browser.
+                if inp == 'p':  # Configure Firefox as default browser.
                     CONFIG['BROWSER'] = 'firefox'  # Current module for future calls to the function.
                     save_config()  # Configuration file for future imports.
                     browser = 'firefox'  # Current function for immediate retry.
                     cmd = re.sub('get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
-                if inp == 'y' or inp == 'Y':
+                if inp == 'y' or inp == 'p':
                     # Re initialize logger so wait_until is effective.
                     self.logger = io.BytesIO()
                     with open(os.devnull, 'w') as pipe:
