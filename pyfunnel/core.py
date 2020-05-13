@@ -28,8 +28,17 @@ except ImportError:
 # Third-party module or package imports.
 import six
 # Code repository sub-package imports.
+from pyfunnel import config
+
 
 __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
+
+
+BROWSER = config.BROWSER
+try:  # To guard against webbrowser.get(browser).name that may return 'xdg-open' on Ubuntu.
+    LINUX_DEFAULT = subprocess.check_output('xdg-settings get default-web-browser', shell=True)
+except:
+    LINUX_DEFAULT = None
 
 
 def _get_lib_path(project_name):
@@ -242,27 +251,33 @@ class MyHTTPServer(HTTPServer):
             browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
             timeout (float): maximum time (s) before server shutdown
         """
+        global BROWSER
+        global LINUX_DEFAULT
         browser = kwargs.pop('browser', None)
         timeout = kwargs.pop('timeout', 10)
+        # Manage browser command using configuration file.
+        cmd = f'import webbrowser; webbrowser.get().open("http://localhost:{self.server_port}/funnel")'
+        if browser is None:
+            # This assignment cannot be done with browser = kwargs.pop('browser', BROWSER)
+            # as another module can call browse(browser=None).
+            browser = BROWSER
+        if browser is not None:
+            webbrowser.get(browser)  # Throw exception in case of missing browser.
+            cmd = re.sub('get\(\)', f'get("{browser}")', cmd)  # Add quotes for strings.
+        webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
         try:
             self.server_launch()
-            if browser is not None:
-                webbrowser.get(browser)  # Throw exception in case of missing browser.
-                browser = '"{}"'.format(browser)
-            webbrowser_cmd = [sys.executable, '-c',  # Use subprocess to avoid web browser error into terminal.
-                'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
-                browser, self.server_port)]
-            # Launch browser.
+            # Launch browser as a subprocess command to avoid web browser error into terminal.
             with open(os.devnull, 'w') as pipe:
                 proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
             # Watch syslog for error.
             chrome_error = False
-            if platform.system() == 'Linux' and 'chrome' in webbrowser.get(browser).name:
+            if platform.system() == 'Linux' and 'chrome' in LINUX_DEFAULT+webbrowser.get(browser).name:
                 with open('/var/log/syslog') as f:
-                    for l in follow(f, 1):
+                    for l in follow(f, 2):
                         if 'ERROR:gles2_cmd_decoder' in l:
                             chrome_error = True
                             break
@@ -272,14 +287,21 @@ class MyHTTPServer(HTTPServer):
                 inp = 'y'
                 while True:  # Prompt user to retry.
                     inp = input(('Launching browser yields syslog errors, '
-                        'probably because display entered screensaver mode.\n'
+                        'probably because Chrome is used and the display entered screensaver mode.\n'
                         'All related processes have been killed by precaution.\n'
-                        'Do you want to retry ([y]/n)? '))
-                    if inp not in ['y', 'n']:
+                        'If you have Firefox installed and want to use it persistently, enter Y\n'
+                        'Otherwise, do you simply want to retry ([y]/n)? '))
+                    if inp not in ['y', 'Y', 'n']:
                         continue
                     else:
                         break
-                if inp == 'y':
+                if inp == 'Y':  # Configure Firefox as default browser.
+                    config.save_config(BROWSER='firefox')  # Configuration file for future imports.
+                    BROWSER = 'firefox'  # Current module for future calls to the function.
+                    browser = 'firefox'  # Current function for immediate retry.
+                    cmd = re.sub('get\(.*?\)', f'get("{browser}")', cmd)
+                    webbrowser_cmd = [sys.executable, '-c', cmd]
+                if inp == 'y' or inp == 'Y':
                     # Re initialize logger so wait_until is effective.
                     self.logger = io.BytesIO()
                     with open(os.devnull, 'w') as pipe:
