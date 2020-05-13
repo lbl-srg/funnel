@@ -34,7 +34,7 @@ install:
   - pip install --user .
 
 before_script:
-  - mkdir build && cd build && cmake .. $ARCH_OPTION
+  - rm -rf build && mkdir build && cd build && cmake .. $ARCH_OPTION
 
 script:
   # Compile, link, install.
