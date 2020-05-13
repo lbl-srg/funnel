@@ -1,0 +1,2 @@
+include pyfunnel/VERSION
+recursive-include pyfunnel/templates *

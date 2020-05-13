@@ -18,7 +18,8 @@
 
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.11.0)
-project(funnel VERSION 0.1.0 LANGUAGES C)
+file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
+project(funnel VERSION ${VERSION} LANGUAGES C)
 enable_testing()
 
 # Detect OS.
@@ -34,10 +35,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
 else()
     message(WARNING "OS unknown!")
 endif()
-
-# Output build system directories.
-message("CMake source directory is: ${CMAKE_SOURCE_DIR}")
-message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
 
 # Set compiling and linking options.
 # Consider adding -std=c89 -pedantic to gcc options to improve portability.
@@ -70,10 +67,14 @@ elseif(MACOSX)
     set(PLATFORM_INSTALL_PREFIX darwin64)
 endif()
 
-set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}")
-set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib/${PLATFORM_INSTALL_PREFIX}")
-set(RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set(PUBLIC_INCLUDE_DIRECTORY "${CMAKE_SOURCE_DIR}/include")
+set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/pyfunnel/lib/${PLATFORM_INSTALL_PREFIX}")
+set(LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/pyfunnel/lib/${PLATFORM_INSTALL_PREFIX}")
+
+# Print build system directories.
+message("CMake source directory is: ${CMAKE_SOURCE_DIR}")
+message("CMake binary directory is: ${CMAKE_BINARY_DIR}")
+message("CMake archive directory is: ${ARCHIVE_OUTPUT_DIRECTORY}")
+message("CMake library directory is: ${LIBRARY_OUTPUT_DIRECTORY}")
 
 # Manage subdirectories.
 add_subdirectory(src)
@@ -105,14 +106,14 @@ add_test(
 set(TEST_ARGS_0 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_0
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/bin/pyfunnel.py" ${TEST_ARGS_0}
+    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_0}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 ### Wrong arguments
 set(TEST_ARGS_1 --reference wrong.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_1
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/bin/pyfunnel.py" ${TEST_ARGS_1}
+    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_1}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file")
@@ -120,7 +121,7 @@ set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file"
 set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atoly 0.002 --output results)
 add_test(
     NAME test_py_2
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/bin/pyfunnel.py" ${TEST_ARGS_2}
+    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "At least one of the two possible tolerance parameters")
@@ -128,7 +129,7 @@ set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "At least one 
 set(TEST_ARGS_3 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(
     NAME test_py_3
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/bin/pyfunnel.py" ${TEST_ARGS_3}
+    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_3}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_3 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
@@ -173,9 +174,15 @@ add_test(
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
 ## Configure pre/post test.
+set(summary_path "${CMAKE_TEST_DIR}/test_summary.py")
+set(CTEST_CUSTOM_POST_TEST
+    "${PYTHON_EXECUTABLE} ${summary_path} ${CMAKE_TEST_DIR}"
+)
 set(content "# Numerics testing configuration file
     set(CTEST_CUSTOM_PRE_TEST
-        ${CTEST_CUSTOM_PRE_TEST})"
+        ${CTEST_CUSTOM_PRE_TEST})
+    set(CTEST_CUSTOM_POST_TEST
+        \"${CTEST_CUSTOM_POST_TEST}\")"
 )
 file(WRITE
     "${CMAKE_BINARY_DIR}/CTestCustom.cmake"

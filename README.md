@@ -4,9 +4,6 @@
 
 A cross-platform C-based software for comparing two `(x, y)` data sets given tolerances in `x` and `y` directions.
 
-Handles: different time (`x`) scales, time events offsets, relative and absolute tolerances
-in `x` and `y` directions.
-
 ## Principles
 
 ### Overall
@@ -54,19 +51,30 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 ### System Requirements
 
-The software has been tested on the following platforms for which a library is provided in `./lib`:
+The software has been tested on the following platforms.
 
   * Linux x64
   * Windows x64
   * Mac OS X
 
-The Python binding has been tested with Python `2.7.*` and `3.7.*`.
-See `requirements.txt` for the required Python packages.
+A Python binding is available to access the library. It is compatible with Python 2 and 3.
 
-### Python Binding
+### Installing
+
+The Python binding is delivered as a package named `pyfunnel`.
+
+The package is not published on PyPI but can be installed from GitHub with
+
+`pip git+https://github.com/lbl-srg/funnel.git@master`
+
+For development, additional dependencies are needed and can be installed with
+
+`pip install -r requirements.txt`
+
+### Main Functions
 
 The software is primarily intended to be used by means of a Python binding.
-The module `./bin/pyfunnel.py` provides the following functions:
+The package `pyfunnel` provides the following functions.
 
   * `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
     Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
@@ -77,7 +85,8 @@ The module `./bin/pyfunnel.py` provides the following functions:
   * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
     Displays plot in default browser. See function docstring for further details.
 
-The module might also be called directly from terminal:
+The module `pyfunnel.py` might also be called directly from terminal.
+
 ```
 usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT]
                    [--atolx ATOLX] [--atoly ATOLY] [--rtolx RTOLX]
@@ -111,13 +120,9 @@ Full documentation at https://github.com/lbl-srg/funnel
 
 ### Example
 
-From a Python shell with `./tests/test_bin` as the current working directory, type
+From a Python shell with `./tests/test_bin` as the current working directory, run
 ```python
->>> import os
->>> import sys
 >>> import pandas as pd
->>> pyfunnel_dir = os.path.join(os.path.pardir, os.path.pardir, 'bin')
->>> sys.path.append(pyfunnel_dir)
 >>> import pyfunnel
 >>> ref = pd.read_csv('trended.csv')
 >>> test = pd.read_csv('simulated.csv')
@@ -125,9 +130,9 @@ From a Python shell with `./tests/test_bin` as the current working directory, ty
 ... xTest=test.iloc(axis=1)[0], yTest=test.iloc(axis=1)[1], atolx=0.002, atoly=0.002)
 >>> pyfunnel.plot_funnel('results')
 ```
-Or from a terminal with `./tests/test_bin` as the current working directory, type
+Or from a terminal with `./tests/test_bin` as the current working directory, run
 ```
-$ python ../../bin/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+$ python ../../pyfunnel/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 ```
 
 ## Build from Source
@@ -141,7 +146,7 @@ The distributed binaries have been built with Microsoft Visual Studio C/C++ comp
 
 ### Procedure
 
-To compile, link and install, from the top-level directory, run the following commands:
+To compile, link and install, from the top-level directory, run the following commands
 
 ```
 mkdir build
@@ -150,10 +155,10 @@ cmake ..                           (add `-A x64` on Windows to compile in 64 bit
 cmake --build . --target install   (add `--config Release` on Windows)
 ```
 
-To run the tests, from `./build` run the following commands:
+To run the tests, from `./build` run
+
 ```
 ctest                               (add `-C Release` on Windows)
-python ../tests/test_summary.py ../tests
 ```
 
 ## License

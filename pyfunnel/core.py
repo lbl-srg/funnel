@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
+
 #######################################################
-# Python binding for funnel library: compareAndReport
-# Function that plots results: plot_funnel
+# Core functions for funnel Python binding
 #######################################################
+
 from __future__ import absolute_import, division, print_function, unicode_literals
+
 # Python standard library imports.
 from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 import io
@@ -15,7 +16,6 @@ import platform
 import re
 import subprocess
 import sys
-import textwrap
 import threading
 import time
 import webbrowser
@@ -30,8 +30,121 @@ import six
 # Code repository sub-package imports.
 
 
+__all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
+
+
+#########################################
+# Configuration functions and variables #
+#########################################
+
+CONFIG_PATH = os.path.join(os.environ.get('HOME'), '.pyfunnel')
+CONFIG_DEFAULT = dict(
+    BROWSER=None,
+)
+try:  # Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Ubuntu.
+    LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
+except:
+    LINUX_DEFAULT = None
+
+
+def read_config(config_path=CONFIG_PATH, config_default=CONFIG_DEFAULT):
+    """Read configuration file and return default values for variables not assigned."""
+    try:
+        with open(config_path, 'r') as f:
+            cfg = f.readlines()
+    except IOError:
+        return config_default
+    toreturn = dict()
+    for e in cfg:
+        (k, v) = re.split('\s*=\s*', e)
+        toreturn[k] = v
+    for k in config_default.keys():
+        if k not in toreturn.keys():
+            toreturn[k] = config_default[k]
+    return toreturn
+
+
+CONFIG = read_config()
+
+
+def save_config(config_path=CONFIG_PATH, config=CONFIG):
+    """Save configuration variables in configuration file."""
+    with open(config_path, 'w') as f:
+        for k in config.keys():
+            f.write('{}={}'.format(k, config[k]))
+
+
+##################
+# Free functions #
+##################
+
+
+def follow(filehandler, timeout):
+    """Generator yielding lines appended to filehandler until timeout is over."""
+    filehandler.seek(0, 2)  # Go to the end of the file.
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        line = filehandler.readline()
+        if not line:  # If no new line: iterate.
+            time.sleep(0.1)
+            continue
+        yield line  # Else: yield line.
+
+
+def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
+    """Waits until some predicate is true or timeout is over."""
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        if somepredicate(*args, **kwargs):
+            return True
+        time.sleep(period)
+    return False
+
+
+def exit_test(logger, list_files=None):
+    """Test if listed files have been loaded by server.
+
+    Based on log of HTTP response status codes:
+        200: request received
+        304: requested resource not modified since previous transmission
+    """
+    content = logger.getvalue().decode('utf8')
+    if list_files is not None:
+        raw_pattern = 'GET.*?{}.*?(200|304)'  # *? for non-greedy search
+        for i, l in enumerate(list_files):
+            if i == 0:
+                pattern = raw_pattern.format(l)
+            else:
+                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
+        return bool(re.search(pattern, content))
+    else:
+        return False
+
+
+def plot_funnel(test_dir, title="", browser=None):
+    """Plot funnel results stored in test_dir and display in default browser.
+
+    Args:
+        test_dir (str): path of directory where output files are stored
+        [title] (str): plot title
+        [browser] (str): web browser to use for displaying plot
+    """
+    list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
+    for f in list_files:
+        file_path = os.path.join(test_dir, f)
+        assert os.path.isfile(file_path), "No such file: {}".format(file_path)
+
+    with open(os.path.join(os.path.dirname(__file__), 'templates', 'plot.html')) as f:
+        _TEMPLATE_HTML = f.read()
+
+    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+    server = MyHTTPServer(('', 0), CORSRequestHandler,
+        str_html=content, url_html='funnel', browse_dir=test_dir)
+    server.browse(list_files, browser=browser)
+
+
 def _get_lib_path(project_name):
-    """Infers the library absolute path.
+    """Infer the library absolute path.
 
     Args:
         project_name (str): project name
@@ -39,7 +152,7 @@ def _get_lib_path(project_name):
     Returns:
         str: guessed library path e.g. ~/project_name/lib/darwin64/lib{project_name}.so
     """
-    lib_path = os.path.join(os.path.dirname(__file__), os.path.pardir, 'lib')
+    lib_path = os.path.join(os.path.dirname(__file__), 'lib')
     os_name = platform.system()
     os_machine = platform.machine()
     if os_name == 'Windows':
@@ -71,9 +184,9 @@ def compareAndReport(
     rtolx=None,
     rtoly=None
 ):
-    """Runs funnel binary with list-like objects as x, y reference and test values.
+    """Run funnel binary with list-like objects as x, y reference and test values.
 
-    Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
+    Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`,
     `test.csv` into the output directory (`./results` by default).
 
     Args:
@@ -199,8 +312,13 @@ def compareAndReport(
     return retVal
 
 
+#####################
+# Class definitions #
+#####################
+
+
 class MyHTTPServer(HTTPServer):
-    """Adds custom server_launch, server_close and browse methods."""
+    """Add custom server_launch, server_close and browse methods."""
 
     def __init__(self, *args, **kwargs):
         """kwargs:
@@ -234,23 +352,74 @@ class MyHTTPServer(HTTPServer):
             print('Could not close logger: {}'.format(e))
 
     def browse(self, *args, **kwargs):
-        # TODOC
+        """Launch server and web browser.
+
+        kwargs:
+            browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
+            timeout (float): maximum time (s) before server shutdown
+        """
+        global CONFIG
+        global LINUX_DEFAULT
         browser = kwargs.pop('browser', None)
-        timeout = kwargs.pop('timeout', 5)
+        timeout = kwargs.pop('timeout', 10)
+        # Manage browser command using configuration file.
+        cmd = 'import webbrowser; webbrowser.get().open("http://localhost:{}/funnel")'.format(
+            self.server_port
+        )
+        if browser is None:
+            # This assignment cannot be done with browser = kwargs.pop('browser', CONFIG['BROWSER'])
+            # as another module can call browse(browser=None).
+            browser = CONFIG['BROWSER']
+        if browser is not None:
+            webbrowser.get(browser)  # Throw exception in case of missing browser.
+            cmd = re.sub('get\(\)', 'get("{}")'.format(browser), cmd)  # Pass browser name within quotes.
+        webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
         try:
             self.server_launch()
-            if browser is not None:
-                webbrowser.get(browser)  # throws exception in case of missing browser
-                browser = '"{}"'.format(browser)
-            webbrowser_cmd = [sys.executable, '-c',  # use subprocess to avoid web browser error into terminal
-                'import webbrowser; webbrowser.get({}).open("http://localhost:{}/funnel")'.format(
-                browser, self.server_port)]
+            # Launch browser as a subprocess command to avoid web browser error into terminal.
             with open(os.devnull, 'w') as pipe:
                 proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
-            if timeout >= 10:
+            # Watch syslog for error.
+            chrome_error = False
+            if platform.system() == 'Linux':
+                if (browser is None and 'chrome' in LINUX_DEFAULT) or (
+                    browser is not None and 'chrome' in browser):
+                    with open('/var/log/syslog') as f:
+                        for l in follow(f, 2):
+                            if 'ERROR:gles2_cmd_decoder' in l:
+                                chrome_error = True
+                                break
+            if chrome_error:
+                proc.terminate()  # Terminating the process does not stop Chrome in background.
+                subprocess.check_call(['pkill', 'chrome'])  # This does.
+                inp = 'y'
+                while True:  # Prompt user to retry.
+                    inp = input(('Launching browser yields syslog errors, '
+                        'probably because Chrome is used and the display entered screensaver mode.\n'
+                        'All related processes have been killed by precaution.\n'
+                        'If you have Firefox installed and want to use it persistently, enter p\n'
+                        'Otherwise, do you simply want to retry ([y]/n/p)? '))
+                    if inp not in ['y', 'n', 'p']:
+                        continue
+                    else:
+                        break
+                if inp == 'p':  # Configure Firefox as default browser.
+                    CONFIG['BROWSER'] = 'firefox'  # Current module for future calls to the function.
+                    save_config()  # Configuration file for future imports.
+                    browser = 'firefox'  # Current function for immediate retry.
+                    cmd = re.sub('get\(.*?\)', 'get("{}")'.format(browser), cmd)
+                    webbrowser_cmd = [sys.executable, '-c', cmd]
+                if inp == 'y' or inp == 'p':
+                    # Re initialize logger so wait_until is effective.
+                    self.logger = io.BytesIO()
+                    with open(os.devnull, 'w') as pipe:
+                        proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+                else:
+                    raise KeyboardInterrupt
+            if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
                 print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
             wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
@@ -259,7 +428,7 @@ class MyHTTPServer(HTTPServer):
             print(e)
         finally:
             os.chdir(cur_dir)
-            try:  # objects may not be defined in case of exception
+            try:  # Objects may not be defined in case of exception.
                 self.server_close()
                 proc.terminate()
                 if not wait_status:
@@ -270,7 +439,7 @@ class MyHTTPServer(HTTPServer):
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
-    """Enables to log message on logger and modifies response header."""
+    """Enable logging message and modify response header."""
     def log_message(self, format, *args):
         try:
             to_send = "{} - - [{}] {}\n".format(
@@ -309,266 +478,3 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             return SimpleHTTPRequestHandler.send_head(self)
 
 
-def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
-    """Waits until some predicate is true."""
-    must_end = time.time() + timeout
-    while time.time() < must_end:
-        if somepredicate(*args, **kwargs):
-            return True
-        time.sleep(period)
-    return False
-
-
-def exit_test(logger, list_files=None):
-    content = logger.getvalue().decode('utf8')
-    if list_files is not None:
-        raw_pattern = 'GET.*?{}.*?200'  # *? for non-greedy search
-        for i, l in enumerate(list_files):
-            if i == 0:
-                pattern = raw_pattern.format(l)
-            else:
-                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
-        return bool(re.search(pattern, content))
-    else:
-        return False
-
-
-def plot_funnel(test_dir, title="", browser=None):
-    """Plots funnel results stored in test_dir and displays in default browser.
-
-    Args:
-        test_dir (str): path of directory where output files are stored
-        [title] (str): plot title
-        [browser] (str): web browser to use for displaying plot
-    """
-    list_files = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
-    for f in list_files:
-        file_path = os.path.join(test_dir, f)
-        assert os.path.isfile(file_path), "No such file: {}".format(file_path)
-
-    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
-    server = MyHTTPServer(('', 0), CORSRequestHandler,
-        str_html=content, url_html='funnel', browse_dir=test_dir)
-    server.browse(list_files, browser=browser, timeout=5)
-
-
-_TEMPLATE_HTML = """
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-</head>
-<body>
-  <div id="myDiv" style="height: 100%; width: 100%;" class="plotly-graph-div"></div>
-  <script>
-    function makeplot() {
-        Plotly.d3.csv("http://localhost:$SERVER_PORT/reference.csv", function(data_ref){
-            Plotly.d3.csv("http://localhost:$SERVER_PORT/test.csv", function(data_test){
-                Plotly.d3.csv("http://localhost:$SERVER_PORT/errors.csv", function(data_err){
-                    Plotly.d3.csv("http://localhost:$SERVER_PORT/lowerBound.csv", function(data_low){
-                        Plotly.d3.csv("http://localhost:$SERVER_PORT/upperBound.csv", function(data_upp){
-                            var data_raw = {
-                                'ref': data_ref,
-                                'test': data_test,
-                                'err': data_err,
-                                'low': data_low,
-                                'upp': data_upp
-                            };
-                            processAll(data_raw);
-                        });
-                    });
-                });
-            });
-        });
-    };
-
-    function processAll(dataIn) {
-        data = {};
-        for(var index in dataIn) {
-            data[index] = processData(dataIn[index]);
-        }
-        makePlotly(data);
-    };
-
-    function processData(allRows) {
-        var x = [], y = [];
-        for (var i=0; i<allRows.length; i++) {
-            row = allRows[i];
-            x.push(row['x']);
-            y.push(row['y']);
-        }
-        return {x: x, y:y};
-    };
-
-    function makePlotly(data){
-        var plotDiv = document.getElementById("plot");
-        var traces = [
-            {
-                x: data['err'].x,
-                y: data['err'].y,
-                name: 'error',
-                xaxis: 'x',
-                yaxis: 'y2',
-            },
-            {
-                x: data['test'].x,
-                y: data['test'].y,
-                name: 'test',
-            },
-            {
-                name: 'lower bound',
-                x: data['low'].x,
-                y: data['low'].y,
-                showlegend: false,
-                line: {width: 0},
-                mode: 'lines'
-            },
-            {
-                x: data['ref'].x,
-                y: data['ref'].y,
-                name: 'reference',
-                fillcolor: 'rgba(68, 68, 68, 0.3)',
-                fill: 'tonexty',
-            },
-            {
-                name: 'upper bound',
-                x: data['upp'].x,
-                y: data['upp'].y,
-                showlegend: false,
-                fillcolor: 'rgba(68, 68, 68, 0.3)',
-                fill: 'tonexty',
-                line: {width: 0},
-                mode: 'lines'
-            },
-        ];
-        var layout = {
-            title: {text: '$TITLE'},
-            grid: {rows: 2, columns: 1, subplots: [['xy1'], ['xy2']]},
-            xaxis1: {
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'x',
-                anchor: 'y1',
-            },
-            yaxis1: {
-                domain: [0.3, 1],
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'y',
-            },
-            yaxis2: {
-                domain: [0, 0.18],
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'error [y]',
-            },
-        };
-        Plotly.newPlot('myDiv', traces, layout, {responsive: true});
-    };
-
-    makeplot();
-    </script>
-</body>
-</html>
-"""
-
-
-if __name__ == "__main__":
-    import argparse
-    import csv
-
-    # Configure the argument parser.
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent("""\
-            Run funnel binary from terminal.\n
-            Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
-        """),
-        epilog=textwrap.dedent("""\
-            Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for each axis.
-            Relative tolerance is relative to the range of x or y values.\n
-            Typical use from terminal:
-            $ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results\n
-            Full documentation at https://github.com/lbl-srg/funnel
-        """)
-    )
-    required_named = parser.add_argument_group('required named arguments')
-
-    required_named.add_argument(
-        "--reference",
-        help="Path of CSV file with reference data",
-        required=True
-    )
-    required_named.add_argument(
-        "--test",
-        help="Path of CSV file with test data",
-        required=True
-    )
-    parser.add_argument(
-        "--output",
-        help="Path of directory to store output data",
-    )
-    parser.add_argument(
-        "--atolx",
-        type=float,
-        help="Absolute tolerance along x axis"
-    )
-    parser.add_argument(
-        "--atoly",
-        type=float,
-        help="Absolute tolerance along y axis"
-    )
-    parser.add_argument(
-        "--rtolx",
-        type=float,
-        help="Relative tolerance along x axis"
-    )
-    parser.add_argument(
-        "--rtoly",
-        type=float,
-        help="Relative tolerance along y axis"
-    )
-
-    # Parse the arguments.
-    args = parser.parse_args()
-
-    # Check the arguments.
-    assert (args.atolx is not None) or (args.rtolx is not None),\
-        "At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values."
-    assert (args.atoly is not None) or (args.rtoly is not None),\
-        "At least one of the two possible tolerance parameters (atol or rtol) must be defined for y values."
-    assert os.path.isfile(args.reference),\
-        "No such file: {}".format(args.reference)
-    assert os.path.isfile(args.test),\
-        "No such file: {}".format(args.test)
-
-    # Extract data from files.
-    data = dict()
-    for s in ('reference', 'test'):
-        data[s] = dict(x=[], y=[])
-        with open(vars(args)[s]) as csvfile:
-            spamreader = csv.reader(csvfile)
-            for row in spamreader:
-                try:
-                    data[s]['x'].append(float(row[0]))
-                    data[s]['y'].append(float(row[1]))
-                except:
-                    pass
-
-    # Call the function.
-    rc =  compareAndReport(
-        xReference=data['reference']['x'],
-        yReference=data['reference']['y'],
-        xTest=data['test']['x'],
-        yTest=data['test']['y'],
-        outputDirectory=args.output,
-        atolx=args.atolx,
-        atoly=args.atoly,
-        rtolx=args.rtolx,
-        rtoly=args.rtoly,
-    )
-
-    sys.exit(rc)

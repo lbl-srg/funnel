@@ -6,7 +6,7 @@ from test_import import *
 
 if __name__ == "__main__":
     test_dir = sys.argv[1]
-    pf.plot_funnel(test_dir)
+    pyfunnel.plot_funnel(test_dir)
     time.sleep(1)  # to catch thread exception
     sys.stderr.flush()  # to output thread exception
 

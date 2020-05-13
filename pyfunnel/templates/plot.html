@@ -1,0 +1,120 @@
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="myDiv" style="height: 100%; width: 100%;" class="plotly-graph-div"></div>
+  <script>
+    function makeplot() {
+        Plotly.d3.csv("http://localhost:$SERVER_PORT/reference.csv", function(data_ref){
+            Plotly.d3.csv("http://localhost:$SERVER_PORT/test.csv", function(data_test){
+                Plotly.d3.csv("http://localhost:$SERVER_PORT/errors.csv", function(data_err){
+                    Plotly.d3.csv("http://localhost:$SERVER_PORT/lowerBound.csv", function(data_low){
+                        Plotly.d3.csv("http://localhost:$SERVER_PORT/upperBound.csv", function(data_upp){
+                            var data_raw = {
+                                'ref': data_ref,
+                                'test': data_test,
+                                'err': data_err,
+                                'low': data_low,
+                                'upp': data_upp
+                            };
+                            processAll(data_raw);
+                        });
+                    });
+                });
+            });
+        });
+    };
+
+    function processAll(dataIn) {
+        data = {};
+        for(var index in dataIn) {
+            data[index] = processData(dataIn[index]);
+        }
+        makePlotly(data);
+    };
+
+    function processData(allRows) {
+        var x = [], y = [];
+        for (var i=0; i<allRows.length; i++) {
+            row = allRows[i];
+            x.push(row['x']);
+            y.push(row['y']);
+        }
+        return {x: x, y:y};
+    };
+
+    function makePlotly(data){
+        var plotDiv = document.getElementById("plot");
+        var traces = [
+            {
+                x: data['err'].x,
+                y: data['err'].y,
+                name: 'error',
+                xaxis: 'x',
+                yaxis: 'y2',
+            },
+            {
+                x: data['test'].x,
+                y: data['test'].y,
+                name: 'test',
+            },
+            {
+                name: 'lower bound',
+                x: data['low'].x,
+                y: data['low'].y,
+                showlegend: false,
+                line: {width: 0},
+                mode: 'lines'
+            },
+            {
+                x: data['ref'].x,
+                y: data['ref'].y,
+                name: 'reference',
+                fillcolor: 'rgba(68, 68, 68, 0.3)',
+                fill: 'tonexty',
+            },
+            {
+                name: 'upper bound',
+                x: data['upp'].x,
+                y: data['upp'].y,
+                showlegend: false,
+                fillcolor: 'rgba(68, 68, 68, 0.3)',
+                fill: 'tonexty',
+                line: {width: 0},
+                mode: 'lines'
+            },
+        ];
+        var layout = {
+            title: {text: '$TITLE'},
+            grid: {rows: 2, columns: 1, subplots: [['xy1'], ['xy2']]},
+            xaxis1: {
+                ticks: 'outside',
+                showline: true,
+                zeroline: false,
+                title: 'x',
+                anchor: 'y1',
+            },
+            yaxis1: {
+                domain: [0.3, 1],
+                ticks: 'outside',
+                showline: true,
+                zeroline: false,
+                title: 'y',
+            },
+            yaxis2: {
+                domain: [0, 0.18],
+                ticks: 'outside',
+                showline: true,
+                zeroline: false,
+                title: 'error [y]',
+            },
+        };
+        Plotly.newPlot('myDiv', traces, layout, {responsive: true});
+    };
+
+    makeplot();
+    </script>
+</body>
+</html>

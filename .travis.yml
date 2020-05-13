@@ -2,6 +2,7 @@ language: c
 
 python:
   - "2.7"
+  - "3.6"
 
 notifications:
   email: false
@@ -24,19 +25,22 @@ matrix:
       before_install:
         - choco install python2
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
-        - python -m pip install --upgrade pip wheel
+
+before_install:
+  - python -m pip install --user --upgrade pip
 
 install:
   - pip install --user -r requirements.txt
+  - pip install --user .
 
 before_script:
-  - mkdir build && cd build && cmake .. $ARCH_OPTION
+  - rm -rf build && mkdir build && cd build && cmake .. $ARCH_OPTION
 
 script:
   # Compile, link, install.
   - cmake --build . --target install --config Release
   # Test and clean.
-  - ctest -C Release && python ../tests/test_summary.py ../tests
+  - ctest -C Release
   # Compare.
   - git status tests
   - git diff --exit-code tests

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os, sys
@@ -8,9 +9,12 @@ import json
 import subprocess
 import pandas as pd
 
-pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'bin'))
-sys.path.append(pyfunnel_dir)
-import pyfunnel as pf
+try:  # CI tool
+    import pyfunnel
+except ImportError:  # ctest with no previous `pip install .`
+    pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
+    sys.path.append(pyfunnel_dir)
+    import pyfunnel
 
 
 def read_res(test_dir):
@@ -78,7 +82,7 @@ def run_pyfunnel(test_dir):
         except KeyError:
             par[t] = None
 
-    rc = pf.compareAndReport(
+    rc = pyfunnel.compareAndReport(
         ref.iloc(axis=1)[0],
         ref.iloc(axis=1)[1],
         test.iloc(axis=1)[0],

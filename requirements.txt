@@ -1,5 +1,9 @@
-# Requirements for pyfunnel
-six
+# Core
+six==1.14.0
 
-# Further requirements for running numeric tests (test cases named test_numerics_*)
-pandas
+# Test and documentation
+pandas==1.0.1; python_version>='3.6'
+pandas==0.24.2; python_version~='2.7'
+setuptools==46.0.0; python_version>='3.6'
+setuptools==44.0.0; python_version~='2.7'
+wheel
