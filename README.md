@@ -22,9 +22,8 @@ data curves from simulation, one can verify if the control sequences
 have been implemented such that they produce a similar control response
 than a simulation model that is considered to be the original specification.
 
-<p align="center">
-  <img src="./img/plot_image.svg"/>
-</p>
+![Funnel Plot](https://github.com/lbl-srg/funnel/blob/master/img/plot_image.svg)
+
 
 ### Method to Compute the Funnel
 
