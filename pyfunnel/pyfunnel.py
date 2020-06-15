@@ -92,11 +92,11 @@ if __name__ == "__main__":
                 try:
                     data[s]['x'].append(float(row[0]))
                     data[s]['y'].append(float(row[1]))
-                except:
+                except BaseException:
                     pass
 
     # Call the function.
-    rc =  compareAndReport(
+    rc = compareAndReport(
         xReference=data['reference']['x'],
         yReference=data['reference']['y'],
         xTest=data['test']['x'],
