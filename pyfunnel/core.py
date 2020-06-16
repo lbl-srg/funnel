@@ -427,7 +427,7 @@ class MyHTTPServer(HTTPServer):
                     raise KeyboardInterrupt
             if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
                 print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
-            wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
+            wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
         except Exception as e:
