@@ -437,9 +437,6 @@ class MyHTTPServer(HTTPServer):
             try:  # Objects may not be defined in case of exception.
                 self.server_close()
                 proc.terminate()
-                if not wait_status:
-                    print('Communication between browser and server failed: '
-                          'check that the browser is not running in private mode.')
             except BaseException:
                 pass
 
