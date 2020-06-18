@@ -20,10 +20,6 @@ readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md
 with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
     README = f.read()
 
-# Library path.
-lib_data = 'lib/**'  # Relative path under MAIN_PACKAGE.
-
-
 setup(
     name=MAIN_PACKAGE,
     version=VERSION,
@@ -38,9 +34,6 @@ setup(
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=['six>=1.11'],
     packages=[MAIN_PACKAGE],
-    package_data={
-        MAIN_PACKAGE: [lib_data_dist],
-    },
     include_package_data=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
