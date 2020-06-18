@@ -1,4 +1,4 @@
-# funnel
+# pyfunnel
 
 [![Build Status](https://travis-ci.org/lbl-srg/funnel.svg?branch=master)](https://travis-ci.org/lbl-srg/funnel)
 
@@ -22,23 +22,21 @@ data curves from simulation, one can verify if the control sequences
 have been implemented such that they produce a similar control response
 than a simulation model that is considered to be the original specification.
 
-<p align="center">
-  <img src="./img/plot_image.svg"/>
-</p>
+![Funnel Plot](https://github.com/lbl-srg/funnel/raw/master/img/plot_image.svg)
+
 
 ### Method to Compute the Funnel
 
 The funnel is computed as follows:
 
-  * First step: tolerance areas (based on L1-norm, i.e., rectangles) are built
-  around each reference data point.
+  * First step: tolerance areas (based on L1-norm) are built around each reference data point.
 
   * Second step: the algorithm selects which corners of the tolerance rectangles
   are to be used to build the envelopes based on the change in the derivative sign at
   each reference point.
 
   * Third step: intersection boundary points are computed when a selected corner
-  happens not to be in the logical order with the next one on the `x` scale (i.e. at a local extremum).
+  happens not to be in the logical order with the next one on the `x` scale (i.e., at a local extremum).
   New envelopes are then built encompassing all boundary points, and points strictly within
   the envelopes are dropped.
 
@@ -61,11 +59,7 @@ A Python binding is available to access the library. It is compatible with Pytho
 
 ### Installing
 
-The Python binding is delivered as a package named `pyfunnel`.
-
-The package is not published on PyPI but can be installed from GitHub with
-
-`pip git+https://github.com/lbl-srg/funnel.git@master`
+The Python binding is delivered as a package named `pyfunnel`, available on PyPI.
 
 For development, additional dependencies are needed and can be installed with
 
@@ -121,6 +115,7 @@ Full documentation at https://github.com/lbl-srg/funnel
 ### Example
 
 From a Python shell with `./tests/test_bin` as the current working directory, run
+
 ```python
 >>> import pandas as pd
 >>> import pyfunnel
@@ -163,8 +158,8 @@ ctest                               (add `-C Release` on Windows)
 
 ## License
 
-Modified 3-clause BSD, see [LICENSE.md](LICENSE.md).
+Modified 3-clause BSD, see `LICENSE.txt`.
 
 ## Copyright
 
-See [copyright notice](COPYRIGHT.md).
+See `COPYRIGHT.txt`.

@@ -1,2 +1,2 @@
-include pyfunnel/VERSION
+global-include COPYRIGHT.txt LICENSE.txt README.md VERSION
 recursive-include pyfunnel/templates *

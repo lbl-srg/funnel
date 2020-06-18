@@ -20,11 +20,11 @@ import threading
 import time
 import webbrowser
 try:
-    from http.server import HTTPServer, SimpleHTTPRequestHandler # Python 3
+    from http.server import HTTPServer, SimpleHTTPRequestHandler  # Python 3
 except ImportError:
     from SimpleHTTPServer import BaseHTTPServer
     HTTPServer = BaseHTTPServer.HTTPServer
-    from SimpleHTTPServer import SimpleHTTPRequestHandler # Python 2
+    from SimpleHTTPServer import SimpleHTTPRequestHandler  # Python 2
 # Third-party module or package imports.
 import six
 # Code repository sub-package imports.
@@ -43,7 +43,7 @@ CONFIG_DEFAULT = dict(
 )
 try:  # Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Ubuntu.
     LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
-except:
+except BaseException:
     LINUX_DEFAULT = None
 
 
@@ -56,7 +56,7 @@ def read_config(config_path=CONFIG_PATH, config_default=CONFIG_DEFAULT):
         return config_default
     toreturn = dict()
     for e in cfg:
-        (k, v) = re.split('\s*=\s*', e)
+        (k, v) = re.split(r'\s*=\s*', e)
         toreturn[k] = v
     for k in config_default.keys():
         if k not in toreturn.keys():
@@ -137,9 +137,9 @@ def plot_funnel(test_dir, title="", browser=None):
     with open(os.path.join(os.path.dirname(__file__), 'templates', 'plot.html')) as f:
         _TEMPLATE_HTML = f.read()
 
-    content = re.sub('\$TITLE', title, _TEMPLATE_HTML)
+    content = re.sub(r'\$TITLE', title, _TEMPLATE_HTML)
     server = MyHTTPServer(('', 0), CORSRequestHandler,
-        str_html=content, url_html='funnel', browse_dir=test_dir)
+                          str_html=content, url_html='funnel', browse_dir=test_dir)
     server.browse(list_files, browser=browser)
 
 
@@ -210,18 +210,18 @@ def compareAndReport(
     """
 
     # Check arguments.
-    ## Logic
+    # Logic
     assert (atolx is not None) or (rtolx is not None),\
         "At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values."
     assert (atoly is not None) or (rtoly is not None),\
         "At least one of the two possible tolerance parameters (atol or rtol) must be defined for y values."
-    ## Type
+    # Type
     if outputDirectory is None:
         print("Output directory not specified: results are stored in subdirectory `results` by default.")
         outputDirectory = "results"
     assert isinstance(outputDirectory, six.string_types),\
         "Path of output directory is not a string type."
-    ## Value
+    # Value
     assert len(xReference) == len(yReference),\
         "xReference and yReference must have the same length."
     assert len(xTest) == len(yTest),\
@@ -253,7 +253,7 @@ def compareAndReport(
         else:
             try:
                 tol[k] = float(args[k])
-            except:
+            except BaseException:
                 raise TypeError("Tolerance {} could not be converted to float.".format(k))
             if tol[k] < 0:
                 raise ValueError("Tolerance {} must be positive.".format(k))
@@ -269,7 +269,9 @@ def compareAndReport(
         lib_path = _get_lib_path('funnel')
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
-        raise RuntimeError("Could not load funnel library with this path: {}. {}".format(lib_path, e))
+        raise RuntimeError(
+            "Could not load funnel library with this path: {}. {}".format(
+                lib_path, e))
 
     # Map arguments.
     lib.compareAndReport.argtypes = [
@@ -331,7 +333,7 @@ class MyHTTPServer(HTTPServer):
         url_html = kwargs.pop('url_html', None)
         browse_dir = kwargs.pop('browse_dir', os.getcwd())
         HTTPServer.__init__(self, *args)
-        self._STR_HTML = re.sub('\$SERVER_PORT', str(self.server_port), str_html)
+        self._STR_HTML = re.sub(r'\$SERVER_PORT', str(self.server_port), str_html)
         self._URL_HTML = url_html
         self._BROWSE_DIR = browse_dir
         self.logger = io.BytesIO()
@@ -343,7 +345,8 @@ class MyHTTPServer(HTTPServer):
 
     def server_close(self):
         # Invoke to close logger.
-        threadd = threading.Thread(target=self.shutdown)  # makes execution stall on Windows if main thread
+        # makes execution stall on Windows if main thread
+        threadd = threading.Thread(target=self.shutdown)
         threadd.daemon = True
         threadd.start()
         try:
@@ -372,7 +375,8 @@ class MyHTTPServer(HTTPServer):
             browser = CONFIG['BROWSER']
         if browser is not None:
             webbrowser.get(browser)  # Throw exception in case of missing browser.
-            cmd = re.sub('get\(\)', 'get("{}")'.format(browser), cmd)  # Pass browser name within quotes.
+            # Pass browser name within quotes.
+            cmd = re.sub(r'get\(\)', 'get("{}")'.format(browser), cmd)
         webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
@@ -386,7 +390,7 @@ class MyHTTPServer(HTTPServer):
             chrome_error = False
             if platform.system() == 'Linux':
                 if (browser is None and 'chrome' in LINUX_DEFAULT) or (
-                    browser is not None and 'chrome' in browser):
+                        browser is not None and 'chrome' in browser):
                     with open('/var/log/syslog') as f:
                         for l in follow(f, 2):
                             if 'ERROR:gles2_cmd_decoder' in l:
@@ -397,20 +401,22 @@ class MyHTTPServer(HTTPServer):
                 subprocess.check_call(['pkill', 'chrome'])  # This does.
                 inp = 'y'
                 while True:  # Prompt user to retry.
-                    inp = input(('Launching browser yields syslog errors, '
-                        'probably because Chrome is used and the display entered screensaver mode.\n'
-                        'All related processes have been killed by precaution.\n'
-                        'If you have Firefox installed and want to use it persistently, enter p\n'
-                        'Otherwise, do you simply want to retry ([y]/n/p)? '))
+                    inp = input(
+                        ('Launching browser yields syslog errors, '
+                         'probably because Chrome is used and the display entered screensaver mode.\n'
+                         'All related processes have been killed by precaution.\n'
+                         'If you have Firefox installed and want to use it persistently, enter p\n'
+                         'Otherwise, do you simply want to retry ([y]/n/p)? '))
                     if inp not in ['y', 'n', 'p']:
                         continue
                     else:
                         break
                 if inp == 'p':  # Configure Firefox as default browser.
-                    CONFIG['BROWSER'] = 'firefox'  # Current module for future calls to the function.
+                    # Current module for future calls to the function.
+                    CONFIG['BROWSER'] = 'firefox'
                     save_config()  # Configuration file for future imports.
                     browser = 'firefox'  # Current function for immediate retry.
-                    cmd = re.sub('get\(.*?\)', 'get("{}")'.format(browser), cmd)
+                    cmd = re.sub(r'get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
                 if inp == 'y' or inp == 'p':
                     # Re initialize logger so wait_until is effective.
@@ -421,7 +427,7 @@ class MyHTTPServer(HTTPServer):
                     raise KeyboardInterrupt
             if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
                 print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
-            wait_status = wait_until(exit_test, timeout, 0.1, self.logger, *args)
+            wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
         except Exception as e:
@@ -431,21 +437,19 @@ class MyHTTPServer(HTTPServer):
             try:  # Objects may not be defined in case of exception.
                 self.server_close()
                 proc.terminate()
-                if not wait_status:
-                    print('Communication between browser and server failed: '
-                        'check that the browser is not running in private mode.')
-            except:
+            except BaseException:
                 pass
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
     """Enable logging message and modify response header."""
+
     def log_message(self, format, *args):
         try:
             to_send = "{} - - [{}] {}\n".format(
                 self.client_address[0],
                 self.log_date_time_string(),
-                format%args
+                format % args
             )
             self.server.logger.write(to_send.encode('utf8'))
         except ValueError:  # logger closed
@@ -455,11 +459,11 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin'.encode('utf8'),
-            '*'.encode('utf8'))
+                         '*'.encode('utf8'))
         self.send_header('Access-Control-Allow-Methods'.encode('utf8'),
-            'GET, POST, OPTIONS'.encode('utf8'))
+                         'GET, POST, OPTIONS'.encode('utf8'))
         self.send_header('Access-Control-Allow-Headers'.encode('utf8'),
-            'X-Requested-With'.encode('utf8'))
+                         'X-Requested-With'.encode('utf8'))
         SimpleHTTPRequestHandler.end_headers(self)
 
     def send_head(self):
@@ -476,5 +480,3 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             return f
         else:
             return SimpleHTTPRequestHandler.send_head(self)
-
-
