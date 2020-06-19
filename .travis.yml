@@ -44,13 +44,13 @@ matrix:
       os: windows
       env: ARCH_OPTION="-A x64"
       before_install:
-        - choco install python2 --version=2.7
+        - choco install python --version=2.7.0
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
     - name: Python 3.6 on Windows
       os: windows
       env: ARCH_OPTION="-A x64"
       before_install:
-        - choco install python --version=3.6
+        - choco install python --version=3.6.0
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
 before_install:
