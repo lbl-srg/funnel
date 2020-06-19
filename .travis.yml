@@ -47,17 +47,15 @@ matrix:
         - choco install python2
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
         - python -m pip install --user --upgrade pip
-        - echo "Python version"
-        - echo $TRAVIS_PYTHON_VERSION
+        - python --version
     - name: Python 3.6 on Windows
       os: windows
       env: ARCH_OPTION="-A x64"
       before_install:
-        - choco install python --version=3.6.0
+        - choco install python36
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
         - python -m pip install --user --upgrade pip
-        - echo "Python version"
-        - echo $TRAVIS_PYTHON_VERSION
+        - python --version
 
 before_install:
   - python -m pip install --user --upgrade pip
