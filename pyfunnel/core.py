@@ -37,7 +37,7 @@ __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funne
 # Configuration functions and variables #
 #########################################
 
-CONFIG_PATH = os.path.join(os.environ.get('HOME'), '.pyfunnel')
+CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.pyfunnel')  # os.environ.get('HOME')=None on Windows.
 CONFIG_DEFAULT = dict(
     BROWSER=None,
 )
