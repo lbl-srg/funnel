@@ -52,7 +52,7 @@ matrix:
       os: windows
       env: ARCH_OPTION="-A x64"
       before_install:
-        - choco install python36
+        - choco install python --version=3.6.10
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
         - python -m pip install --user --upgrade pip
         - python --version
