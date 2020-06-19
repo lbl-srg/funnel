@@ -10,36 +10,36 @@ dist: xenial
 
 matrix:
   include:
-    - name: Python 2.7 on Linux
-      os: linux
-      env: ARCH_OPTION=""
-      compiler: gcc
-      python: 2.7
-    - name: Python 3.6 on Linux
-      os: linux
-      env: ARCH_OPTION=""
-      compiler: gcc
-      python: 3.6
-    - name: Python 3.7 on Linux
-      os: linux
-      env: ARCH_OPTION=""
-      compiler: gcc
-      python: 3.7
-    - name: Python 3.8 on Linux
-      os: linux
-      env: ARCH_OPTION=""
-      compiler: gcc
-      python: 3.8
-    - name: Python 2.7 on macOS
-      os: osx
-      env: ARCH_OPTION=""
-      compiler: gcc
-      env: PYENV_VERSION=2.7
-    - name: Python 3.6 on macOS
-      os: osx
-      env: ARCH_OPTION=""
-      compiler: gcc
-      env: PYENV_VERSION=3.6
+    # - name: Python 2.7 on Linux
+    #   os: linux
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   python: 2.7
+    # - name: Python 3.6 on Linux
+    #   os: linux
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   python: 3.6
+    # - name: Python 3.7 on Linux
+    #   os: linux
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   python: 3.7
+    # - name: Python 3.8 on Linux
+    #   os: linux
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   python: 3.8
+    # - name: Python 2.7 on macOS
+    #   os: osx
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   env: PYENV_VERSION=2.7
+    # - name: Python 3.6 on macOS
+    #   os: osx
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   env: PYENV_VERSION=3.6
     - name: Python 2.7 on Windows
       os: windows
       env: ARCH_OPTION="-A x64"
