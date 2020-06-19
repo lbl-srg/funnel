@@ -55,6 +55,8 @@ matrix:
 
 before_install:
   - python -m pip install --user --upgrade pip
+  - echo "Python version"
+  - echo $TRAVIS_PYTHON_VERSION
 
 install:
   - pip install --user -r requirements.txt
