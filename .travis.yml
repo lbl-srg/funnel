@@ -1,9 +1,5 @@
 language: c
 
-python:
-  - "2.7"
-  - "3.6"
-
 notifications:
   email: false
 
@@ -14,17 +10,35 @@ dist: xenial
 
 matrix:
   include:
+    - python: 2.7
+    - python: 3.6
+    - python: 3.7
+    - python: 3.8
     - os: linux
       env: ARCH_OPTION=""
       compiler: gcc
-    - os: osx
+    - name: Python 2.7 on macOS
+      os: osx
       env: ARCH_OPTION=""
       compiler: gcc
-    - os: windows
+      env: PYENV_VERSION=2.7
+    - name: Python 3.6 on macOS
+      os: osx
+      env: ARCH_OPTION=""
+      compiler: gcc
+      env: PYENV_VERSION=3.6
+    - name: Python 2.7 on Windows
+      os: windows
       env: ARCH_OPTION="-A x64"
       before_install:
-        - choco install python2
+        - choco install python --version=2.7
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
+    - name: Python 3.6 on Windows
+      os: windows
+      env: ARCH_OPTION="-A x64"
+      before_install:
+        - choco install python --version=3.6
+        - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
 
 before_install:
   - python -m pip install --user --upgrade pip
