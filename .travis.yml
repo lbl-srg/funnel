@@ -10,36 +10,36 @@ dist: xenial
 
 matrix:
   include:
-    # - name: Python 2.7 on Linux
-    #   os: linux
-    #   env: ARCH_OPTION=""
-    #   compiler: gcc
-    #   python: 2.7
-    # - name: Python 3.6 on Linux
-    #   os: linux
-    #   env: ARCH_OPTION=""
-    #   compiler: gcc
-    #   python: 3.6
-    # - name: Python 3.7 on Linux
-    #   os: linux
-    #   env: ARCH_OPTION=""
-    #   compiler: gcc
-    #   python: 3.7
-    # - name: Python 3.8 on Linux
-    #   os: linux
-    #   env: ARCH_OPTION=""
-    #   compiler: gcc
-    #   python: 3.8
-    # - name: Python 2.7 on macOS
-    #   os: osx
-    #   env: ARCH_OPTION=""
-    #   compiler: gcc
-    #   env: PYENV_VERSION=2.7
-    # - name: Python 3.6 on macOS
-    #   os: osx
-    #   env: ARCH_OPTION=""
-    #   compiler: gcc
-    #   env: PYENV_VERSION=3.6
+    - name: Python 2.7 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 2.7
+    - name: Python 3.6 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 3.6
+    - name: Python 3.7 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 3.7
+    - name: Python 3.8 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 3.8
+    - name: Python 2.7 on macOS
+      os: osx
+      env: ARCH_OPTION=""
+      compiler: gcc
+      env: PYENV_VERSION=2.7
+    - name: Python 3.6 on macOS
+      os: osx
+      env: ARCH_OPTION=""
+      compiler: gcc
+      env: PYENV_VERSION=3.6
     - name: Python 2.7 on Windows
       os: windows
       env: ARCH_OPTION="-A x64"
@@ -47,7 +47,6 @@ matrix:
         - choco install python2
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
         - python -m pip install --user --upgrade pip
-        - echo $TRAVIS_PYTHON_VERSION
     - name: Python 3.6 on Windows
       os: windows
       env: ARCH_OPTION="-A x64"
@@ -55,11 +54,9 @@ matrix:
         - choco install python --version=3.6.8
         - export PATH="/c/Python36:/c/Python36/Scripts:$PATH"
         - python -m pip install --user --upgrade pip
-        - echo $TRAVIS_PYTHON_VERSION
 
 before_install:
   - python -m pip install --user --upgrade pip
-  - echo $TRAVIS_PYTHON_VERSION
 
 install:
   - pip install --user -r requirements.txt
