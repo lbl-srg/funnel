@@ -10,13 +10,26 @@ dist: xenial
 
 matrix:
   include:
-    - python: 2.7
-    - python: 3.6
-    - python: 3.7
-    - python: 3.8
-    - os: linux
+    - name: Python 2.7 on Linux
+      os: linux
       env: ARCH_OPTION=""
       compiler: gcc
+      python: 2.7
+    - name: Python 3.6 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 3.6
+    - name: Python 3.7 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 3.7
+    - name: Python 3.8 on Linux
+      os: linux
+      env: ARCH_OPTION=""
+      compiler: gcc
+      python: 3.8
     - name: Python 2.7 on macOS
       os: osx
       env: ARCH_OPTION=""
@@ -31,7 +44,7 @@ matrix:
       os: windows
       env: ARCH_OPTION="-A x64"
       before_install:
-        - choco install python --version=2.7
+        - choco install python2 --version=2.7
         - export PATH="/c/Python27:/c/Python27/Scripts:$PATH"
     - name: Python 3.6 on Windows
       os: windows
