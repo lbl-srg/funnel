@@ -3,7 +3,6 @@
 
 import codecs
 import io
-import platform
 import os
 import re
 from setuptools import setup
@@ -21,18 +20,6 @@ readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md
 with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
     README = f.read()
 
-# Library path.
-os_name = platform.system()
-lib_data = 'lib'  # Relative path in MAIN_PACKAGE.
-if os_name == 'Windows':
-    lib_data = '{}/win64/*.dll'.format(lib_data)
-elif os_name == 'Linux':
-    lib_data = '{}/linux64/*.so'.format(lib_data)
-elif os_name == 'Darwin':
-    lib_data = '{}/darwin64/*.dylib'.format(lib_data)
-else:
-    raise RuntimeError('Could not detect standard (system, architecture).')
-
 setup(
     name=MAIN_PACKAGE,
     version=VERSION,
@@ -47,9 +34,6 @@ setup(
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=['six>=1.11'],
     packages=[MAIN_PACKAGE],
-    package_data={
-        MAIN_PACKAGE: [lib_data],
-    },
     include_package_data=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
