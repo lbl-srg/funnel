@@ -45,7 +45,10 @@ CONFIG_DEFAULT = dict(
 # Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Ubuntu.
 LINUX_DEFAULT = None
 if platform.system() == 'Linux':
-    LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
+    try:
+        LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
+    except BaseException:
+        pass
 
 
 def read_config(config_path=CONFIG_PATH, config_default=CONFIG_DEFAULT):
