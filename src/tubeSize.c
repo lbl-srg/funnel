@@ -10,7 +10,7 @@
  *   maxValue : find maximum value of an array
  *   setStandardBaseAndRatio : calculate standard values for baseX, baseY and ratio
  *   setFormerBaseAndRatio : calculate former standard values for baseX, baseY and ratio
- *   tubeSize : calculate tubeSize (half-width and half-height of rectangle)
+ *   tube_size_calc : calculate tube size (half-width and half-height of rectangle)
  */
 
 #include <stdio.h>
@@ -80,87 +80,77 @@ double maxValue(double* array, int size) {
 }
 
 /*
- * Function: setData
+ * Function: set_data
  * -----------------
  *   find maximum values and value ranges in x and y of reference data
  *
  *   refData: CSV data which will be used as reference
  *
- *   return : an array "results" that includes:
- *              rangeX -- value range of x
- *              rangeY -- value range of Y
- *              maxX   -- maximum x
- *              maxY   -- maximum y
+ *   return : a data_char struct
  */
-double * setData(struct data refData) {
-	double rangeX, rangeY;
-	double* results = malloc(4 * sizeof(double));
 
-	double maxX = maxValue(refData.x,refData.n);
-	double minX = minValue(refData.x,refData.n);
+struct data_char {
+  double range_x;  /* Range of x */
+  double range_y;  /* Range of y */
+  double mag_x;    /* Magnitude of x */
+  double mag_y;    /* Magnitude of y */
+};
 
-	double maxY = maxValue(refData.y,refData.n);
-	double minY = minValue(refData.y,refData.n);
+struct data_char set_data(struct data refData) {
 
-	rangeX = maxX - minX;
-	rangeY = maxY - minY;
+  double maxX = maxValue(refData.x, refData.n);
+  double minX = minValue(refData.x, refData.n);
 
-	results[0] = rangeX;
-	results[1] = rangeY;
-	results[2] = maxX;
-	results[3] = maxY;
-	return results;
+  double maxY = maxValue(refData.y, refData.n);
+  double minY = minValue(refData.y, refData.n);
+
+  struct data_char d = {
+    .range_x=maxX - minX,
+    .range_y=maxY - minY,
+    .mag_x=max(maxX, fabs(minX)),
+    .mag_y = max(maxY, fabs(minY))
+  };
+
+  return d;
 }
 
-
 /*
- * Function: tubeSize
+ * Function: tube_size_calc
  * ------------------
- *   calculate tubeSize (half-width and half-height of rectangle)
+ *   calculate tube size (half-width and half-height of rectangle)
  *
  *   refData: CSV data which will be used as reference
  *   tol    : data structure containing absolute tolerance (atolx, atoly)
  *            and relative tolerance (rtolx, rtoly)
  *
- *   return : an array "tubeSize" that includes:
- *                   x  -- half width of rectangle
- *                   y  -- half height of rectangle
- *               rangeX -- value range of x
- *               rangeY -- value range of y
+ *   return : a tube_size struct
  */
-double * tubeSize(struct data refData, struct tolerances tol) {
-  double x = 1e-10, y = 1e-10, rangeX, rangeY, maxX, maxY;
-  double* tubeSize = malloc(4 * sizeof(double));
-
-  double *standValue;
-
-  standValue = setData(refData);
-  rangeX = standValue[0];
-  rangeY = standValue[1];
-  maxX   = standValue[2];
-  maxY   = standValue[3];
+struct tube_size tube_size_calc(struct data refData, struct tolerances tol) {
+  double dx, dy;
+  struct data_char d = set_data(refData);
+  struct tube_size tube_s;
 
   if ((equ(tol.atolx,0) && equ(tol.rtolx, 0)) || (equ(tol.atoly,0) && equ(tol.rtoly, 0))) {
-	  fputs("Error: At least one tolerance has to be set for both, x and y.\n", stderr);
-	  exit(1);
+    fputs("Error: At least one tolerance has to be set for both x and y.\n", stderr);
+    exit(1);
   }
 
-  if (equ(rangeX, 0)) {
-	  x = max(1e-5, 1e-5*fabs(maxX));
+  if (equ(d.range_x, 0)) {
+    dx = max(tol.atolx, tol.rtolx * d.mag_x);
   } else {
-	  x = max(tol.atolx, tol.rtolx * rangeX);
+    dx = max(tol.atolx, tol.rtolx * d.range_x);
   }
 
-  if (equ(rangeY, 0)) {
-  	  y = max(1e-5, 1e-5*fabs(maxY));
-    } else {
-  	  y = max(tol.atoly, tol.rtoly * rangeY);
-    }
+  if (equ(d.range_y, 0)) {
+    dy = max(tol.atoly, tol.rtoly * d.mag_y);
+  } else {
+    dy = max(tol.atoly, tol.rtoly * d.range_y);
+  }
 
-  tubeSize[0] = x;
-  tubeSize[1] = y;
-  tubeSize[2] = rangeX;
-  tubeSize[3] = rangeX;
+  tube_s.dx = dx;
+  tube_s.dy = dy;
+  tube_s.range_x = d.range_x;
+  tube_s.range_y = d.range_y;
 
-  return tubeSize;
+  return tube_s;
 }

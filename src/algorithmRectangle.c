@@ -257,16 +257,11 @@ struct data denormalizeData(struct data df, double mx, double my) {
  *   find the data set of lower tube curve
  *
  *   reference: reference data curve
- *   tubeSize: data array specifying tube size that includes:
- *             tubeSize[0], x -- half width of rectangle
- *             tubeSize[1], y -- half height of rectangle
- *             tubeSize[2], baseX -- base of relative value is x direction
- *             tubeSize[3], baseY -- base of relative value is y direction
- *             tubeSize[4], ratio -- ratio y / x
+ *   tube_s: tube_size struct specifying tube size
  *
  *   return : data set defining lower curve of the tube
  */
-struct data calculateLower(struct data reference, double* tubeSize) {
+struct data calculateLower(struct data reference, struct tube_size tube_s) {
   int i;
   struct data ref_norm;
   struct data lower;
@@ -286,14 +281,14 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   my = fabs(mean(reference.y, reference.n));
   ref_norm = normalizeData(reference, mx, my);
   if equ(mx, 0.0) {
-    xLen = tubeSize[0];
+    xLen = tube_s.dx;
   } else {
-    xLen = tubeSize[0] / mx;
+    xLen = tube_s.dx / mx;
   }
   if equ(my, 0.0) {
-    yLen = tubeSize[1];
+    yLen = tube_s.dy;
   } else {
-    yLen = tubeSize[1] / my;
+    yLen = tube_s.dy / my;
   }
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning
@@ -420,16 +415,11 @@ struct data calculateLower(struct data reference, double* tubeSize) {
  *   find the data set of upper tube curve
  *
  *   reference: reference data curve
- *   tubeSize: data array specifying tube size that includes:
- *             tubeSize[0], x -- half width of rectangle
- *             tubeSize[1], y -- half height of rectangle
- *             tubeSize[2], baseX -- base of relative value is x direction
- *             tubeSize[3], baseY -- base of relative value is y direction
- *             tubeSize[4], ratio -- ratio y / x
+ *   tube_s: tube_size struct specifying tube size
  *
  *   return : data set defining upper curve of the tube
  */
-struct data calculateUpper(struct data reference, double* tubeSize) {
+struct data calculateUpper(struct data reference, struct tube_size tube_s) {
   int i;
   struct data ref_norm;
   struct data upper;
@@ -449,14 +439,14 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
   my = fabs(mean(reference.y, reference.n));
   ref_norm = normalizeData(reference, mx, my);
   if equ(mx, 0.0) {
-    xLen = tubeSize[0];
+    xLen = tube_s.dx;
   } else {
-    xLen = tubeSize[0] / mx;
+    xLen = tube_s.dx / mx;
   }
   if equ(my, 0.0) {
-    yLen = tubeSize[1];
+    yLen = tube_s.dy;
   } else {
-    yLen = tubeSize[1] / my;
+    yLen = tube_s.dy / my;
   }
   // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
   // ignore identical point at the beginning

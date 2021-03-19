@@ -205,11 +205,11 @@ int compareAndReport(
   tolerances.rtoly = rtoly;
   // Calculate tube size (half-width and half-height of rectangle)
   //printf("useRelative=%d\n", arguments.useRelativeTolerance);
-  double* tube = tubeSize(*baseCSV, tolerances);
+  struct tube_size tube_s = tube_size_calc(*baseCSV, tolerances);
 
   // Calculate the data set of lower and upper curve around base
-  struct data lowerCurve = calculateLower(*baseCSV, tube);
-  struct data upperCurve = calculateUpper(*baseCSV, tube);
+  struct data lowerCurve = calculateLower(*baseCSV, tube_s);
+  struct data upperCurve = calculateUpper(*baseCSV, tube_s);
 
   // Validate test curve and generate error report
   if (lowerCurve.n == 0 || upperCurve.n == 0){

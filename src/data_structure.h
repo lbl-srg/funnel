@@ -31,4 +31,12 @@ struct tolerances {
 	double rtolx;
 	double rtoly;
 };
+
+struct tube_size {
+  double dx;       /* Half width of rectangle  */
+  double dy;       /* Half height of rectangle  */
+  double range_x;  /* Range of x */
+  double range_y;  /* Range of y */
+};
+
 #endif /* DATA_STRUCTURE_H_ */
