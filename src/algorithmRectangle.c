@@ -277,12 +277,8 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   double *yLen;
   xLen = (double *)malloc(sizeof(double) * reference->n);
   yLen = (double *)malloc(sizeof(double) * reference->n);
-  if (xLen == NULL){
-	  fputs("Error: Failed to allocate memory for xLen.\n", stderr);
-    exit(1);
-  }
-  if (yLen == NULL){
-	  fputs("Error: Failed to allocate memory for xLen.\n", stderr);
+  if ((xLen == NULL) || (yLen == NULL)){
+	  fputs("Error: Failed to allocate memory for xLen and yLen.\n", stderr);
     exit(1);
   }
 
@@ -422,8 +418,8 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   lower = removeLoop(tempLX, tempLY, lisLen, -1);
 
   // Free the memory.
-  free(xLen);
-  free(yLen);
+  if (xLen != NULL) free(xLen);
+  if (yLen != NULL) free(yLen);
 
   return denormalizeData(lower, mx, my);
 }

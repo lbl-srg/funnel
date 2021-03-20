@@ -183,8 +183,13 @@ int compareAndReport(
   int rc_mkdir = mkdir_p(outputDirectory);
   struct data *baseCSV = newData(tReference, yReference, nReference);
   struct data *testCSV = newData(tTest, yTest, nTest);
-  double init_values[nReference];
-  struct data *tube_size = newData(init_values, init_values, nReference);
+  struct data *tube_size = (struct data *)(malloc(sizeof(struct data)));
+  tube_size->x = (double *)malloc(sizeof(double) * nReference);
+  tube_size->y = (double *)malloc(sizeof(double) * nReference);
+  if ((tube_size == NULL) || (tube_size->x == NULL) || (tube_size->y == NULL)){
+	  fputs("Error: Failed to allocate memory for tube_size struct.\n", stderr);
+    exit(1);
+  }
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
@@ -262,6 +267,7 @@ int compareAndReport(
   end:
     freeData(baseCSV);
     freeData(testCSV);
+    freeData(tube_size);
     fclose(log_file);
     return retVal;
 }
