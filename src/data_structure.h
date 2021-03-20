@@ -26,17 +26,12 @@ struct reports {
 };
 
 struct tolerances {
-	double atolx;
-	double atoly;
-	double rtolx;
-	double rtoly;
-};
-
-struct tube_size {
-  double dx;       /* Half width of rectangle  */
-  double dy;       /* Half height of rectangle  */
-  double range_x;  /* Range of x */
-  double range_y;  /* Range of y */
+	double atolx;  /* Absolute tolerance in x */
+	double atoly;  /* Absolute tolerance in y */
+	double rtolx;  /* Relative tolerance in x: relatively to range of x */
+	double rtoly;  /* Relative tolerance in y: relatively to range of y */
+	double ltolx;  /* Relative tolerance in x: relatively to local value of x */
+	double ltoly;  /* Relative tolerance in y: relatively to local value of y */
 };
 
 #endif /* DATA_STRUCTURE_H_ */

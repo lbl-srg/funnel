@@ -124,7 +124,7 @@ add_test(
     COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
-set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "At least one of the two possible tolerance parameters")
+set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "At least one of the tolerance parameters")
 ### Again
 set(TEST_ARGS_3 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(

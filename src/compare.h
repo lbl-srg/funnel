@@ -40,7 +40,9 @@ int compareAndReport(
   const double atolx,
   const double atoly,
   const double rtolx,
-  const double rtoly
+  const double rtoly,
+  const double ltolx,
+  const double ltoly
 );
 
 #endif /* COMPARE_H_ */

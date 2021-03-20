@@ -96,13 +96,13 @@ struct data_char {
   double mag_y;    /* Magnitude of y */
 };
 
-struct data_char set_data(struct data refData) {
+struct data_char set_data(struct data *refData) {
 
-  double maxX = maxValue(refData.x, refData.n);
-  double minX = minValue(refData.x, refData.n);
+  double maxX = maxValue(refData->x, refData->n);
+  double minX = minValue(refData->x, refData->n);
 
-  double maxY = maxValue(refData.y, refData.n);
-  double minY = minValue(refData.y, refData.n);
+  double maxY = maxValue(refData->y, refData->n);
+  double minY = minValue(refData->y, refData->n);
 
   struct data_char d = {
     .range_x=maxX - minX,
@@ -119,38 +119,58 @@ struct data_char set_data(struct data refData) {
  * ------------------
  *   calculate tube size (half-width and half-height of rectangle)
  *
- *   refData: CSV data which will be used as reference
- *   tol    : data structure containing absolute tolerance (atolx, atoly)
- *            and relative tolerance (rtolx, rtoly)
+ *   refData: pointer to struct with the reference data
+ *   tube_size : pointer to struct with the tube size
+ *   tol    : struct with tolerance values
  *
- *   return : a tube_size struct
+ *   return : void (modifies tube_size in place)
  */
-struct tube_size tube_size_calc(struct data refData, struct tolerances tol) {
-  double dx, dy;
+void tube_size_calc(struct data *refData, struct data *tube_size, struct tolerances tol) {
+  int i;
   struct data_char d = set_data(refData);
-  struct tube_size tube_s;
 
-  if ((equ(tol.atolx,0) && equ(tol.rtolx, 0)) || (equ(tol.atoly,0) && equ(tol.rtoly, 0))) {
-    fputs("Error: At least one tolerance has to be set for both x and y.\n", stderr);
+  if (((equ(tol.atolx,0) && equ(tol.rtolx, 0)) && equ(tol.ltolx, 0)) ||
+      ((equ(tol.atoly,0) && equ(tol.rtoly, 0)) && equ(tol.ltoly, 0))) {
+    fputs("Error: At least one of the possible tolerance parameters \
+           (atol, ltol, or rtol) must be defined for each axis..\n", stderr);
     exit(1);
   }
 
-  if (equ(d.range_x, 0)) {
-    dx = max(tol.atolx, tol.rtolx * d.mag_x);
-  } else {
-    dx = max(tol.atolx, tol.rtolx * d.range_x);
+  for (i=0; i<refData->n; i++)
+  {
+    tube_size->x[i] = max(max(tol.atolx, tol.rtolx * d.range_x), tol.ltolx * refData->x[i]);
+    tube_size->y[i] = max(max(tol.atoly, tol.rtoly * d.range_y), tol.ltoly * refData->y[i]);
+
+    if (equ(tube_size->x[i], 0))
+    {
+      if (!equ(tol.rtolx, 0))
+      /* This is for consistency with csv compare. */
+      {
+        tube_size->x[i] = max(tube_size->x[i], tol.rtolx * d.mag_x);
+      }
+      if (equ(tube_size->x[i], 0))
+      /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
+         Then we consider both rtol and ltol as absolute.
+      */
+      {
+        tube_size->x[i] = max(tube_size->x[i], max(tol.rtolx, tol.ltolx));
+      }
+    }
+    /* Same logic for y variable. */
+    if (equ(tube_size->y[i], 0))
+    {
+      if (!equ(tol.rtoly, 0))
+      /* This is for consistency with csv compare: we use the magnitude if the range is 0. */
+      {
+        tube_size->y[i] = max(tube_size->y[i], tol.rtoly * d.mag_y);
+      }
+      if (equ(tube_size->y[i], 0))
+      /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
+         Then we consider both rtol and ltol as absolute.
+      */
+      {
+        tube_size->y[i] = max(tube_size->y[i], max(tol.rtoly, tol.ltoly));
+      }
+    }
   }
-
-  if (equ(d.range_y, 0)) {
-    dy = max(tol.atoly, tol.rtoly * d.mag_y);
-  } else {
-    dy = max(tol.atoly, tol.rtoly * d.range_y);
-  }
-
-  tube_s.dx = dx;
-  tube_s.dy = dy;
-  tube_s.range_x = d.range_x;
-  tube_s.range_y = d.range_y;
-
-  return tube_s;
 }

@@ -25,8 +25,9 @@ if __name__ == "__main__":
             Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
         """),
         epilog=textwrap.dedent("""\
-            Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for each axis.
-            Relative tolerance is relative to the range of x or y values.\n
+            Note: At least one of the possible tolerance parameters (atol, ltol, or rtol) must be defined for each axis.
+            Relative tolerance ltol is relative to the local value of x or y.\n
+            Relative tolerance rtol is relative to the range of x or y.\n
             Typical use from terminal:
             $ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results\n
             Full documentation at https://github.com/lbl-srg/funnel
@@ -59,24 +60,34 @@ if __name__ == "__main__":
         help="Absolute tolerance along y axis"
     )
     parser.add_argument(
+        "--ltolx",
+        type=float,
+        help="Relative tolerance along x axis (relatively to the local value)"
+    )
+    parser.add_argument(
+        "--ltoly",
+        type=float,
+        help="Relative tolerance along y axis (relatively to the local value)"
+    )
+    parser.add_argument(
         "--rtolx",
         type=float,
-        help="Relative tolerance along x axis"
+        help="Relative tolerance along x axis (relatively to the range)"
     )
     parser.add_argument(
         "--rtoly",
         type=float,
-        help="Relative tolerance along y axis"
+        help="Relative tolerance along y axis (relatively to the range)"
     )
 
     # Parse the arguments.
     args = parser.parse_args()
 
     # Check the arguments.
-    assert (args.atolx is not None) or (args.rtolx is not None),\
-        "At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values."
-    assert (args.atoly is not None) or (args.rtoly is not None),\
-        "At least one of the two possible tolerance parameters (atol or rtol) must be defined for y values."
+    assert (args.atolx is not None) or (args.ltolx is not None) or (args.rtolx is not None),\
+        "At least one of the tolerance parameters (atol, ltol, or rtol) must be defined for x values."
+    assert (args.atoly is not None) or (args.ltoly is not None) or (args.rtoly is not None),\
+        "At least one of the tolerance parameters (atol, ltol or rtol) must be defined for y values."
     assert os.path.isfile(args.reference),\
         "No such file: {}".format(args.reference)
     assert os.path.isfile(args.test),\
@@ -104,6 +115,8 @@ if __name__ == "__main__":
         outputDirectory=args.output,
         atolx=args.atolx,
         atoly=args.atoly,
+        ltolx=args.ltolx,
+        ltoly=args.ltoly,
         rtolx=args.rtolx,
         rtoly=args.rtoly,
     )

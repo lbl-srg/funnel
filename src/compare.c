@@ -119,22 +119,23 @@ struct data *newData(
   size_t n
 ) {
 
-  struct data *retVal = malloc (sizeof (struct data));
-  if (retVal == NULL){
+  struct data *retVal = malloc(sizeof(struct data));
+  if (retVal == NULL)
+  {
     fputs("Error: Failed to allocate memory for data.\n", log_file);
     return NULL;
   }
   // Try to allocate vector data, free structure if fail.
 
-  retVal->x = malloc (n * sizeof (double));
+  retVal->x = malloc(n * sizeof(double));
   if (retVal->x == NULL) {
     fputs("Error: Failed to allocate memory for data.x.\n", log_file);
     free (retVal);
     return NULL;
   }
-  memcpy(retVal->x, x, sizeof(double)*n);
+  memcpy(retVal->x, x, n * sizeof(double));
 
-  retVal->y = malloc (n * sizeof (double));
+  retVal->y = malloc(n * sizeof(double));
   if (retVal->y == NULL) {
     fputs("Error: Failed to allocate memory for data.y.\n", log_file);
     free (retVal->x);
@@ -173,13 +174,17 @@ int compareAndReport(
   const char *outputDirectory,
   const double atolx,
   const double atoly,
+  const double ltolx,
+  const double ltoly,
   const double rtolx,
   const double rtoly
 ) {
   int retVal;
   int rc_mkdir = mkdir_p(outputDirectory);
-  struct data * baseCSV = newData(tReference, yReference, nReference);
-  struct data * testCSV = newData(tTest, yTest, nTest);
+  struct data *baseCSV = newData(tReference, yReference, nReference);
+  struct data *testCSV = newData(tTest, yTest, nTest);
+  double init_values[nReference];
+  struct data *tube_size = newData(init_values, init_values, nReference);
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
@@ -198,18 +203,20 @@ int compareAndReport(
     goto end;
   }
 
-  struct tolerances tolerances;
-  tolerances.atolx = atolx;
-  tolerances.atoly = atoly;
-  tolerances.rtolx = rtolx;
-  tolerances.rtoly = rtoly;
-  // Calculate tube size (half-width and half-height of rectangle)
-  //printf("useRelative=%d\n", arguments.useRelativeTolerance);
-  struct tube_size tube_s = tube_size_calc(*baseCSV, tolerances);
+  struct tolerances tolerances = {
+    .atolx = atolx,
+    .atoly = atoly,
+    .rtolx = rtolx,
+    .rtoly = rtoly,
+    .ltolx = ltolx,
+    .ltoly = ltoly,
+  };
+  // Compute tube size.
+  tube_size_calc(baseCSV, tube_size, tolerances);
 
   // Calculate the data set of lower and upper curve around base
-  struct data lowerCurve = calculateLower(*baseCSV, tube_s);
-  struct data upperCurve = calculateUpper(*baseCSV, tube_s);
+  struct data lowerCurve = calculateLower(baseCSV, tube_size);
+  struct data upperCurve = calculateUpper(baseCSV, tube_size);
 
   // Validate test curve and generate error report
   if (lowerCurve.n == 0 || upperCurve.n == 0){

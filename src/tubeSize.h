@@ -10,7 +10,7 @@
 #ifndef TUBESIZE_H_
 #define TUBESIZE_H_
 
-struct tube_size tube_size_calc(struct data refData, struct tolerances tol);
+void tube_size_calc(struct data *refData, struct data *tube_size, struct tolerances tol);
 
 double minValue(double* array, int size);
 

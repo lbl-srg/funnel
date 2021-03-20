@@ -185,6 +185,8 @@ def compareAndReport(
     outputDirectory=None,
     atolx=None,
     atoly=None,
+    ltolx=None,
+    ltoly=None,
     rtolx=None,
     rtoly=None
 ):
@@ -201,8 +203,10 @@ def compareAndReport(
         outputDirectory (str): path of directory to store output files
         atolx (float): absolute tolerance along x axis
         atoly (float): absolute tolerance along y axis
-        rtolx (float): relative tolerance along x axis
-        rtoly (float): relative tolerance along y axis
+        ltolx (float): relative tolerance along x axis (relatively to the local value)
+        ltoly (float): relative tolerance along y axis (relatively to the local value)
+        rtolx (float): relative tolerance along x axis (relatively to the range)
+        rtoly (float): relative tolerance along y axis (relatively to the range)
 
     Returns:
         None
@@ -215,10 +219,10 @@ def compareAndReport(
 
     # Check arguments.
     # Logic
-    assert (atolx is not None) or (rtolx is not None),\
-        "At least one of the two possible tolerance parameters (atol or rtol) must be defined for x values."
-    assert (atoly is not None) or (rtoly is not None),\
-        "At least one of the two possible tolerance parameters (atol or rtol) must be defined for y values."
+    assert (atolx is not None) or (ltolx is not None) or (rtolx is not None),\
+        "At least one of the tolerance parameters (atol, ltol, or rtol) must be defined for x values."
+    assert (atoly is not None) or (ltoly is not None) or (rtolx is not None),\
+        "At least one of the tolerance parameters (atol, ltol, or rtol) must be defined for y values."
     # Type
     if outputDirectory is None:
         print("Output directory not specified: results are stored in subdirectory `results` by default.")
@@ -251,7 +255,7 @@ def compareAndReport(
     # Convert None tolerance to 0.
     tol = dict()
     args = locals()
-    for k in ('atolx', 'atoly', 'rtolx', 'rtoly'):
+    for k in ('atolx', 'atoly', 'ltolx', 'ltoly', 'rtolx', 'rtoly'):
         if args[k] is None:
             tol[k] = 0.0
         else:
@@ -289,6 +293,8 @@ def compareAndReport(
         c_double,
         c_double,
         c_double,
+        c_double,
+        c_double,
         c_double]
     lib.compareAndReport.restype = c_int
 
@@ -304,6 +310,8 @@ def compareAndReport(
             outputDirectory,
             tol['atolx'],
             tol['atoly'],
+            tol['ltolx'],
+            tol['ltoly'],
             tol['rtolx'],
             tol['rtoly'],
         )
