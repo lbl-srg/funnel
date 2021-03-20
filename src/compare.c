@@ -206,10 +206,10 @@ int compareAndReport(
   struct tolerances tolerances = {
     .atolx = atolx,
     .atoly = atoly,
-    .rtolx = rtolx,
-    .rtoly = rtoly,
     .ltolx = ltolx,
     .ltoly = ltoly,
+    .rtolx = rtolx,
+    .rtoly = rtoly
   };
   // Compute tube size.
   tube_size_calc(baseCSV, tube_size, tolerances);

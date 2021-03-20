@@ -273,8 +273,18 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
   double mx, my;
   int b;
-  double xLen[reference->n];
-  double yLen[reference->n];
+  double *xLen;
+  double *yLen;
+  xLen = (double *)malloc(sizeof(double) * reference->n);
+  yLen = (double *)malloc(sizeof(double) * reference->n);
+  if (xLen == NULL){
+	  fputs("Error: Failed to allocate memory for xLen.\n", stderr);
+    exit(1);
+  }
+  if (yLen == NULL){
+	  fputs("Error: Failed to allocate memory for xLen.\n", stderr);
+    exit(1);
+  }
 
   // Normalize data.
   mx = fabs(mean(reference->x, reference->n));
@@ -410,6 +420,10 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   tempLY = getListValues(ly);
 
   lower = removeLoop(tempLX, tempLY, lisLen, -1);
+
+  // Free the memory.
+  free(xLen);
+  free(yLen);
 
   return denormalizeData(lower, mx, my);
 }

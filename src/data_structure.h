@@ -28,10 +28,10 @@ struct reports {
 struct tolerances {
 	double atolx;  /* Absolute tolerance in x */
 	double atoly;  /* Absolute tolerance in y */
-	double rtolx;  /* Relative tolerance in x: relatively to range of x */
-	double rtoly;  /* Relative tolerance in y: relatively to range of y */
-	double ltolx;  /* Relative tolerance in x: relatively to local value of x */
-	double ltoly;  /* Relative tolerance in y: relatively to local value of y */
+	double ltolx;  /* Relative tolerance in x (relatively to local value) */
+	double ltoly;  /* Relative tolerance in y (relatively to local value) */
+	double rtolx;  /* Relative tolerance in x (relatively to range */
+	double rtoly;  /* Relative tolerance in y (relatively to range) */
 };
 
 #endif /* DATA_STRUCTURE_H_ */
