@@ -273,10 +273,8 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
   double mx, my;
   int b;
-  double *xLen;
-  double *yLen;
-  xLen = (double *)malloc(sizeof(double) * reference->n);
-  yLen = (double *)malloc(sizeof(double) * reference->n);
+  double *xLen = (double *)malloc(sizeof(double) * reference->n);
+  double *yLen = (double *)malloc(sizeof(double) * reference->n);
   if ((xLen == NULL) || (yLen == NULL)){
 	  fputs("Error: Failed to allocate memory for xLen and yLen.\n", stderr);
     exit(1);
@@ -447,8 +445,12 @@ struct data calculateUpper(struct data *reference, struct data *tube_size) {
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
   double mx, my;
   int b;
-  double xLen[reference->n];
-  double yLen[reference->n];
+  double *xLen = (double *)malloc(sizeof(double) * reference->n);
+  double *yLen = (double *)malloc(sizeof(double) * reference->n);
+  if ((xLen == NULL) || (yLen == NULL)){
+	  fputs("Error: Failed to allocate memory for xLen and yLen.\n", stderr);
+    exit(1);
+  }
 
   // Normalize data.
   mx = fabs(mean(reference->x, reference->n));
@@ -579,8 +581,11 @@ struct data calculateUpper(struct data *reference, struct data *tube_size) {
 
   tempUX = getListValues(ux);
   tempUY = getListValues(uy);
-
   upper = removeLoop(tempUX, tempUY, lisLen, 1);
+
+  // Free the memory.
+  if (xLen != NULL) free(xLen);
+  if (yLen != NULL) free(yLen);
 
   return denormalizeData(upper, mx, my);
 }
