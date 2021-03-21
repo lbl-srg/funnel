@@ -149,11 +149,6 @@ void setData(
   const double x[],
   const double y[]
 ) {
-  // size_t lentgh_x = sizeof(x) / sizeof(x[0]);
-  // size_t lentgh_y = sizeof(y) / sizeof(y[0]);
-  // if ((dat->n != lentgh_x) || (dat->n != lentgh_y)) {
-  //   fputs("Error: data struct size and array lengths are different.\n", log_file);
-  // }
   if (dat != NULL) {
     memcpy(dat->x, x, sizeof(double) * dat->n);
     memcpy(dat->y, y, sizeof(double) * dat->n);

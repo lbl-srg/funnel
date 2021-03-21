@@ -236,6 +236,12 @@ struct data getLower(struct data *reference, struct data *tube_size) {
   node_t *lx = NULL;
   node_t *ly = NULL;
   size_t i, b;
+
+  /* Normalize values and tube size in x direction.
+   * This was introduced in https://github.com/lbl-srg/funnel/pull/30
+   * to guard against vanishing derivatives (dy/dx) for x values with a large order of magnitude.
+   */
+
   struct data_char dat_char = get_data_char(reference);                   // Data characteristics
   double *x_norm = (double *)malloc(sizeof(double) * reference->n);       // Normalized x values
   double *tube_x_norm = (double *)malloc(sizeof(double) * tube_size->n);  // Normalized tube size in x direction
@@ -244,10 +250,7 @@ struct data getLower(struct data *reference, struct data *tube_size) {
     exit(1);
   }
   memcpy(x_norm, reference->x, sizeof(double) * reference->n);
-  memcpy(tube_x_norm, tube_size->x, sizeof(double) * tube_size->n);;
-  /* Normalize values and tube size in x direction
-   *
-   */
+  memcpy(tube_x_norm, tube_size->x, sizeof(double) * tube_size->n);
   normalize(x_norm, reference->n, dat_char.mag_x);
   normalize(tube_x_norm, tube_size->n, dat_char.mag_x);
 
@@ -395,6 +398,12 @@ struct data getUpper(struct data *reference, struct data *tube_size) {
   node_t *ux = NULL;
   node_t *uy = NULL;
   size_t i, b;
+
+  /* Normalize values and tube size in x direction.
+   * This was introduced in https://github.com/lbl-srg/funnel/pull/30
+   * to guard against vanishing derivatives (dy/dx) for x values with a large order of magnitude.
+   */
+
   struct data_char dat_char = get_data_char(reference);                   // Data characteristics
   double *x_norm = (double *)malloc(sizeof(double) * reference->n);       // Normalized x values
   double *tube_x_norm = (double *)malloc(sizeof(double) * tube_size->n);  // Normalized tube size in x direction
@@ -403,10 +412,7 @@ struct data getUpper(struct data *reference, struct data *tube_size) {
     exit(1);
   }
   memcpy(x_norm, reference->x, sizeof(double) * reference->n);
-  memcpy(tube_x_norm, tube_size->x, sizeof(double) * tube_size->n);;
-  /* Normalize values and tube size in x direction
-   *
-   */
+  memcpy(tube_x_norm, tube_size->x, sizeof(double) * tube_size->n);
   normalize(x_norm, reference->n, dat_char.mag_x);
   normalize(tube_x_norm, tube_size->n, dat_char.mag_x);
 
