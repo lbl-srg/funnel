@@ -45,11 +45,11 @@
  *
  *   return: minimum value of the data array
  */
-double minValue(double* array, int size) {
-  int i;
+double minValue(double* array, size_t size) {
+  size_t i;
   double min;
   min = array[0];
-  for (i=0; i<size; i++) {
+  for (i = 0; i < size; i++) {
     if (array[i] < min) {
       min = array[i];
     }
@@ -67,11 +67,11 @@ double minValue(double* array, int size) {
  *
  *   return: maximum value of the data array
  */
-double maxValue(double* array, int size) {
-  int i;
+double maxValue(double* array, size_t size) {
+  size_t i;
   double max;
   max = array[0];
-  for (i=0; i<size; i++) {
+  for (i = 0; i < size; i++) {
     if (array[i] > max) {
       max = array[i];
     }

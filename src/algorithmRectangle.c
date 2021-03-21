@@ -201,24 +201,24 @@ void lastNodeDeletion(node_t* head) {
 
 /* Normalize variable array (passed by reference) by variable magnitude */
 void normalize(double **var, double var_mag) {
-  size_t var_size = sizeof(*var) / sizeof(**var);
-  for (size_t i = 0; i < var_size; i++) {
+  size_t var_length = sizeof(*var) / sizeof((*var)[0]);
+  for (size_t i = 0; i < var_length; i++) {
     if (var_mag > 1E-5) {
-      *var[i] = *var[i] / var_mag;
+      (*var)[i] = (*var)[i] / var_mag;
     } else {
-      *var[i] = *var[i];
+      (*var)[i] = (*var)[i];
     }
   }
 }
 
 /* Denormalize variable array (passed by reference) by variable magnitude */
 void denormalize(double **var, double var_mag) {
-  size_t var_size = sizeof(*var) / sizeof(**var);
-  for (size_t i = 0; i < var_size; i++) {
+  size_t var_length = sizeof(*var) / sizeof((*var)[0]);
+  for (size_t i = 0; i < var_length; i++) {
     if (var_mag > 1E-5) {
-      *var[i] = *var[i] * var_mag;
+      (*var)[i] = (*var)[i] * var_mag;
     } else {
-      *var[i] = *var[i];
+      (*var)[i] = (*var)[i];
     }
   }
 }

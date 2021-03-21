@@ -14,8 +14,8 @@ void set_tube_size(struct data *refData, struct data *tube_size, struct toleranc
 
 struct data_char get_data_char(struct data *dat);
 
-double minValue(double* array, int size);
+double minValue(double* array, size_t size);
 
-double maxValue(double* array, int size);
+double maxValue(double* array, size_t size);
 
 #endif /* TUBESIZE_H_ */

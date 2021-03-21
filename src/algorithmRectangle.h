@@ -25,10 +25,6 @@ double * getListValues(node_t* head);
 
 void lastNodeDeletion(node_t* head);
 
-void normalize(double **var, double var_mag);
-
-void denormalize(double **var, double var_mag);
-
 void setLower(struct data *upper, struct data *reference, struct data *tube_size);
 
 void setUpper(struct data *upper, struct data *reference, struct data *tube_size);
