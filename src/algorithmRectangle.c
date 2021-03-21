@@ -41,10 +41,10 @@
 #define inline __inline
 #endif
 
-static inline double mean(double* arr, int n) {
+static inline double mean(double* arr, size_t n) {
     double sum = 0;
 
-    for (int i = 0; i < n; i++) {sum += arr[i];}
+    for (size_t i = 0; i < n; i++) {sum += arr[i];}
 
     return sum / n;
 }
