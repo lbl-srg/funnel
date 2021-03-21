@@ -25,9 +25,9 @@ double * getListValues(node_t* head);
 
 void lastNodeDeletion(node_t* head);
 
-void setLower(struct data *upper, struct data *reference, struct data *tube_size);
+struct data getLower(struct data *reference, struct data *tube_size);
 
-void setUpper(struct data *upper, struct data *reference, struct data *tube_size);
+struct data getUpper(struct data *reference, struct data *tube_size);
 
 struct data removeLoop(double* x, double* y, int size, int curInd);
 

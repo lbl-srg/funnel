@@ -195,30 +195,28 @@ void lastNodeDeletion(node_t* head) {
             preNode->next = NULL;
         }
         /* Delete the last node */
-        free(toDelLast);
+        if (toDelLast != NULL) free(toDelLast);
     }
 }
 
-/* Normalize variable array (passed by reference) by variable magnitude */
-void normalize(double **var, double var_mag) {
-  size_t var_length = sizeof(*var) / sizeof((*var)[0]);
-  for (size_t i = 0; i < var_length; i++) {
+/* Normalize variable array by variable magnitude */
+void normalize(double *var, size_t length, double var_mag) {
+  for (size_t i = 0; i < length; i++) {
     if (var_mag > 1E-5) {
-      (*var)[i] = (*var)[i] / var_mag;
+      var[i] = var[i] / var_mag;
     } else {
-      (*var)[i] = (*var)[i];
+      var[i] = var[i];
     }
   }
 }
 
-/* Denormalize variable array (passed by reference) by variable magnitude */
-void denormalize(double **var, double var_mag) {
-  size_t var_length = sizeof(*var) / sizeof((*var)[0]);
-  for (size_t i = 0; i < var_length; i++) {
+/* Denormalize variable array by variable magnitude */
+void denormalize(double *var, size_t length, double var_mag) {
+  for (size_t i = 0; i < length; i++) {
     if (var_mag > 1E-5) {
-      (*var)[i] = (*var)[i] * var_mag;
+      var[i] = var[i] * var_mag;
     } else {
-      (*var)[i] = (*var)[i];
+      var[i] = var[i];
     }
   }
 }
@@ -233,7 +231,8 @@ void denormalize(double **var, double var_mag) {
  *
  *   return : data struct defining lower curve of the tube
  */
-void setLower(struct data *lower, struct data *reference, struct data *tube_size) {
+struct data getLower(struct data *reference, struct data *tube_size) {
+  struct data lower;
   node_t *lx = NULL;
   node_t *ly = NULL;
   size_t i, b;
@@ -249,8 +248,8 @@ void setLower(struct data *lower, struct data *reference, struct data *tube_size
   /* Normalize values and tube size in x direction
    *
    */
-  normalize(&x_norm, dat_char.mag_x);
-  normalize(&tube_x_norm, dat_char.mag_x);
+  normalize(x_norm, reference->n, dat_char.mag_x);
+  normalize(tube_x_norm, tube_size->n, dat_char.mag_x);
 
   // ===== 1. add corner points of the rectangle =====
   double m0, m1; // slopes before and after point i of reference curve
@@ -370,12 +369,14 @@ void setLower(struct data *lower, struct data *reference, struct data *tube_size
 
   tempLX = getListValues(lx);
   tempLY = getListValues(ly);
-  denormalize(&tempLX, dat_char.mag_x);
-  *lower = removeLoop(tempLX, tempLY, lisLen, -1);
+  lower = removeLoop(tempLX, tempLY, lisLen, -1);
+  denormalize(lower.x, lower.n, dat_char.mag_x);
 
   // Free the memory.
   if (x_norm != NULL) free(x_norm);
   if (tube_x_norm != NULL) free(tube_x_norm);
+
+  return lower;
 }
 
 
@@ -389,7 +390,8 @@ void setLower(struct data *lower, struct data *reference, struct data *tube_size
  *
  *   return : data set defining upper curve of the tube
  */
-void setUpper(struct data *upper, struct data *reference, struct data *tube_size) {
+struct data getUpper(struct data *reference, struct data *tube_size) {
+  struct data upper;
   node_t *ux = NULL;
   node_t *uy = NULL;
   size_t i, b;
@@ -405,8 +407,8 @@ void setUpper(struct data *upper, struct data *reference, struct data *tube_size
   /* Normalize values and tube size in x direction
    *
    */
-  normalize(&x_norm, dat_char.mag_x);
-  normalize(&tube_x_norm, dat_char.mag_x);
+  normalize(x_norm, reference->n, dat_char.mag_x);
+  normalize(tube_x_norm, tube_size->n, dat_char.mag_x);
 
   // ===== 1. add corner points of the rectangle =====
   double m0, m1; // slopes before and after point i of reference curve
@@ -525,12 +527,14 @@ void setUpper(struct data *upper, struct data *reference, struct data *tube_size
 
   tempUX = getListValues(ux);
   tempUY = getListValues(uy);
-  denormalize(&tempUX, dat_char.mag_x);
-  *upper = removeLoop(tempUX, tempUY, lisLen, 1);
+  upper = removeLoop(tempUX, tempUY, lisLen, 1);
+  denormalize(upper.x, upper.n, dat_char.mag_x);
 
   // Free the memory.
   if (tube_x_norm != NULL) free(tube_x_norm);
   if (tube_size->y != NULL) free(tube_size->y);
+
+  return upper;
 }
 
  /*

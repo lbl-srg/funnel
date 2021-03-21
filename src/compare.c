@@ -68,7 +68,7 @@ FILE *init_log(
 ) {
   char *fname = buildPath(outDir, fileName);
   FILE *fil = fopen(fname, "w+");
-  free(fname);
+  if (fname != NULL) free(fname);
 
   if (fil == NULL){
     perror("Error: Failed to open log.\n");
@@ -96,7 +96,7 @@ int writeToFile(
 
   char *fname = buildPath(outDir, fileName);
   FILE *fil = fopen(fname, "w+");
-  free(fname);
+  if (fname != NULL) free(fname);
 
   if (fil == NULL){
     fprintf(log_file, "Error: Failed to open '%s' in writeToFile.\n", fname);
@@ -146,24 +146,26 @@ struct data *newData(
 
 void setData(
   struct data *dat,
-  const double **x,
-  const double **y
+  const double x[],
+  const double y[]
 ) {
-  size_t size_x = sizeof *x / sizeof **x;
-  size_t size_y = sizeof *y / sizeof **y;
-  if ((dat->n != size_x) || (dat->n != size_y)) {
-    fputs("Error: data struct size and array lengths are different.\n", log_file);
-  }
+  // size_t lentgh_x = sizeof(x) / sizeof(x[0]);
+  // size_t lentgh_y = sizeof(y) / sizeof(y[0]);
+  // if ((dat->n != lentgh_x) || (dat->n != lentgh_y)) {
+  //   fputs("Error: data struct size and array lengths are different.\n", log_file);
+  // }
   if (dat != NULL) {
     memcpy(dat->x, x, sizeof(double) * dat->n);
     memcpy(dat->y, y, sizeof(double) * dat->n);
+  } else {
+    fputs("Error: Cannot set data for unallocated struct.\n", log_file);
   }
 }
 
 void freeData (struct data *dat) {
   if (dat != NULL) {
-      free (dat->x);
-      free (dat->y);
+      if (dat->x != NULL) free (dat->x);
+      if (dat->y != NULL) free (dat->y);
       free (dat);
   }
 }
@@ -195,10 +197,8 @@ int compareAndReport(
   struct data *baseCSV = newData(nReference);
   struct data *testCSV = newData(nTest);
   struct data *tube_size = newData(nReference);
-  struct data *lowerCurve = newData(nReference);
-  struct data *upperCurve = newData(nReference);
-  setData(baseCSV, &tReference, &yReference);
-  setData(testCSV, &tTest, &yTest);
+  setData(baseCSV, tReference, yReference);
+  setData(testCSV, tTest, yTest);
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
@@ -229,18 +229,18 @@ int compareAndReport(
   set_tube_size(baseCSV, tube_size, tolerances);
 
   // Calculate values of lower and upper curve around base
-  setLower(lowerCurve, baseCSV, tube_size);
-  setUpper(upperCurve, baseCSV, tube_size);
+  struct data lowerCurve = getLower(baseCSV, tube_size);
+  struct data upperCurve = getUpper(baseCSV, tube_size);
 
   // Validate test curve and generate error report
-  if (lowerCurve->n == 0 || lowerCurve->n == 0){
+  if (lowerCurve.n == 0 || lowerCurve.n == 0){
     fputs("Error: lower or upper curve has 0 elements.\n", log_file);
     retVal = 1;
     goto end;
   }
   struct reports validateReport;
 
-  retVal = validate(*lowerCurve, *upperCurve, *testCSV, &validateReport.errors);
+  retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
   if (retVal != 0){
     fputs("Error: Failed to run validate function.\n", log_file);
     goto end;
@@ -252,12 +252,12 @@ int compareAndReport(
     fputs("Error: Failed to write reference.csv in output directory.\n", log_file);
     goto end;
   }
-  retVal = writeToFile(outputDirectory, "lowerBound.csv", lowerCurve);
+  retVal = writeToFile(outputDirectory, "lowerBound.csv", &lowerCurve);
   if (retVal != 0){
     fputs("Error: Failed to write lowerBound.csv in output directory.\n", log_file);
     goto end;
   }
-  retVal = writeToFile(outputDirectory, "upperBound.csv", upperCurve);
+  retVal = writeToFile(outputDirectory, "upperBound.csv", &upperCurve);
   if (retVal != 0){
     fputs("Error: Failed to write upperBound.csv in output directory.\n", log_file);
     goto end;
@@ -277,8 +277,6 @@ int compareAndReport(
     freeData(baseCSV);
     freeData(testCSV);
     freeData(tube_size);
-    freeData(lowerCurve);
-    freeData(upperCurve);
     fclose(log_file);
     return retVal;
 }

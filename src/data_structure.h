@@ -11,8 +11,8 @@
 #include <sys/types.h>
 
 struct data {
-  double* x;
-  double* y;
+  double *x;
+  double *y;
   size_t n;
 };
 
