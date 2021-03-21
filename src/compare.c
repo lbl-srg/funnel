@@ -114,11 +114,8 @@ int writeToFile(
 }
 
 struct data *newData(
-  const double x[],
-  const double y[],
   size_t n
 ) {
-
   struct data *retVal = malloc(sizeof(struct data));
   if (retVal == NULL)
   {
@@ -133,7 +130,6 @@ struct data *newData(
     free (retVal);
     return NULL;
   }
-  memcpy(retVal->x, x, n * sizeof(double));
 
   retVal->y = malloc(n * sizeof(double));
   if (retVal->y == NULL) {
@@ -142,11 +138,26 @@ struct data *newData(
     free (retVal);
     return NULL;
   }
-  memcpy(retVal->y, y, sizeof(double)*n);
 
   // Set size and return.
   retVal->n = n;
   return retVal;
+}
+
+void setData(
+  struct data *dat,
+  const double **x,
+  const double **y
+) {
+  size_t size_x = sizeof *x / sizeof **x;
+  size_t size_y = sizeof *y / sizeof **y;
+  if ((dat->n != size_x) || (dat->n != size_y)) {
+    fputs("Error: data struct size and array lengths are different.\n", log_file);
+  }
+  if (dat != NULL) {
+    memcpy(dat->x, x, sizeof(double) * dat->n);
+    memcpy(dat->y, y, sizeof(double) * dat->n);
+  }
 }
 
 void freeData (struct data *dat) {
@@ -181,15 +192,13 @@ int compareAndReport(
 ) {
   int retVal;
   int rc_mkdir = mkdir_p(outputDirectory);
-  struct data *baseCSV = newData(tReference, yReference, nReference);
-  struct data *testCSV = newData(tTest, yTest, nTest);
-  struct data *tube_size = (struct data *)(malloc(sizeof(struct data)));
-  tube_size->x = (double *)malloc(sizeof(double) * nReference);
-  tube_size->y = (double *)malloc(sizeof(double) * nReference);
-  if ((tube_size == NULL) || (tube_size->x == NULL) || (tube_size->y == NULL)){
-	  fputs("Error: Failed to allocate memory for tube_size struct.\n", stderr);
-    exit(1);
-  }
+  struct data *baseCSV = newData(nReference);
+  struct data *testCSV = newData(nTest);
+  struct data *tube_size = newData(nReference);
+  struct data *lowerCurve = newData(nReference);
+  struct data *upperCurve = newData(nReference);
+  setData(baseCSV, &tReference, &yReference);
+  setData(testCSV, &tTest, &yTest);
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
@@ -214,24 +223,24 @@ int compareAndReport(
     .ltolx = ltolx,
     .ltoly = ltoly,
     .rtolx = rtolx,
-    .rtoly = rtoly
+    .rtoly = rtoly,
   };
   // Compute tube size.
   set_tube_size(baseCSV, tube_size, tolerances);
 
-  // Calculate the data set of lower and upper curve around base
-  struct data lowerCurve = calculateLower(baseCSV, tube_size);
-  struct data upperCurve = calculateUpper(baseCSV, tube_size);
+  // Calculate values of lower and upper curve around base
+  setLower(lowerCurve, baseCSV, tube_size);
+  setUpper(upperCurve, baseCSV, tube_size);
 
   // Validate test curve and generate error report
-  if (lowerCurve.n == 0 || upperCurve.n == 0){
+  if (lowerCurve->n == 0 || lowerCurve->n == 0){
     fputs("Error: lower or upper curve has 0 elements.\n", log_file);
     retVal = 1;
     goto end;
   }
   struct reports validateReport;
 
-  retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
+  retVal = validate(*lowerCurve, *upperCurve, *testCSV, &validateReport.errors);
   if (retVal != 0){
     fputs("Error: Failed to run validate function.\n", log_file);
     goto end;
@@ -243,12 +252,12 @@ int compareAndReport(
     fputs("Error: Failed to write reference.csv in output directory.\n", log_file);
     goto end;
   }
-  retVal = writeToFile(outputDirectory, "lowerBound.csv", &lowerCurve);
+  retVal = writeToFile(outputDirectory, "lowerBound.csv", lowerCurve);
   if (retVal != 0){
     fputs("Error: Failed to write lowerBound.csv in output directory.\n", log_file);
     goto end;
   }
-  retVal = writeToFile(outputDirectory, "upperBound.csv", &upperCurve);
+  retVal = writeToFile(outputDirectory, "upperBound.csv", upperCurve);
   if (retVal != 0){
     fputs("Error: Failed to write upperBound.csv in output directory.\n", log_file);
     goto end;
@@ -268,6 +277,8 @@ int compareAndReport(
     freeData(baseCSV);
     freeData(testCSV);
     freeData(tube_size);
+    freeData(lowerCurve);
+    freeData(upperCurve);
     fclose(log_file);
     return retVal;
 }

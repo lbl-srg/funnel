@@ -80,37 +80,25 @@ double maxValue(double* array, int size) {
 }
 
 /*
- * Function: set_data
- * -----------------
- *   find maximum values and value ranges in x and y of reference data
+ * Function: get_data_char
+ * -----------------------
+ *   Find range and magnitude in x and y
  *
- *   refData: CSV data which will be used as reference
+ *   dat: data struct
  *
  *   return : a data_char struct
  */
-
-struct data_char {
-  double range_x;  /* Range of x */
-  double range_y;  /* Range of y */
-  double mag_x;    /* Magnitude of x */
-  double mag_y;    /* Magnitude of y */
-};
-
-struct data_char set_data(struct data *refData) {
-
-  double maxX = maxValue(refData->x, refData->n);
-  double minX = minValue(refData->x, refData->n);
-
-  double maxY = maxValue(refData->y, refData->n);
-  double minY = minValue(refData->y, refData->n);
-
+struct data_char get_data_char(struct data *dat) {
+  double maxX = maxValue(dat->x, dat->n);
+  double minX = minValue(dat->x, dat->n);
+  double maxY = maxValue(dat->y, dat->n);
+  double minY = minValue(dat->y, dat->n);
   struct data_char d = {
     .range_x=maxX - minX,
     .range_y=maxY - minY,
     .mag_x=max(maxX, fabs(minX)),
     .mag_y = max(maxY, fabs(minY))
   };
-
   return d;
 }
 
@@ -127,7 +115,7 @@ struct data_char set_data(struct data *refData) {
  */
 void set_tube_size(struct data *refData, struct data *tube_size, struct tolerances tol) {
   size_t i;
-  struct data_char d = set_data(refData);
+  struct data_char dat_char = get_data_char(refData);
 
   if (((equ(tol.atolx,0) && equ(tol.rtolx, 0)) && equ(tol.ltolx, 0)) ||
       ((equ(tol.atoly,0) && equ(tol.rtoly, 0)) && equ(tol.ltoly, 0))) {
@@ -139,10 +127,10 @@ void set_tube_size(struct data *refData, struct data *tube_size, struct toleranc
   for (i = 0; i < refData->n; i++)
   {
     tube_size->x[i] = max(
-      max(tol.atolx, tol.rtolx * d.range_x),
+      max(tol.atolx, tol.rtolx * dat_char.range_x),
       tol.ltolx * fabs(refData->x[i]));
     tube_size->y[i] = max(
-      max(tol.atoly, tol.rtoly * d.range_y),
+      max(tol.atoly, tol.rtoly * dat_char.range_y),
       tol.ltoly * fabs(refData->y[i]));
 
     if (equ(tube_size->x[i], 0))
@@ -150,7 +138,7 @@ void set_tube_size(struct data *refData, struct data *tube_size, struct toleranc
       if (!equ(tol.rtolx, 0))
       /* This is for consistency with csv compare: we use the magnitude if the range is 0. */
       {
-        tube_size->x[i] = max(tube_size->x[i], tol.rtolx * d.mag_x);
+        tube_size->x[i] = max(tube_size->x[i], tol.rtolx * dat_char.mag_x);
       }
       if (equ(tube_size->x[i], 0))
       /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
@@ -165,7 +153,7 @@ void set_tube_size(struct data *refData, struct data *tube_size, struct toleranc
     {
       if (!equ(tol.rtoly, 0))
       {
-        tube_size->y[i] = max(tube_size->y[i], tol.rtoly * d.mag_y);
+        tube_size->y[i] = max(tube_size->y[i], tol.rtoly * dat_char.mag_y);
       }
       if (equ(tube_size->y[i], 0))
       {

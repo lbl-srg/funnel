@@ -16,6 +16,13 @@ struct data {
   size_t n;
 };
 
+struct data_char {
+  double range_x;  /* Range of x */
+  double range_y;  /* Range of y */
+  double mag_x;    /* Magnitude of x */
+  double mag_y;    /* Magnitude of y */
+};
+
 struct errorReport {
   struct data original;
   struct data diff;

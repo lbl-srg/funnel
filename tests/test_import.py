@@ -76,7 +76,7 @@ def run_pyfunnel(test_dir):
     test = pd.read_csv(os.path.join(test_dir, par['test']))
     par['outputDirectory'] = par['output']
 
-    for t in ['atolx', 'atoly', 'rtolx', 'rtoly']:
+    for t in ['atolx', 'atoly', 'ltolx', 'ltoly', 'rtolx', 'rtoly']:
         try:
             par[t]
         except KeyError:
@@ -87,7 +87,7 @@ def run_pyfunnel(test_dir):
         ref.iloc(axis=1)[1],
         test.iloc(axis=1)[0],
         test.iloc(axis=1)[1],
-        **{k: par[k] for k in ['outputDirectory', 'atolx', 'atoly', 'rtolx', 'rtoly']}
+        **{k: par[k] for k in ['outputDirectory', 'atolx', 'atoly', 'ltolx', 'ltoly', 'rtolx', 'rtoly']}
     )
 
     return rc

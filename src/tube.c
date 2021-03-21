@@ -192,8 +192,8 @@ int validate(
   const struct data upper,
   const struct data test,
   struct errorReport* err) {
-  double* newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
-  double* newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
+  double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
+  double *newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
   int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
   return retVal;
 }
