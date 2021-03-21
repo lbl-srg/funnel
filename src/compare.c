@@ -92,7 +92,7 @@ int writeToFile(
   const char *fileName,
   struct data *data
 ) {
-  int i = 0;
+  size_t i = 0;
 
   char *fname = buildPath(outDir, fileName);
   FILE *fil = fopen(fname, "w+");
@@ -217,7 +217,7 @@ int compareAndReport(
     .rtoly = rtoly
   };
   // Compute tube size.
-  tube_size_calc(baseCSV, tube_size, tolerances);
+  set_tube_size(baseCSV, tube_size, tolerances);
 
   // Calculate the data set of lower and upper curve around base
   struct data lowerCurve = calculateLower(baseCSV, tube_size);

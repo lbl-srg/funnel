@@ -212,7 +212,7 @@ struct data normalizeData(struct data df, double mx, double my) {
     .n = df.n
   };
 
-  for (int i = 0; i < df.n; i++) {
+  for (size_t i = 0; i < df.n; i++) {
     if equ(mx, 0.0) {
       df_norm.x[i] = df.x[i];
     } else {
@@ -235,7 +235,7 @@ struct data denormalizeData(struct data df, double mx, double my) {
     .n = df.n
   };
 
-  for (int i = 0; i < df.n; i++) {
+  for (size_t i = 0; i < df.n; i++) {
     if equ(mx, 0.0) {
       df_norm.x[i] = df.x[i];
     } else {
@@ -262,7 +262,6 @@ struct data denormalizeData(struct data df, double mx, double my) {
  *   return : data set defining lower curve of the tube
  */
 struct data calculateLower(struct data *reference, struct data *tube_size) {
-  int i;
   struct data ref_norm;
   struct data lower;
   node_t* lx = NULL;
@@ -272,7 +271,7 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   double m0, m1; // slopes before and after point i of reference curve
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
   double mx, my;
-  int b;
+  size_t i, b;
   double *xLen = (double *)malloc(sizeof(double) * reference->n);
   double *yLen = (double *)malloc(sizeof(double) * reference->n);
   if ((xLen == NULL) || (yLen == NULL)){
@@ -285,7 +284,7 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   my = fabs(mean(reference->y, reference->n));
   ref_norm = normalizeData(*reference, mx, my);
   // Normalize tube size.
-  for (i=0; i<reference->n; i++)
+  for (i = 0; i < reference->n; i++)
   {
     if equ(mx, 0.0) {
       xLen[i] = tube_size->x[i];
@@ -302,7 +301,9 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
   // ignore identical point at the beginning
   b = 0;
   while ((b+1 < ref_norm.n) && equ(ref_norm.x[b], ref_norm.x[b+1]) && (equ(ref_norm.y[b], ref_norm.y[b+1])))
+  {
     b = b+1;
+  }
 
    // Normalize tube size.
 
@@ -434,7 +435,6 @@ struct data calculateLower(struct data *reference, struct data *tube_size) {
  *   return : data set defining upper curve of the tube
  */
 struct data calculateUpper(struct data *reference, struct data *tube_size) {
-  int i;
   struct data ref_norm;
   struct data upper;
   node_t* ux = NULL;
@@ -444,7 +444,7 @@ struct data calculateUpper(struct data *reference, struct data *tube_size) {
   double m0, m1; // slopes before and after point i of reference curve
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
   double mx, my;
-  int b;
+  size_t i, b;
   double *xLen = (double *)malloc(sizeof(double) * reference->n);
   double *yLen = (double *)malloc(sizeof(double) * reference->n);
   if ((xLen == NULL) || (yLen == NULL)){
@@ -457,7 +457,7 @@ struct data calculateUpper(struct data *reference, struct data *tube_size) {
   my = fabs(mean(reference->y, reference->n));
   ref_norm = normalizeData(*reference, mx, my);
   // Normalize tube size.
-  for (i=0; i<reference->n; i++)
+  for (i = 0; i < reference->n; i++)
   {
     if equ(mx, 0.0) {
       xLen[i] = tube_size->x[i];
@@ -474,7 +474,9 @@ struct data calculateUpper(struct data *reference, struct data *tube_size) {
   // ignore identical point at the beginning
   b = 0;
   while (((b+1)< ref_norm.n) && equ(ref_norm.x[b], ref_norm.x[b+1]) && equ(ref_norm.y[b], ref_norm.y[b+1]))
+  {
     b = b+1;
+  }
   // add top left point
   ux = addNode(ux,(ref_norm.x[b] - xLen[b]));
   uy = addNode(uy, (ref_norm.y[b] + yLen[b]));

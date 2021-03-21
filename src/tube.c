@@ -115,8 +115,8 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
 int compare(double* lower, double* upper, int refLen,
   double* testY, double* testX, int testLen,
   struct errorReport* err) {
-  int i;
-  int errArrSize = 1;
+  size_t i;
+  size_t errArrSize = 1;
   err->original.n = 0;
   err->original.x = malloc(errArrSize * sizeof(double));
   if (err->original.x == NULL){

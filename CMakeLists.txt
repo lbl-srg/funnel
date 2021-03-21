@@ -37,8 +37,7 @@ else()
 endif()
 
 # Set compiling and linking options.
-# Consider adding -std=c89 -pedantic to gcc options to improve portability.
-set(UNIX_COMPILE_FLAGS "-Wall -Wfloat-equal -o3 -fPIC")
+set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC")
 set(WIN_COMPILE_FLAGS "/Wall /O2")
 set(UNIX_LINK_FLAGS "-fPIC")
 

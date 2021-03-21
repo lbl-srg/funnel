@@ -10,7 +10,7 @@
  *   maxValue : find maximum value of an array
  *   setStandardBaseAndRatio : calculate standard values for baseX, baseY and ratio
  *   setFormerBaseAndRatio : calculate former standard values for baseX, baseY and ratio
- *   tube_size_calc : calculate tube size (half-width and half-height of rectangle)
+ *   set_tube_size : calculate tube size (half-width and half-height of rectangle)
  */
 
 #include <stdio.h>
@@ -115,9 +115,9 @@ struct data_char set_data(struct data *refData) {
 }
 
 /*
- * Function: tube_size_calc
+ * Function: set_tube_size
  * ------------------
- *   calculate tube size (half-width and half-height of rectangle)
+ *   Calculate tube size (half-width and half-height of rectangle)
  *
  *   refData: pointer to struct with the reference data
  *   tube_size : pointer to struct with the tube size
@@ -125,33 +125,37 @@ struct data_char set_data(struct data *refData) {
  *
  *   return : void (modifies tube_size in place)
  */
-void tube_size_calc(struct data *refData, struct data *tube_size, struct tolerances tol) {
-  int i;
+void set_tube_size(struct data *refData, struct data *tube_size, struct tolerances tol) {
+  size_t i;
   struct data_char d = set_data(refData);
 
   if (((equ(tol.atolx,0) && equ(tol.rtolx, 0)) && equ(tol.ltolx, 0)) ||
       ((equ(tol.atoly,0) && equ(tol.rtoly, 0)) && equ(tol.ltoly, 0))) {
     fputs("Error: At least one of the possible tolerance parameters \
-           (atol, ltol, or rtol) must be defined for each axis..\n", stderr);
+           (atol, ltol, or rtol) must be defined for each axis.\n", stderr);
     exit(1);
   }
 
-  for (i=0; i<refData->n; i++)
+  for (i = 0; i < refData->n; i++)
   {
-    tube_size->x[i] = max(max(tol.atolx, tol.rtolx * d.range_x), tol.ltolx * refData->x[i]);
-    tube_size->y[i] = max(max(tol.atoly, tol.rtoly * d.range_y), tol.ltoly * refData->y[i]);
+    tube_size->x[i] = max(
+      max(tol.atolx, tol.rtolx * d.range_x),
+      tol.ltolx * fabs(refData->x[i]));
+    tube_size->y[i] = max(
+      max(tol.atoly, tol.rtoly * d.range_y),
+      tol.ltoly * fabs(refData->y[i]));
 
     if (equ(tube_size->x[i], 0))
     {
       if (!equ(tol.rtolx, 0))
-      /* This is for consistency with csv compare. */
+      /* This is for consistency with csv compare: we use the magnitude if the range is 0. */
       {
         tube_size->x[i] = max(tube_size->x[i], tol.rtolx * d.mag_x);
       }
       if (equ(tube_size->x[i], 0))
       /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
-         Then we consider both rtol and ltol as absolute.
-      */
+       * Then we consider both rtol and ltol as absolute.
+       */
       {
         tube_size->x[i] = max(tube_size->x[i], max(tol.rtolx, tol.ltolx));
       }
@@ -160,14 +164,10 @@ void tube_size_calc(struct data *refData, struct data *tube_size, struct toleran
     if (equ(tube_size->y[i], 0))
     {
       if (!equ(tol.rtoly, 0))
-      /* This is for consistency with csv compare: we use the magnitude if the range is 0. */
       {
         tube_size->y[i] = max(tube_size->y[i], tol.rtoly * d.mag_y);
       }
       if (equ(tube_size->y[i], 0))
-      /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
-         Then we consider both rtol and ltol as absolute.
-      */
       {
         tube_size->y[i] = max(tube_size->y[i], max(tol.rtoly, tol.ltoly));
       }
