@@ -107,13 +107,13 @@ struct data_char get_data_char(struct data *dat) {
  * ------------------
  *   Calculate tube size (half-width and half-height of rectangle)
  *
- *   refData: pointer to struct with the reference data
+ *   refData   : pointer to struct with the reference data
  *   tube_size : pointer to struct with the tube size
- *   tol    : struct with tolerance values
+ *   tol       : struct with tolerance values
  *
- *   return : void (modifies tube_size in place)
+ *   return    : void (modifies tube_size in place)
  */
-void set_tube_size(struct data *refData, struct data *tube_size, struct tolerances tol) {
+void set_tube_size(struct data *tube_size, struct data *refData, struct tolerances tol) {
   size_t i;
   struct data_char dat_char = get_data_char(refData);
 

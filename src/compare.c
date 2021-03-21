@@ -162,11 +162,11 @@ void setData(
   }
 }
 
-void freeData (struct data *dat) {
+void freeData(struct data *dat) {
   if (dat != NULL) {
-      if (dat->x != NULL) free (dat->x);
-      if (dat->y != NULL) free (dat->y);
-      free (dat);
+    if (dat->x != NULL) free (dat->x);
+    if (dat->y != NULL) free (dat->y);
+    free (dat);
   }
 }
 
@@ -226,7 +226,7 @@ int compareAndReport(
     .rtoly = rtoly,
   };
   // Compute tube size.
-  set_tube_size(baseCSV, tube_size, tolerances);
+  set_tube_size(tube_size, baseCSV, tolerances);
 
   // Calculate values of lower and upper curve around base
   struct data lowerCurve = getLower(baseCSV, tube_size);

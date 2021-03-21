@@ -531,8 +531,8 @@ struct data getUpper(struct data *reference, struct data *tube_size) {
   denormalize(upper.x, upper.n, dat_char.mag_x);
 
   // Free the memory.
+  if (x_norm != NULL) free(x_norm);
   if (tube_x_norm != NULL) free(tube_x_norm);
-  if (tube_size->y != NULL) free(tube_size->y);
 
   return upper;
 }
