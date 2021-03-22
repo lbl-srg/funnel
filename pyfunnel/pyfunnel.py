@@ -13,25 +13,19 @@ import os
 import textwrap
 import sys
 
-from core import compareAndReport
+import core
+
 
 if __name__ == "__main__":
 
     # Configure the argument parser.
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent("""\
-            Run funnel binary from terminal.\n
-            Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
-        """),
-        epilog=textwrap.dedent("""\
-            Note: At least one of the possible tolerance parameters (atol, ltol, or rtol) must be defined for each axis.
-            Relative tolerance ltol is relative to the local value of x or y.\n
-            Relative tolerance rtol is relative to the range of x or y.\n
-            Typical use from terminal:
-            $ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results\n
-            Full documentation at https://github.com/lbl-srg/funnel
-        """)
+        description=(
+            'Run funnel binary from terminal.\n\n'
+            'Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` '
+            'into the output directory (`./results` by default).'),
+        epilog='Full documentation at https://github.com/lbl-srg/funnel'
     )
     required_named = parser.add_argument_group('required named arguments')
 
@@ -84,10 +78,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Check the arguments.
-    assert (args.atolx is not None) or (args.ltolx is not None) or (args.rtolx is not None),\
-        "At least one of the tolerance parameters (atol, ltol, or rtol) must be defined for x values."
-    assert (args.atoly is not None) or (args.ltoly is not None) or (args.rtoly is not None),\
-        "At least one of the tolerance parameters (atol, ltol or rtol) must be defined for y values."
     assert os.path.isfile(args.reference),\
         "No such file: {}".format(args.reference)
     assert os.path.isfile(args.test),\
@@ -107,7 +97,7 @@ if __name__ == "__main__":
                     pass
 
     # Call the function.
-    rc = compareAndReport(
+    rc = core.compareAndReport(
         xReference=data['reference']['x'],
         yReference=data['reference']['y'],
         xTest=data['test']['x'],

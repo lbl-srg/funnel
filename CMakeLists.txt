@@ -116,22 +116,14 @@ add_test(
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file")
-### Again
-set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atoly 0.002 --output results)
+### Wrong arguments
+set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(
     NAME test_py_2
     COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
-set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "At least one of the tolerance parameters")
-### Again
-set(TEST_ARGS_3 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
-add_test(
-    NAME test_py_3
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_3}
-    WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
-)
-set_tests_properties(test_py_3 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
+set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
 
 ## Numerics testing.
 

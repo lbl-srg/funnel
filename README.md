@@ -31,29 +31,40 @@ The funnel is computed as follows:
 
   * First step: tolerance areas (based on L1-norm) are built around each reference data point.
 
+    * The tolerance parameters correspond to the half-width and half-height of the
+    tolerance areas. They default to 0.
+    * When using `atolx` and `atoly`, the tolerance is considered as absolute
+    (same unit as `x` and `y`).
+    * When using `ltolx` and `ltoly`, the tolerance is considered relative
+    to the local value of `x` and `y`.
+    * When using `rtolx` and `rtoly`, the tolerance is considered relative
+    to the range of `x` and `y`. This option is available mainly for compatibility with
+    the algorithm implemented in [csv-compare](https://github.com/modelica-tools/csv-compare)
+    for relative comparison. It should be used with caution.
+
   * Second step: the algorithm selects which corners of the tolerance rectangles
-  are to be used to build the envelopes based on the change in the derivative sign at
+  are used to build the envelopes based on the change in the derivative sign at
   each reference point.
 
   * Third step: intersection boundary points are computed when a selected corner
-  happens not to be in the logical order with the next one on the `x` scale (i.e., at a local extremum).
-  New envelopes are then built encompassing all boundary points, and points strictly within
-  the envelopes are dropped.
+  happens not to be in the logical order with the next one on the `x` scale
+  (i.e., at a local extremum).
+  New envelopes are then built encompassing all boundary points, and points strictly
+  within the envelopes are dropped.
 
 The comparison then simply consists of interpolating the upper and lower envelopes
 at the `x` test values and comparing the yielded `y_up` and `y_low` values with the `y` test values.
 By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it is always positive.
 
-
 ## How to Run
 
 ### System Requirements
 
-The software has been tested on the following platforms.
+The software is tested on the following platforms.
 
   * Linux x64
   * Windows x64
-  * Mac OS X
+  * macOS
 
 A Python binding is available to access the library. It is compatible with Python 2 and 3.
 
@@ -73,18 +84,14 @@ The package `pyfunnel` provides the following functions.
   * `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
     Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
     into the output directory (`./results` by default).
-    Note: At least one absolute or relative tolerance parameter must be provided for each axis.
-    See function docstring for further details.
 
   * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
     Displays plot in default browser. See function docstring for further details.
 
-The module `pyfunnel.py` might also be called directly from terminal.
+The module `pyfunnel.py` can also be run with the following command line interface.
 
 ```
-usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT]
-                   [--atolx ATOLX] [--atoly ATOLY] [--rtolx RTOLX]
-                   [--rtoly RTOLY]
+usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT] [--atolx ATOLX] [--atoly ATOLY] [--ltolx LTOLX] [--ltoly LTOLY] [--rtolx RTOLX] [--rtoly RTOLY]
 
 Run funnel binary from terminal.
 
@@ -95,19 +102,15 @@ optional arguments:
   --output OUTPUT       Path of directory to store output data
   --atolx ATOLX         Absolute tolerance along x axis
   --atoly ATOLY         Absolute tolerance along y axis
-  --rtolx RTOLX         Relative tolerance along x axis
-  --rtoly RTOLY         Relative tolerance along y axis
+  --ltolx LTOLX         Relative tolerance along x axis (relatively to the local value)
+  --ltoly LTOLY         Relative tolerance along y axis (relatively to the local value)
+  --rtolx RTOLX         Relative tolerance along x axis (relatively to the range)
+  --rtoly RTOLY         Relative tolerance along y axis (relatively to the range)
 
 required named arguments:
   --reference REFERENCE
                         Path of CSV file with reference data
   --test TEST           Path of CSV file with test data
-
-Note: At least one of the two possible tolerance parameters (atol or rtol) must be defined for each axis.
-Relative tolerance is relative to the range of x or y values.
-
-Typical use from terminal:
-$ python {path to pyfunnel.py} --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results
 
 Full documentation at https://github.com/lbl-srg/funnel
 ```

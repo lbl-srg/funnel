@@ -211,18 +211,10 @@ def compareAndReport(
     Returns:
         None
 
-    Note: At least one absolute or relative tolerance parameter must be provided for each axis.
-    Relative tolerance is relative to the range of x or y values.
-
     Full documentation at https://github.com/lbl-srg/funnel.
     """
 
     # Check arguments.
-    # Logic
-    assert (atolx is not None) or (ltolx is not None) or (rtolx is not None),\
-        "At least one of the tolerance parameters (atol, ltol, or rtol) must be defined for x values."
-    assert (atoly is not None) or (ltoly is not None) or (rtolx is not None),\
-        "At least one of the tolerance parameters (atol, ltol, or rtol) must be defined for y values."
     # Type
     if outputDirectory is None:
         print("Output directory not specified: results are stored in subdirectory `results` by default.")

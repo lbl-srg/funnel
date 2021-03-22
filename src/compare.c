@@ -158,11 +158,9 @@ void setData(
 }
 
 void freeData(struct data *dat) {
-  if (dat != NULL) {
-    if (dat->x != NULL) free (dat->x);
-    if (dat->y != NULL) free (dat->y);
-    free (dat);
-  }
+  if (dat->x != NULL) free (dat->x);
+  if (dat->y != NULL) free (dat->y);
+  if (dat != NULL) free (dat);
 }
 
 /*

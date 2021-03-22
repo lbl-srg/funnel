@@ -117,13 +117,6 @@ void set_tube_size(struct data *tube_size, struct data *refData, struct toleranc
   size_t i;
   struct data_char dat_char = get_data_char(refData);
 
-  if (((equ(tol.atolx,0) && equ(tol.rtolx, 0)) && equ(tol.ltolx, 0)) ||
-      ((equ(tol.atoly,0) && equ(tol.rtoly, 0)) && equ(tol.ltoly, 0))) {
-    fputs("Error: At least one of the possible tolerance parameters \
-           (atol, ltol, or rtol) must be defined for each axis.\n", stderr);
-    exit(1);
-  }
-
   for (i = 0; i < refData->n; i++)
   {
     tube_size->x[i] = max(
