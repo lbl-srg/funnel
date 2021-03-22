@@ -129,7 +129,6 @@ int compare(double* lower, double* upper, int refLen,
     return -1;
   }
 
-
   err->diff.n = min(testLen, refLen);
   err->diff.x = malloc(err->diff.n * sizeof(double));
   if (err->diff.x == NULL){
@@ -192,8 +191,8 @@ int validate(
   const struct data upper,
   const struct data test,
   struct errorReport* err) {
-  double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
-  double *newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
-  int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
-  return retVal;
+    double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
+    double *newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
+    int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
+    return retVal;
 }
