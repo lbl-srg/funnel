@@ -139,8 +139,8 @@ $ python ../../pyfunnel/pyfunnel.py --reference trended.csv --test simulated.csv
 
 The cross-platform build system relies on CMake version `3.11.*`.
 
-The distributed binaries have been built with Microsoft Visual Studio C/C++ compiler
-(Windows) and `gcc` (Linux and Mac).
+The distributed binaries are built with Microsoft Visual Studio C/C++ compiler
+(Windows), Clang (macOS) and GCC (Linux).
 
 ### Procedure
 
