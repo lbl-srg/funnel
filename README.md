@@ -27,26 +27,29 @@ than a simulation model that is considered to be the original specification.
 
 ### Method to Compute the Funnel
 
-The funnel is computed as follows:
+The funnel is computed as follows.
 
-  * First step: tolerance areas (based on L1-norm) are built around each reference data point.
+  1. Tolerance areas (based on L1-norm) are built around each reference data point.
 
-    * The tolerance parameters correspond to the half-width and half-height of the
+     * The tolerance parameters correspond to the half-width and half-height of the
     tolerance areas. They default to 0.
-    * When using `atolx` and `atoly`, the tolerance is considered as absolute
+
+     * When using `atolx` and `atoly`, the tolerance is considered as absolute
     (same unit as `x` and `y`).
-    * When using `ltolx` and `ltoly`, the tolerance is considered relative
+
+     * When using `ltolx` and `ltoly`, the tolerance is considered relative
     to the local value of `x` and `y`.
-    * When using `rtolx` and `rtoly`, the tolerance is considered relative
+
+     * When using `rtolx` and `rtoly`, the tolerance is considered relative
     to the range of `x` and `y`. This option is available mainly for compatibility with
     the algorithm implemented in [csv-compare](https://github.com/modelica-tools/csv-compare)
     for relative comparison. It should be used with caution.
 
-  * Second step: the algorithm selects which corners of the tolerance rectangles
+  2. The algorithm selects which corners of the tolerance rectangles
   are used to build the envelopes based on the change in the derivative sign at
   each reference point.
 
-  * Third step: intersection boundary points are computed when a selected corner
+  3. Intersection boundary points are computed when a selected corner
   happens not to be in the logical order with the next one on the `x` scale
   (i.e., at a local extremum).
   New envelopes are then built encompassing all boundary points, and points strictly
