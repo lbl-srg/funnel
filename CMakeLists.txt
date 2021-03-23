@@ -12,9 +12,6 @@
 #   *   CMake CMAKE_SYSTEM_PROCESSOR in tool chain file: error at build time
 #       see https://stackoverflow.com/questions/54151877/cmake-cmake-system-processor-in-tool-chain-file-error-at-build-time
 #
-# @todo
-#   Add test with Python 3
-#   Temporary test dir for parallel running
 
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.11.0)
