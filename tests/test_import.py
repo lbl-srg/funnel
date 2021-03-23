@@ -7,6 +7,8 @@ import os, sys
 import re
 import json
 import subprocess
+
+import numpy as np
 import pandas as pd
 
 try:  # CI tool
@@ -34,7 +36,7 @@ def test_log(test_name, test_dir, tmp_dir, dif_err):
         json.dump(test_log, f)
 
 
-def dif_test(test_dir):
+def dif_test(test_dir, rtol=1e-12):
     """Assess the differences between the current test and the reference test.
     The differences are assessed for x and y values of error.csv files between
     the test run in the current directory (file ./results/error.csv) and
@@ -49,8 +51,8 @@ def dif_test(test_dir):
     """
     test_ref = read_res(test_dir)
     test_new = read_res('./')
-    dif_x = test_ref.iloc(axis=1)[0] != test_new.iloc(axis=1)[0]
-    dif_y = test_ref.iloc(axis=1)[1] != test_new.iloc(axis=1)[1]
+    dif_x = np.logical_not(np.isclose(test_ref.iloc(axis=1)[0], test_new.iloc(axis=1)[0], rtol=rtol))
+    dif_y = np.logical_not(np.isclose(test_ref.iloc(axis=1)[1], test_new.iloc(axis=1)[1], rtol=rtol))
     frac_dif_x = sum(dif_x) / len(test_ref)
     frac_dif_y = sum(dif_y) / len(test_ref)
     pd.options.display.float_format = '{:f}'.format
