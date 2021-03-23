@@ -15,5 +15,5 @@ if __name__ == "__main__":
     test_log(test_name, test_dir, tmp_dir, dif_err)
 
     assert max(dif_err) == 0,\
-        "Number of discrepancies between current and reference error values ({}): {} on x, {} on y.".format(
+        "Fraction of points that differ between current and reference error values ({}): {} on x, {} on y.".format(
         test_dir, dif_err[0], dif_err[1])

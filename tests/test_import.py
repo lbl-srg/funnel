@@ -49,10 +49,23 @@ def dif_test(test_dir):
     """
     test_ref = read_res(test_dir)
     test_new = read_res('./')
-    nb_dif_x = sum(test_ref.iloc(axis=1)[0] != test_new.iloc(axis=1)[0]) / len(test_ref)
-    nb_dif_y = sum(test_ref.iloc(axis=1)[1] != test_new.iloc(axis=1)[1]) / len(test_ref)
+    dif_x = test_ref.iloc(axis=1)[0] != test_new.iloc(axis=1)[0]
+    dif_y = test_ref.iloc(axis=1)[1] != test_new.iloc(axis=1)[1]
+    frac_dif_x = sum(dif_x) / len(test_ref)
+    frac_dif_y = sum(dif_y) / len(test_ref)
+    pd.options.display.float_format = '{:f}'.format
+    if frac_dif_x > 0:
+        print('*** x values that differ between reference and test results:')
+        print(pd.concat([
+            test_ref[dif_x].rename(lambda x: x + '_ref', axis=1),
+            test_new[dif_x].rename(lambda x: x + '_test', axis=1)], axis=1))
+    if frac_dif_y > 0:
+        print('*** y values that differ between reference and test results:')
+        print(pd.concat([
+            test_ref[dif_y].rename(lambda x: x + '_ref', axis=1),
+            test_new[dif_y].rename(lambda x: x + '_test', axis=1)], axis=1))
 
-    return [nb_dif_x, nb_dif_y]
+    return [frac_dif_x, frac_dif_y]
 
 
 def run_pyfunnel(test_dir):
