@@ -61,7 +61,6 @@ before_install:
 install:
   - pip install --user -r requirements.txt
   - pip install --user .
-  - pip uninstall --user -qq pyfunnel
 
 before_script:
   - rm -rf build && mkdir build && cd build && cmake .. $ARCH_OPTION
