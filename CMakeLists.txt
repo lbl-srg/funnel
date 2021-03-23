@@ -46,7 +46,7 @@ else()
 endif()
 
 # Set target directories.
-# NOTA: always add quotes to protect spaces in path when setting new variables.
+# NOTE: always add quotes to protect spaces in path when setting new variables.
 if (WINDOWS)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
         set(PLATFORM_INSTALL_PREFIX win64)
