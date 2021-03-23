@@ -73,3 +73,7 @@ script:
   # Compare.
   - git status tests
   - git diff --exit-code tests
+
+after_failure:
+  - echo "*** Content of build/Testing/Temporary/LastTest.log"
+  - cat ./build/Testing/Temporary/LastTest.log
