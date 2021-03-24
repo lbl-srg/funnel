@@ -115,8 +115,8 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
 int compare(double* lower, double* upper, int refLen,
   double* testY, double* testX, int testLen,
   struct errorReport* err) {
-  int i;
-  int errArrSize = 1;
+  size_t i;
+  size_t errArrSize = 1;
   err->original.n = 0;
   err->original.x = malloc(errArrSize * sizeof(double));
   if (err->original.x == NULL){
@@ -128,7 +128,6 @@ int compare(double* lower, double* upper, int refLen,
     fputs("Error: Failed to allocate memory for err->original.y.\n", stderr);
     return -1;
   }
-
 
   err->diff.n = min(testLen, refLen);
   err->diff.x = malloc(err->diff.n * sizeof(double));
@@ -192,8 +191,8 @@ int validate(
   const struct data upper,
   const struct data test,
   struct errorReport* err) {
-  double* newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
-  double* newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
-  int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
-  return retVal;
+    double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
+    double *newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
+    int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
+    return retVal;
 }

@@ -1,0 +1,1 @@
+Similar data as in success6 (range x = range y = 1) but with local tolerance driving the error

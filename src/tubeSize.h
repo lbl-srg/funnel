@@ -10,10 +10,12 @@
 #ifndef TUBESIZE_H_
 #define TUBESIZE_H_
 
-double minValue(double* array, int size);
+void set_tube_size(struct data *tube_size, struct data *refData, struct tolerances tol);
 
-double maxValue(double* array, int size);
+struct data_char get_data_char(struct data *dat);
 
-double * tubeSize(struct data refData, struct tolerances tol);
+double minValue(double* array, size_t size);
+
+double maxValue(double* array, size_t size);
 
 #endif /* TUBESIZE_H_ */

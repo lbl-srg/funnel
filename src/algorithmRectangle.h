@@ -25,13 +25,9 @@ double * getListValues(node_t* head);
 
 void lastNodeDeletion(node_t* head);
 
-struct data normalizeData(struct data df, double mx, double my);
+struct data getLower(struct data *reference, struct data *tube_size);
 
-struct data denormalizeData(struct data df, double mx, double my);
-
-struct data calculateLower(struct data reference, double* tubeSize);
-
-struct data calculateUpper(struct data reference, double* tubeSize);
+struct data getUpper(struct data *reference, struct data *tube_size);
 
 struct data removeLoop(double* x, double* y, int size, int curInd);
 

@@ -28,6 +28,8 @@ int main() {
             const double,
             const double,
             const double,
+            const double,
+            const double,
             const double
     );
     _read_csv read_csv;
@@ -68,14 +70,14 @@ int main() {
         fputs(dlerror(), stderr);
         exit(1);
     }
-
-    read_csv = dlsym(handle, "readCSV");
+    /* Trick to deal with dlsym returning a void pointer instead of a function pointer. */
+    *(void **) (&read_csv) = dlsym(handle, "readCSV");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         exit(1);
     }
-
-    compare_func = dlsym(handle, "compareAndReport");
+    /* Trick to deal with dlsym returning a void pointer instead of a function pointer. */
+    *(void **) (&compare_func) = dlsym(handle, "compareAndReport");
     if ((error = dlerror()) != NULL)  {
         fputs(error, stderr);
         exit(1);
@@ -96,6 +98,8 @@ int main() {
         "results",
         0.002,
         0.002,
+        0.0,
+        0.0,
         0.0,
         0.0
     );

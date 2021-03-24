@@ -68,7 +68,7 @@ FILE *init_log(
 ) {
   char *fname = buildPath(outDir, fileName);
   FILE *fil = fopen(fname, "w+");
-  free(fname);
+  if (fname != NULL) free(fname);
 
   if (fil == NULL){
     perror("Error: Failed to open log.\n");
@@ -92,11 +92,11 @@ int writeToFile(
   const char *fileName,
   struct data *data
 ) {
-  int i = 0;
+  size_t i = 0;
 
   char *fname = buildPath(outDir, fileName);
   FILE *fil = fopen(fname, "w+");
-  free(fname);
+  if (fname != NULL) free(fname);
 
   if (fil == NULL){
     fprintf(log_file, "Error: Failed to open '%s' in writeToFile.\n", fname);
@@ -114,46 +114,53 @@ int writeToFile(
 }
 
 struct data *newData(
-  const double x[],
-  const double y[],
   size_t n
 ) {
-
-  struct data *retVal = malloc (sizeof (struct data));
-  if (retVal == NULL){
+  struct data *retVal = malloc(sizeof(struct data));
+  if (retVal == NULL)
+  {
     fputs("Error: Failed to allocate memory for data.\n", log_file);
     return NULL;
   }
   // Try to allocate vector data, free structure if fail.
 
-  retVal->x = malloc (n * sizeof (double));
+  retVal->x = malloc(n * sizeof(double));
   if (retVal->x == NULL) {
     fputs("Error: Failed to allocate memory for data.x.\n", log_file);
     free (retVal);
     return NULL;
   }
-  memcpy(retVal->x, x, sizeof(double)*n);
 
-  retVal->y = malloc (n * sizeof (double));
+  retVal->y = malloc(n * sizeof(double));
   if (retVal->y == NULL) {
     fputs("Error: Failed to allocate memory for data.y.\n", log_file);
     free (retVal->x);
     free (retVal);
     return NULL;
   }
-  memcpy(retVal->y, y, sizeof(double)*n);
 
   // Set size and return.
   retVal->n = n;
   return retVal;
 }
 
-void freeData (struct data *dat) {
+void setData(
+  struct data *dat,
+  const double x[],
+  const double y[]
+) {
   if (dat != NULL) {
-      free (dat->x);
-      free (dat->y);
-      free (dat);
+    memcpy(dat->x, x, sizeof(double) * dat->n);
+    memcpy(dat->y, y, sizeof(double) * dat->n);
+  } else {
+    fputs("Error: Cannot set data for unallocated struct.\n", log_file);
   }
+}
+
+void freeData(struct data *dat) {
+  if (dat->x != NULL) free (dat->x);
+  if (dat->y != NULL) free (dat->y);
+  if (dat != NULL) free (dat);
 }
 
 /*
@@ -173,13 +180,18 @@ int compareAndReport(
   const char *outputDirectory,
   const double atolx,
   const double atoly,
+  const double ltolx,
+  const double ltoly,
   const double rtolx,
   const double rtoly
 ) {
   int retVal;
   int rc_mkdir = mkdir_p(outputDirectory);
-  struct data * baseCSV = newData(tReference, yReference, nReference);
-  struct data * testCSV = newData(tTest, yTest, nTest);
+  struct data *baseCSV = newData(nReference);
+  struct data *testCSV = newData(nTest);
+  struct data *tube_size = newData(nReference);
+  setData(baseCSV, tReference, yReference);
+  setData(testCSV, tTest, yTest);
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
@@ -198,21 +210,23 @@ int compareAndReport(
     goto end;
   }
 
-  struct tolerances tolerances;
-  tolerances.atolx = atolx;
-  tolerances.atoly = atoly;
-  tolerances.rtolx = rtolx;
-  tolerances.rtoly = rtoly;
-  // Calculate tube size (half-width and half-height of rectangle)
-  //printf("useRelative=%d\n", arguments.useRelativeTolerance);
-  double* tube = tubeSize(*baseCSV, tolerances);
+  struct tolerances tolerances = {
+    .atolx = atolx,
+    .atoly = atoly,
+    .ltolx = ltolx,
+    .ltoly = ltoly,
+    .rtolx = rtolx,
+    .rtoly = rtoly,
+  };
+  // Compute tube size.
+  set_tube_size(tube_size, baseCSV, tolerances);
 
-  // Calculate the data set of lower and upper curve around base
-  struct data lowerCurve = calculateLower(*baseCSV, tube);
-  struct data upperCurve = calculateUpper(*baseCSV, tube);
+  // Calculate values of lower and upper curve around base
+  struct data lowerCurve = getLower(baseCSV, tube_size);
+  struct data upperCurve = getUpper(baseCSV, tube_size);
 
   // Validate test curve and generate error report
-  if (lowerCurve.n == 0 || upperCurve.n == 0){
+  if (lowerCurve.n == 0 || lowerCurve.n == 0){
     fputs("Error: lower or upper curve has 0 elements.\n", log_file);
     retVal = 1;
     goto end;
@@ -255,6 +269,7 @@ int compareAndReport(
   end:
     freeData(baseCSV);
     freeData(testCSV);
+    freeData(tube_size);
     fclose(log_file);
     return retVal;
 }

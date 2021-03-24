@@ -28,6 +28,7 @@
 
 #include "data_structure.h"
 #include "algorithmRectangle.h"
+#include "tubeSize.h"
 
 #ifndef sign
 #define sign(a) (((a)>0) ? 1 : (((a)<0) ? -1 : 0))
@@ -41,13 +42,6 @@
 #define inline __inline
 #endif
 
-static inline double mean(double* arr, int n) {
-    double sum = 0;
-
-    for (int i = 0; i < n; i++) {sum += arr[i];}
-
-    return sum / n;
-}
 
 /*
  * Function: createNode
@@ -201,134 +195,105 @@ void lastNodeDeletion(node_t* head) {
             preNode->next = NULL;
         }
         /* Delete the last node */
-        free(toDelLast);
+        if (toDelLast != NULL) free(toDelLast);
     }
 }
 
-struct data normalizeData(struct data df, double mx, double my) {
-  struct data df_norm = {
-    .x = malloc(sizeof(double) * df.n),
-    .y = malloc(sizeof(double) * df.n),
-    .n = df.n
-  };
-
-  for (int i = 0; i < df.n; i++) {
-    if equ(mx, 0.0) {
-      df_norm.x[i] = df.x[i];
+/* Normalize variable array by variable magnitude */
+void normalize(double *var, size_t length, double var_mag) {
+  for (size_t i = 0; i < length; i++) {
+    if (var_mag > 1E-5) {
+      var[i] = var[i] / var_mag;
     } else {
-      df_norm.x[i] = df.x[i] / mx;
-    }
-    if equ(my, 0.0) {
-      df_norm.y[i] = df.y[i];
-    } else {
-      df_norm.y[i] = df.y[i] / my;
+      var[i] = var[i];
     }
   }
-
-  return df_norm;
 }
 
-struct data denormalizeData(struct data df, double mx, double my) {
-  struct data df_norm = {
-    .x = malloc(sizeof(double) * df.n),
-    .y = malloc(sizeof(double) * df.n),
-    .n = df.n
-  };
-
-  for (int i = 0; i < df.n; i++) {
-    if equ(mx, 0.0) {
-      df_norm.x[i] = df.x[i];
+/* Denormalize variable array by variable magnitude */
+void denormalize(double *var, size_t length, double var_mag) {
+  for (size_t i = 0; i < length; i++) {
+    if (var_mag > 1E-5) {
+      var[i] = var[i] * var_mag;
     } else {
-      df_norm.x[i] = df.x[i] * mx;
-    }
-    if equ(my, 0.0) {
-      df_norm.y[i] = df.y[i];
-    } else {
-      df_norm.y[i] = df.y[i] * my;
+      var[i] = var[i];
     }
   }
-
-  return df_norm;
 }
 
 /*
- * Function: calculateLower
+ * Function: setLower
  * ------------------------
  *   find the data set of lower tube curve
  *
- *   reference: reference data curve
- *   tubeSize: data array specifying tube size that includes:
- *             tubeSize[0], x -- half width of rectangle
- *             tubeSize[1], y -- half height of rectangle
- *             tubeSize[2], baseX -- base of relative value is x direction
- *             tubeSize[3], baseY -- base of relative value is y direction
- *             tubeSize[4], ratio -- ratio y / x
+ *   reference: pointer to reference data struct
+ *   tube_size: pointer to tube_size struct
  *
- *   return : data set defining lower curve of the tube
+ *   return : data struct defining lower curve of the tube
  */
-struct data calculateLower(struct data reference, double* tubeSize) {
-  int i;
-  struct data ref_norm;
+struct data getLower(struct data *reference, struct data *tube_size) {
   struct data lower;
-  node_t* lx = NULL;
-  node_t* ly = NULL;
+  node_t *lx = NULL;
+  node_t *ly = NULL;
+  size_t i, b;
+
+  /* Normalize values and tube size in x direction.
+   * This was introduced in https://github.com/lbl-srg/funnel/pull/30
+   * to guard against vanishing derivatives (dy/dx) for x values with a large order of magnitude.
+   */
+
+  struct data_char dat_char = get_data_char(reference);                   // Data characteristics
+  double *x_norm = (double *)malloc(sizeof(double) * reference->n);       // Normalized x values
+  double *tube_x_norm = (double *)malloc(sizeof(double) * tube_size->n);  // Normalized tube size in x direction
+  if ((x_norm == NULL) || (tube_x_norm == NULL)){
+	  fputs("Error: Failed to allocate memory for x_norm or tube_x_norm.\n", stderr);
+    exit(1);
+  }
+  memcpy(x_norm, reference->x, sizeof(double) * reference->n);
+  memcpy(tube_x_norm, tube_size->x, sizeof(double) * tube_size->n);
+  normalize(x_norm, reference->n, dat_char.mag_x);
+  normalize(tube_x_norm, tube_size->n, dat_char.mag_x);
 
   // ===== 1. add corner points of the rectangle =====
   double m0, m1; // slopes before and after point i of reference curve
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
-  double mx, my;
-  int b;
-  double xLen;
-  double yLen;
 
-  // Normalize data.
-  mx = fabs(mean(reference.x, reference.n));
-  my = fabs(mean(reference.y, reference.n));
-  ref_norm = normalizeData(reference, mx, my);
-  if equ(mx, 0.0) {
-    xLen = tubeSize[0];
-  } else {
-    xLen = tubeSize[0] / mx;
-  }
-  if equ(my, 0.0) {
-    yLen = tubeSize[1];
-  } else {
-    yLen = tubeSize[1] / my;
-  }
-  // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
+  // ----- 1.1 Start: rectangle with center (x,y) = (reference->x[0], reference->y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while ((b+1 < ref_norm.n) && equ(ref_norm.x[b], ref_norm.x[b+1]) && (equ(ref_norm.y[b], ref_norm.y[b+1])))
+  while ((b+1 < reference->n) && equ(x_norm[b], x_norm[b+1]) && (equ(reference->y[b], reference->y[b+1])))
+  {
     b = b+1;
+  }
 
   // add down left point
-  lx = addNode(lx,(ref_norm.x[b] - xLen));
-  ly = addNode(ly, (ref_norm.y[b] - yLen));
+  lx = addNode(lx,(x_norm[b] - tube_x_norm[b]));
+  ly = addNode(ly, (reference->y[b] - tube_size->y[b]));
 
-  if (b+1 < ref_norm.n) {
+  if (b+1 < reference->n) {
   	  // slopes of reference curve (initialization)
-  	  s0 = sign(ref_norm.y[b+1] - ref_norm.y[b]);
-  	  if (!equ(ref_norm.x[b+1], ref_norm.x[b])) {
-  		  m0 = (ref_norm.y[b+1] - ref_norm.y[b]) / (ref_norm.x[b+1] - ref_norm.x[b]);
+  	  s0 = sign(reference->y[b+1] - reference->y[b]);
+  	  if (!equ(x_norm[b+1], x_norm[b])) {
+  		  m0 = (reference->y[b+1] - reference->y[b]) / (x_norm[b+1] - x_norm[b]);
   	  } else {
   		  m0 = (s0>0) ? 1e+15 : -1e+15;
   	  }
   	  if equ(s0, 1) {
   		  // add down right point
-  		  lx = addNode(lx,(ref_norm.x[b] + xLen));
-  		  ly = addNode(ly, (ref_norm.y[b] - yLen));
+  		  lx = addNode(lx,(x_norm[b] + tube_x_norm[b]));
+  		  ly = addNode(ly, (reference->y[b] - tube_size->y[b]));
   	  }
 
-  	  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference.x[i], reference.y[i]) -----
-  	  for (i = b+1; i < ref_norm.n-1; i++) {
+  	  // ----- 1.2 Iteration: rectangle with center (x,y) = (reference->x[i], reference->y[i]) -----
+  	  for (i = b+1; i < reference->n-1; i++) {
   		  // ignore identical points
-  		  if (equ(ref_norm.x[i], ref_norm.x[i+1]) && equ(ref_norm.y[i], ref_norm.y[i+1]))
+  		  if (equ(x_norm[i], x_norm[i+1]) && equ(reference->y[i], reference->y[i+1]))
   			  continue;
 
   		  // slopes of reference curve
-  		  s1 = sign(ref_norm.y[i+1] - ref_norm.y[i]);
-  		  if (!equ(ref_norm.x[i+1], ref_norm.x[i])) {
-  			  m1 = (ref_norm.y[i+1] - ref_norm.y[i]) / (ref_norm.x[i+1] - ref_norm.x[i]);
+  		  s1 = sign(reference->y[i+1] - reference->y[i]);
+  		  if (!equ(x_norm[i+1], x_norm[i])) {
+  			  m1 = (reference->y[i+1] - reference->y[i]) / (x_norm[i+1] - x_norm[i]);
   		  } else {
   			  m1 = (s1>0) ? (1e+15) : (-1e+15);
   		  }
@@ -337,32 +302,32 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   		  if (!equ(m0, m1)) {
   			  if (!equ(s0, -1) && !equ(s1, -1)) {
   				  // add down right point
-  				  lx = addNode(lx, (ref_norm.x[i] + xLen));
-  				  ly = addNode(ly, (ref_norm.y[i] - yLen));
+  				  lx = addNode(lx, (x_norm[i] + tube_x_norm[i]));
+  				  ly = addNode(ly, (reference->y[i] - tube_size->y[i]));
   			  } else if (!equ(s0, 1) && !equ(s1, 1)) {
   				  // add down left point
-  				  lx = addNode(lx, (ref_norm.x[i] - xLen));
-  				  ly = addNode(ly, (ref_norm.y[i] - yLen));
+  				  lx = addNode(lx, (x_norm[i] - tube_x_norm[i]));
+  				  ly = addNode(ly, (reference->y[i] - tube_size->y[i]));
   			  } else if (equ(s0, -1) && equ(s1, 1)) {
   				  // add down left point
-  				  lx = addNode(lx, (ref_norm.x[i] - xLen));
-  				  ly = addNode(ly, (ref_norm.y[i] - yLen));
+  				  lx = addNode(lx, (x_norm[i] - tube_x_norm[i]));
+  				  ly = addNode(ly, (reference->y[i] - tube_size->y[i]));
   				  // add down right point
-  				  lx = addNode(lx, (ref_norm.x[i] + xLen));
-  				  ly = addNode(ly, (ref_norm.y[i] - yLen));
+  				  lx = addNode(lx, (x_norm[i] + tube_x_norm[i]));
+  				  ly = addNode(ly, (reference->y[i] - tube_size->y[i]));
   			  } else if (equ(s0, 1) && equ(s1, -1)) {
   				  // add down right point
-  				  lx = addNode(lx, (ref_norm.x[i] + xLen));
-  				  ly = addNode(ly, (ref_norm.y[i] - yLen));
+  				  lx = addNode(lx, (x_norm[i] + tube_x_norm[i]));
+  				  ly = addNode(ly, (reference->y[i] - tube_size->y[i]));
   				  // add down left point
-  				  lx = addNode(lx, (ref_norm.x[i] - xLen));
-  				  ly = addNode(ly, (ref_norm.y[i] - yLen));
+  				  lx = addNode(lx, (x_norm[i] - tube_x_norm[i]));
+  				  ly = addNode(ly, (reference->y[i] - tube_size->y[i]));
   			  }
 
   			  int len = listLen(ly);
   			  double lastY = getNth(ly, len-1);
   			  // remove the last added points in case of zero slope of tube curve
-  			  if equ((ref_norm.y[i+1] - yLen), lastY) {
+  			  if equ((reference->y[i+1] - tube_size->y[i+1]), lastY) {
   				  if (equ(s0 * s1, -1) && equ(getNth(ly, len-3), lastY)) {
   					  // remove two points, if two points were added at last
   					  // ((len-1) - 2 >= 0, because start point + two added points)
@@ -381,16 +346,16 @@ struct data calculateLower(struct data reference, double* tubeSize) {
   		  s0 = s1;
   		  m0 = m1;
   	  }
-  	  // ----- 1.3. End: Rectangle with center (x,y) = (reference.x[reference.n - 1], reference.y[reference.n - 1]) -----
+  	  // ----- 1.3. End: Rectangle with center (x,y) = (reference->x[reference->n - 1], reference->y[reference->n - 1]) -----
   	  if equ(s0, -1) {
   		  // add down left point
-  		  lx = addNode(lx, (ref_norm.x[ref_norm.n-1] - xLen));
-  		  ly = addNode(ly, (ref_norm.y[ref_norm.n-1] - yLen));
+  		  lx = addNode(lx, (x_norm[reference->n-1] - tube_x_norm[reference->n-1]));
+  		  ly = addNode(ly, (reference->y[reference->n-1] - tube_size->y[reference->n-1]));
   	  }
   }
   // add down right point
-  lx = addNode(lx, (ref_norm.x[ref_norm.n-1] + xLen));
-  ly = addNode(ly, (ref_norm.y[ref_norm.n-1] - yLen));
+  lx = addNode(lx, (x_norm[reference->n-1] + tube_x_norm[reference->n-1]));
+  ly = addNode(ly, (reference->y[reference->n-1] - tube_size->y[reference->n-1]));
 
   // ===== 2. Remove points and add intersection points in case of backward order =====
   int lisLen = listLen(ly);
@@ -407,90 +372,89 @@ struct data calculateLower(struct data reference, double* tubeSize) {
 
   tempLX = getListValues(lx);
   tempLY = getListValues(ly);
-
   lower = removeLoop(tempLX, tempLY, lisLen, -1);
+  denormalize(lower.x, lower.n, dat_char.mag_x);
 
-  return denormalizeData(lower, mx, my);
+  // Free the memory.
+  if (x_norm != NULL) free(x_norm);
+  if (tube_x_norm != NULL) free(tube_x_norm);
+
+  return lower;
 }
 
 
 /*
- * Function: calculateUpper
+ * Function: setUpper
  * ------------------------
  *   find the data set of upper tube curve
  *
  *   reference: reference data curve
- *   tubeSize: data array specifying tube size that includes:
- *             tubeSize[0], x -- half width of rectangle
- *             tubeSize[1], y -- half height of rectangle
- *             tubeSize[2], baseX -- base of relative value is x direction
- *             tubeSize[3], baseY -- base of relative value is y direction
- *             tubeSize[4], ratio -- ratio y / x
+ *   tube_size: struct specifying tube size
  *
  *   return : data set defining upper curve of the tube
  */
-struct data calculateUpper(struct data reference, double* tubeSize) {
-  int i;
-  struct data ref_norm;
+struct data getUpper(struct data *reference, struct data *tube_size) {
   struct data upper;
-  node_t* ux = NULL;
-  node_t* uy = NULL;
+  node_t *ux = NULL;
+  node_t *uy = NULL;
+  size_t i, b;
+
+  /* Normalize values and tube size in x direction.
+   * This was introduced in https://github.com/lbl-srg/funnel/pull/30
+   * to guard against vanishing derivatives (dy/dx) for x values with a large order of magnitude.
+   */
+
+  struct data_char dat_char = get_data_char(reference);                   // Data characteristics
+  double *x_norm = (double *)malloc(sizeof(double) * reference->n);       // Normalized x values
+  double *tube_x_norm = (double *)malloc(sizeof(double) * tube_size->n);  // Normalized tube size in x direction
+  if ((x_norm == NULL) || (tube_x_norm == NULL)){
+	  fputs("Error: Failed to allocate memory for x_norm or tube_x_norm.\n", stderr);
+    exit(1);
+  }
+  memcpy(x_norm, reference->x, sizeof(double) * reference->n);
+  memcpy(tube_x_norm, tube_size->x, sizeof(double) * tube_size->n);
+  normalize(x_norm, reference->n, dat_char.mag_x);
+  normalize(tube_x_norm, tube_size->n, dat_char.mag_x);
 
   // ===== 1. add corner points of the rectangle =====
   double m0, m1; // slopes before and after point i of reference curve
   double s0, s1; // sign of slopes of reference curve: 1 - increasing, 0 - constant, -1 - decreasing
-  double mx, my;
-  int b;
-  double xLen;
-  double yLen;
 
-  // Normalize data.
-  mx = fabs(mean(reference.x, reference.n));
-  my = fabs(mean(reference.y, reference.n));
-  ref_norm = normalizeData(reference, mx, my);
-  if equ(mx, 0.0) {
-    xLen = tubeSize[0];
-  } else {
-    xLen = tubeSize[0] / mx;
-  }
-  if equ(my, 0.0) {
-    yLen = tubeSize[1];
-  } else {
-    yLen = tubeSize[1] / my;
-  }
-  // ----- 1.1 Start: rectangle with center (x,y) = (reference.x[0], reference.y[0]) -----
+  // ----- 1.1 Start: rectangle with center (x,y) = (reference->x[0], reference->y[0]) -----
   // ignore identical point at the beginning
   b = 0;
-  while (((b+1)< ref_norm.n) && equ(ref_norm.x[b], ref_norm.x[b+1]) && equ(ref_norm.y[b], ref_norm.y[b+1]))
+  while (((b+1)< reference->n) && equ(x_norm[b], x_norm[b+1]) && equ(reference->y[b], reference->y[b+1]))
+  {
     b = b+1;
+  }
   // add top left point
-  ux = addNode(ux,(ref_norm.x[b] - xLen));
-  uy = addNode(uy, (ref_norm.y[b] + yLen));
+  ux = addNode(ux,(x_norm[b] - tube_x_norm[b]));
+  uy = addNode(uy, (reference->y[b] + tube_size->y[b]));
 
-  if (b+1 < ref_norm.n) {
+  if (b+1 < reference->n) {
 	  // slopes of reference curve (initialization)
-	  s0 = sign(ref_norm.y[b+1] - ref_norm.y[b]);
-	  if (!equ(ref_norm.x[b+1], ref_norm.x[b])) {
-		  m0 = (ref_norm.y[b+1] - ref_norm.y[b]) / (ref_norm.x[b+1] - ref_norm.x[b]);
+	  s0 = sign(reference->y[b+1] - reference->y[b]);
+	  if (!equ(x_norm[b+1], x_norm[b])) {
+		  m0 = (reference->y[b+1] - reference->y[b]) / (x_norm[b+1] - x_norm[b]);
 	  } else {
 		  m0 = (s0>0) ? 1e+15 : -1e+15;
 	  }
 	  if equ(s0, -1) {
 		  // add top right point
-		  ux = addNode(ux, (ref_norm.x[b] + xLen));
-		  uy = addNode(uy, (ref_norm.y[b] + yLen));
+		  ux = addNode(ux, (x_norm[b] + tube_x_norm[b]));
+		  uy = addNode(uy, (reference->y[b] + tube_size->y[b]));
 	  }
 
-	  // ----- 1.2 Iteration: rectangle with center (x,y) = (ref_norm.x[i], ref_norm.y[i]) -----
-	  for (i = b+1; i < ref_norm.n-1; i++) {
+	  // ----- 1.2 Iteration: rectangle with center (x,y) = (x_norm[i], reference->y[i]) -----
+	  for (i = b+1; i < reference->n-1; i++) {
 		  // ignore identical points
-		  if (equ(ref_norm.x[i], ref_norm.x[i+1]) && equ(ref_norm.y[i], ref_norm.y[i+1]))
+		  if (equ(x_norm[i], x_norm[i+1]) && equ(reference->y[i], reference->y[i+1]))
 			  continue;
 
 		  // slopes of reference curve
-		  s1 = sign(ref_norm.y[i+1] - ref_norm.y[i]);
-		  if (!equ(ref_norm.x[i+1], ref_norm.x[i])) {
-			  m1 = (ref_norm.y[i+1] - ref_norm.y[i]) / (ref_norm.x[i+1] - ref_norm.x[i]);
+		  s1 = sign(reference->y[i+1] - reference->y[i]);
+		  if (!equ(x_norm[i+1], x_norm[i])) {
+			  m1 = (reference->y[i+1] - reference->y[i]) / (x_norm[i+1] - x_norm[i]);
 		  } else {
 			  m1 = (s1>0) ? (1e+15) : (-1e+15);
 		  }
@@ -499,32 +463,32 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
 		  if (!equ(m0, m1)) {
 			  if (!equ(s0, -1) && !equ(s1, -1)) {
 				  // add top left point
-				  ux = addNode(ux, (ref_norm.x[i] - xLen));
-				  uy = addNode(uy, (ref_norm.y[i] + yLen));
+				  ux = addNode(ux, (x_norm[i] - tube_x_norm[i]));
+				  uy = addNode(uy, (reference->y[i] + tube_size->y[i]));
 			  } else if (!equ(s0, 1) && !equ(s1, 1)) {
 				  // add top right point
-				  ux = addNode(ux, (ref_norm.x[i] + xLen));
-				  uy = addNode(uy, (ref_norm.y[i] + yLen));
+				  ux = addNode(ux, (x_norm[i] + tube_x_norm[i]));
+				  uy = addNode(uy, (reference->y[i] + tube_size->y[i]));
 			  } else if (equ(s0, 1) && equ(s1, -1)) {
 				  // add top left point
-				  ux = addNode(ux, (ref_norm.x[i] - xLen));
-				  uy = addNode(uy, (ref_norm.y[i] + yLen));
+				  ux = addNode(ux, (x_norm[i] - tube_x_norm[i]));
+				  uy = addNode(uy, (reference->y[i] + tube_size->y[i]));
 				  // add top right point
-				  ux = addNode(ux, (ref_norm.x[i] + xLen));
-				  uy = addNode(uy, (ref_norm.y[i] + yLen));
+				  ux = addNode(ux, (x_norm[i] + tube_x_norm[i]));
+				  uy = addNode(uy, (reference->y[i] + tube_size->y[i]));
 			  } else if (equ(s0, -1) && equ(s1, 1)) {
 				  // add top right point
-				  ux = addNode(ux, (ref_norm.x[i] + xLen));
-				  uy = addNode(uy, (ref_norm.y[i] + yLen));
+				  ux = addNode(ux, (x_norm[i] + tube_x_norm[i]));
+				  uy = addNode(uy, (reference->y[i] + tube_size->y[i]));
 				  // add top left point
-				  ux = addNode(ux, (ref_norm.x[i] - xLen));
-				  uy = addNode(uy, (ref_norm.y[i] + yLen));
+				  ux = addNode(ux, (x_norm[i] - tube_x_norm[i]));
+				  uy = addNode(uy, (reference->y[i] + tube_size->y[i]));
 			  }
 
 			  int len = listLen(uy);
 			  double lastY = getNth(uy, len-1);
 			  // remove the last added points in case of zero slope of tube curve
-			  if equ((ref_norm.y[i+1] + yLen), lastY) {
+			  if equ((reference->y[i+1] + tube_size->y[i+1]), lastY) {
 				  if (equ(s0 * s1, -1) && equ(getNth(uy, len-3), lastY)) {
 					  // remove two points, if two points were added at last
 					  // ((len-1) - 2 >= 0, because start point + two added points)
@@ -543,16 +507,16 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
 		  s0 = s1;
 		  m0 = m1;
 	  }
-	  // ----- 1.3. End: Rectangle with center (x,y) = (ref_norm.x[ref_norm.n - 1], ref_norm.y[ref_norm.n - 1]) -----
+	  // ----- 1.3. End: Rectangle with center (x,y) = (x_norm[reference->n - 1], reference->y[reference->n - 1]) -----
 	  if equ(s0, 1) {
 		  // add top left point
-		  ux = addNode(ux, (ref_norm.x[ref_norm.n-1] - xLen));
-		  uy = addNode(uy, (ref_norm.y[ref_norm.n-1] + yLen));
+		  ux = addNode(ux, (x_norm[reference->n-1] - tube_x_norm[reference->n-1]));
+		  uy = addNode(uy, (reference->y[reference->n-1] + tube_size->y[reference->n-1]));
 	  }
   }
   // add top right point
-  ux = addNode(ux, (ref_norm.x[ref_norm.n-1] + xLen));
-  uy = addNode(uy, (ref_norm.y[ref_norm.n-1] + yLen));
+  ux = addNode(ux, (x_norm[reference->n-1] + tube_x_norm[reference->n-1]));
+  uy = addNode(uy, (reference->y[reference->n-1] + tube_size->y[reference->n-1]));
 
   // ===== 2. Remove points and add intersection points in case of backward order =====
   int lisLen = listLen(uy);
@@ -569,10 +533,14 @@ struct data calculateUpper(struct data reference, double* tubeSize) {
 
   tempUX = getListValues(ux);
   tempUY = getListValues(uy);
-
   upper = removeLoop(tempUX, tempUY, lisLen, 1);
+  denormalize(upper.x, upper.n, dat_char.mag_x);
 
-  return denormalizeData(upper, mx, my);
+  // Free the memory.
+  if (x_norm != NULL) free(x_norm);
+  if (tube_x_norm != NULL) free(tube_x_norm);
+
+  return upper;
 }
 
  /*

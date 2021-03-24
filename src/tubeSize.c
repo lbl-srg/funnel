@@ -10,7 +10,7 @@
  *   maxValue : find maximum value of an array
  *   setStandardBaseAndRatio : calculate standard values for baseX, baseY and ratio
  *   setFormerBaseAndRatio : calculate former standard values for baseX, baseY and ratio
- *   tubeSize : calculate tubeSize (half-width and half-height of rectangle)
+ *   set_tube_size : calculate tube size (half-width and half-height of rectangle)
  */
 
 #include <stdio.h>
@@ -45,11 +45,11 @@
  *
  *   return: minimum value of the data array
  */
-double minValue(double* array, int size) {
-  int i;
+double minValue(double* array, size_t size) {
+  size_t i;
   double min;
   min = array[0];
-  for (i=0; i<size; i++) {
+  for (i = 0; i < size; i++) {
     if (array[i] < min) {
       min = array[i];
     }
@@ -67,11 +67,11 @@ double minValue(double* array, int size) {
  *
  *   return: maximum value of the data array
  */
-double maxValue(double* array, int size) {
-  int i;
+double maxValue(double* array, size_t size) {
+  size_t i;
   double max;
   max = array[0];
-  for (i=0; i<size; i++) {
+  for (i = 0; i < size; i++) {
     if (array[i] > max) {
       max = array[i];
     }
@@ -80,87 +80,78 @@ double maxValue(double* array, int size) {
 }
 
 /*
- * Function: setData
- * -----------------
- *   find maximum values and value ranges in x and y of reference data
+ * Function: get_data_char
+ * -----------------------
+ *   Find range and magnitude in x and y
  *
- *   refData: CSV data which will be used as reference
+ *   dat: data struct
  *
- *   return : an array "results" that includes:
- *              rangeX -- value range of x
- *              rangeY -- value range of Y
- *              maxX   -- maximum x
- *              maxY   -- maximum y
+ *   return : a data_char struct
  */
-double * setData(struct data refData) {
-	double rangeX, rangeY;
-	double* results = malloc(4 * sizeof(double));
-
-	double maxX = maxValue(refData.x,refData.n);
-	double minX = minValue(refData.x,refData.n);
-
-	double maxY = maxValue(refData.y,refData.n);
-	double minY = minValue(refData.y,refData.n);
-
-	rangeX = maxX - minX;
-	rangeY = maxY - minY;
-
-	results[0] = rangeX;
-	results[1] = rangeY;
-	results[2] = maxX;
-	results[3] = maxY;
-	return results;
+struct data_char get_data_char(struct data *dat) {
+  double maxX = maxValue(dat->x, dat->n);
+  double minX = minValue(dat->x, dat->n);
+  double maxY = maxValue(dat->y, dat->n);
+  double minY = minValue(dat->y, dat->n);
+  struct data_char d = {
+    .range_x=maxX - minX,
+    .range_y=maxY - minY,
+    .mag_x=max(maxX, fabs(minX)),
+    .mag_y = max(maxY, fabs(minY))
+  };
+  return d;
 }
 
-
 /*
- * Function: tubeSize
+ * Function: set_tube_size
  * ------------------
- *   calculate tubeSize (half-width and half-height of rectangle)
+ *   Calculate tube size (half-width and half-height of rectangle)
  *
- *   refData: CSV data which will be used as reference
- *   tol    : data structure containing absolute tolerance (atolx, atoly)
- *            and relative tolerance (rtolx, rtoly)
+ *   refData   : pointer to struct with the reference data
+ *   tube_size : pointer to struct with the tube size
+ *   tol       : struct with tolerance values
  *
- *   return : an array "tubeSize" that includes:
- *                   x  -- half width of rectangle
- *                   y  -- half height of rectangle
- *               rangeX -- value range of x
- *               rangeY -- value range of y
+ *   return    : void (modifies tube_size in place)
  */
-double * tubeSize(struct data refData, struct tolerances tol) {
-  double x = 1e-10, y = 1e-10, rangeX, rangeY, maxX, maxY;
-  double* tubeSize = malloc(4 * sizeof(double));
+void set_tube_size(struct data *tube_size, struct data *refData, struct tolerances tol) {
+  size_t i;
+  struct data_char dat_char = get_data_char(refData);
 
-  double *standValue;
+  for (i = 0; i < refData->n; i++)
+  {
+    tube_size->x[i] = max(
+      max(tol.atolx, tol.rtolx * dat_char.range_x),
+      tol.ltolx * fabs(refData->x[i]));
+    tube_size->y[i] = max(
+      max(tol.atoly, tol.rtoly * dat_char.range_y),
+      tol.ltoly * fabs(refData->y[i]));
 
-  standValue = setData(refData);
-  rangeX = standValue[0];
-  rangeY = standValue[1];
-  maxX   = standValue[2];
-  maxY   = standValue[3];
-
-  if ((equ(tol.atolx,0) && equ(tol.rtolx, 0)) || (equ(tol.atoly,0) && equ(tol.rtoly, 0))) {
-	  fputs("Error: At least one tolerance has to be set for both, x and y.\n", stderr);
-	  exit(1);
-  }
-
-  if (equ(rangeX, 0)) {
-	  x = max(1e-5, 1e-5*fabs(maxX));
-  } else {
-	  x = max(tol.atolx, tol.rtolx * rangeX);
-  }
-
-  if (equ(rangeY, 0)) {
-  	  y = max(1e-5, 1e-5*fabs(maxY));
-    } else {
-  	  y = max(tol.atoly, tol.rtoly * rangeY);
+    if (equ(tube_size->x[i], 0))
+    {
+      if (!equ(tol.rtolx, 0))
+      /* This is for consistency with csv compare: we use the magnitude if the range is 0. */
+      {
+        tube_size->x[i] = max(tube_size->x[i], tol.rtolx * dat_char.mag_x);
+      }
+      if (equ(tube_size->x[i], 0))
+      /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
+       * Then we consider both rtol and ltol as absolute.
+       */
+      {
+        tube_size->x[i] = max(tube_size->x[i], max(tol.rtolx, tol.ltolx));
+      }
     }
-
-  tubeSize[0] = x;
-  tubeSize[1] = y;
-  tubeSize[2] = rangeX;
-  tubeSize[3] = rangeX;
-
-  return tubeSize;
+    /* Same logic for y variable. */
+    if (equ(tube_size->y[i], 0))
+    {
+      if (!equ(tol.rtoly, 0))
+      {
+        tube_size->y[i] = max(tube_size->y[i], tol.rtoly * dat_char.mag_y);
+      }
+      if (equ(tube_size->y[i], 0))
+      {
+        tube_size->y[i] = max(tube_size->y[i], max(tol.rtoly, tol.ltoly));
+      }
+    }
+  }
 }

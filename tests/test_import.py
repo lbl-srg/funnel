@@ -7,6 +7,8 @@ import os, sys
 import re
 import json
 import subprocess
+
+import numpy as np
 import pandas as pd
 
 try:  # CI tool
@@ -34,7 +36,7 @@ def test_log(test_name, test_dir, tmp_dir, dif_err):
         json.dump(test_log, f)
 
 
-def dif_test(test_dir):
+def dif_test(test_dir, rtol=1e-12):
     """Assess the differences between the current test and the reference test.
     The differences are assessed for x and y values of error.csv files between
     the test run in the current directory (file ./results/error.csv) and
@@ -49,10 +51,23 @@ def dif_test(test_dir):
     """
     test_ref = read_res(test_dir)
     test_new = read_res('./')
-    nb_dif_x = sum(test_ref.iloc(axis=1)[0] != test_new.iloc(axis=1)[0]) / len(test_ref)
-    nb_dif_y = sum(test_ref.iloc(axis=1)[1] != test_new.iloc(axis=1)[1]) / len(test_ref)
+    dif_x = np.logical_not(np.isclose(test_ref.iloc(axis=1)[0], test_new.iloc(axis=1)[0], rtol=rtol))
+    dif_y = np.logical_not(np.isclose(test_ref.iloc(axis=1)[1], test_new.iloc(axis=1)[1], rtol=rtol))
+    frac_dif_x = sum(dif_x) / len(test_ref)
+    frac_dif_y = sum(dif_y) / len(test_ref)
+    pd.options.display.float_format = '{:f}'.format
+    if frac_dif_x > 0:
+        print('*** x values that differ between reference and test results:')
+        print(pd.concat([
+            test_ref[dif_x].rename(lambda x: x + '_ref', axis=1),
+            test_new[dif_x].rename(lambda x: x + '_test', axis=1)], axis=1))
+    if frac_dif_y > 0:
+        print('*** y values that differ between reference and test results:')
+        print(pd.concat([
+            test_ref[dif_y].rename(lambda x: x + '_ref', axis=1),
+            test_new[dif_y].rename(lambda x: x + '_test', axis=1)], axis=1))
 
-    return [nb_dif_x, nb_dif_y]
+    return [frac_dif_x, frac_dif_y]
 
 
 def run_pyfunnel(test_dir):
@@ -76,7 +91,7 @@ def run_pyfunnel(test_dir):
     test = pd.read_csv(os.path.join(test_dir, par['test']))
     par['outputDirectory'] = par['output']
 
-    for t in ['atolx', 'atoly', 'rtolx', 'rtoly']:
+    for t in ['atolx', 'atoly', 'ltolx', 'ltoly', 'rtolx', 'rtoly']:
         try:
             par[t]
         except KeyError:
@@ -87,7 +102,7 @@ def run_pyfunnel(test_dir):
         ref.iloc(axis=1)[1],
         test.iloc(axis=1)[0],
         test.iloc(axis=1)[1],
-        **{k: par[k] for k in ['outputDirectory', 'atolx', 'atoly', 'rtolx', 'rtoly']}
+        **{k: par[k] for k in ['outputDirectory', 'atolx', 'atoly', 'ltolx', 'ltoly', 'rtolx', 'rtoly']}
     )
 
     return rc

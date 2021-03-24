@@ -30,16 +30,16 @@ matrix:
       env: ARCH_OPTION=""
       compiler: gcc
       python: 3.8
-    - name: Python 2.7 on macOS
-      os: osx
-      env: ARCH_OPTION=""
-      compiler: gcc
-      env: PYENV_VERSION=2.7
-    - name: Python 3.6 on macOS
-      os: osx
-      env: ARCH_OPTION=""
-      compiler: gcc
-      env: PYENV_VERSION=3.6
+    # - name: Python 2.7 on macOS
+    #   os: osx
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   env: PYENV_VERSION=2.7
+    # - name: Python 3.6 on macOS
+    #   os: osx
+    #   env: ARCH_OPTION=""
+    #   compiler: gcc
+    #   env: PYENV_VERSION=3.6
     - name: Python 2.7 on Windows
       os: windows
       env: ARCH_OPTION="-A x64"
@@ -69,7 +69,7 @@ script:
   # Compile, link, install.
   - cmake --build . --target install --config Release
   # Test and clean.
-  - ctest -C Release
+  - ctest -C Release --verbose
   # Compare.
   - git status tests
   - git diff --exit-code tests

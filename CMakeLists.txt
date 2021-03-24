@@ -12,9 +12,6 @@
 #   *   CMake CMAKE_SYSTEM_PROCESSOR in tool chain file: error at build time
 #       see https://stackoverflow.com/questions/54151877/cmake-cmake-system-processor-in-tool-chain-file-error-at-build-time
 #
-# @todo
-#   Add test with Python 3
-#   Temporary test dir for parallel running
 
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.11.0)
@@ -37,8 +34,7 @@ else()
 endif()
 
 # Set compiling and linking options.
-# Consider adding -std=c89 -pedantic to gcc options to improve portability.
-set(UNIX_COMPILE_FLAGS "-Wall -Wfloat-equal -o3 -fPIC")
+set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC")
 set(WIN_COMPILE_FLAGS "/Wall /O2")
 set(UNIX_LINK_FLAGS "-fPIC")
 
@@ -50,7 +46,7 @@ else()
 endif()
 
 # Set target directories.
-# NOTA: always add quotes to protect spaces in path when setting new variables.
+# NOTE: always add quotes to protect spaces in path when setting new variables.
 if (WINDOWS)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
         set(PLATFORM_INSTALL_PREFIX win64)
@@ -117,22 +113,14 @@ add_test(
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file")
-### Again
-set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atoly 0.002 --output results)
+### Wrong arguments
+set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(
     NAME test_py_2
     COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
-set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "At least one of the two possible tolerance parameters")
-### Again
-set(TEST_ARGS_3 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
-add_test(
-    NAME test_py_3
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_3}
-    WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
-)
-set_tests_properties(test_py_3 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
+set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
 
 ## Numerics testing.
 

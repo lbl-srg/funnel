@@ -39,6 +39,8 @@ int compareAndReport(
   const char * outputDirectory,
   const double atolx,
   const double atoly,
+  const double ltolx,
+  const double ltoly,
   const double rtolx,
   const double rtoly
 );
