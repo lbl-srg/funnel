@@ -22,14 +22,14 @@
  * Function: file_exist
  * -----------------
  *  Test if file is in file system (with no dependency to unistd.h (access()): not available on Windows).
- *  
+ *
  *  filename: path to file
- *  
+ *
  *  returns: TRUE if exists
  */
 int file_exist (const char *filename)
 {
-  struct stat buffer;   
+  struct stat buffer;
   return (stat(filename, &buffer) == 0);
 }
 
@@ -64,7 +64,7 @@ struct data readCSV(const char * filename, int skipLines) {
   } else {
     fprintf(stderr, "No such file: %s\n", filename);
   }
-  
+
   time = malloc(sizeof(double) * arraySize);
   if (time == NULL){
     fputs("Error: Failed to allocate memory for time.\n", stderr);
@@ -83,7 +83,7 @@ struct data readCSV(const char * filename, int skipLines) {
     fgets(buf,100,fp); // skip the first "skipLines" lines
   }
 
-  while (fscanf(fp, "%lf%*[,;]%lf\n", &time[rowCount], &value[rowCount]) == 2) {
+  while (fscanf(fp, "%lg%*[,;]%lg\n", &time[rowCount], &value[rowCount]) == 2) {
     if (rowCount == arraySize ) {
       // need more space
       arraySize += 5;
