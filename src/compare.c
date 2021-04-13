@@ -105,7 +105,7 @@ int writeToFile(
 
   fprintf(fil, "%s\n", "x,y");
   for (i = 0; i < data->n; i++) {
-    fprintf(fil, "%lg,%lg\n", data->x[i], data->y[i]);
+    fprintf(fil, "%0.12lg,%0.12lg\n", data->x[i], data->y[i]);
   }
 
   fclose(fil);
