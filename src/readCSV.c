@@ -83,7 +83,7 @@ struct data readCSV(const char * filename, int skipLines) {
     fgets(buf,100,fp); // skip the first "skipLines" lines
   }
 
-  while (fscanf(fp, "%lf%*[,;]%lf\n", &time[rowCount], &value[rowCount]) == 2) {
+  while (fscanf(fp, "%lg%*[,;]%lg\n", &time[rowCount], &value[rowCount]) == 2) {
     if (rowCount == arraySize ) {
       // need more space
       arraySize += 5;

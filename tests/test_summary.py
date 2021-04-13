@@ -49,8 +49,8 @@ if __name__ == "__main__":
                     print(
 """Test {} with data from {} failed on:
 {:%} x points and {:%} y points.""".format(test_log['test_name'], test_log['test_dir'], dif_err[0], dif_err[1]))
-                    # pyfunnel.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original')
-                    # pyfunnel.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New')
+                    pyfunnel.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original')
+                    pyfunnel.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New')
 
                     replace = six.moves.input(
 """Do you want to keep new results from {} and replace results stored in {}?
@@ -70,7 +70,7 @@ Yes (y) or no (n):""".format(test_log['test_name'], test_log['test_dir']))
         except:
             pass
         finally:
-            pass  # shutil.rmtree(os.path.join(cmake_test_dir, d))
+            shutil.rmtree(os.path.join(cmake_test_dir, d))
 
     if dif_test == 0:
         print('All numerics tests passed.')
