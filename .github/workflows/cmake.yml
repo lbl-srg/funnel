@@ -4,6 +4,7 @@ on: [push]
 
 env:
   BUILD_TYPE: Release
+  GH_USERNAME: ${{ github.actor }}
 
 jobs:
   build:
@@ -60,12 +61,10 @@ jobs:
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
 
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.3
-        with:
-            # Artifact name
-            name: binary
-            # A file, directory or wildcard pattern that describes what to upload
-            path: ${{github.workspace}}/pyfunnel/lib/
-            # The desired behavior if no files are found using the provided path.
-            if-no-files-found: error
+      - name: Push changes to remote
+        run: |
+          git config --global user.name $GH_USERNAME
+          git config --global user.email $GH_USERNAME@users.noreply.github.com
+          git add ${{github.workspace}}/pyfunnel/lib
+          git commit -m "Add binaries"
+          git push
