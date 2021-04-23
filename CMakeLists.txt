@@ -4,7 +4,7 @@
 #   Build from root/build/. with commands:
 #   > cmake .. (add `-A x64` on Windows to compile in 64 bits, MSVC compiles in 32 bits by default)
 #   > cmake --build . --target install (add `--config Release` on Windows, MSVC compiles in Debug mode by default)
-#   > ctest (add `--config Release` on Windows + add -R {lib, py or num} to specify a specific set of tests)
+#   > ctest (add `-C Release` on Windows + add -R {lib, py or num} to specify a specific set of tests)
 #
 # @bug
 #   *   Library test crashes on x86 due to readCSV(90, 91) realloc invalid next size
