@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['2.x', '3.x']
+        python-version: ['2.7', '3.8']
 
     steps:
       - uses: actions/checkout@v2
@@ -62,9 +62,11 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Push changes to remote
+        if: {{ contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8') }}
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git add ${{github.workspace}}/pyfunnel/lib
           git commit -m "Add binaries"
+          git pull
           git push
