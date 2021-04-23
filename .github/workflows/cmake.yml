@@ -58,7 +58,7 @@ jobs:
       - name: Test
         working-directory: ${{ github.workspace }}/build
         shell: bash
-        run: ctest --config $BUILD_TYPE --verbose
+        run: ctest -C $BUILD_TYPE --verbose
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.3
