@@ -69,4 +69,4 @@ jobs:
           git add ${{github.workspace}}/pyfunnel/lib
           git diff-index --quiet HEAD -- || git commit -m "Add binaries (GH workflow)"
           git pull
-          git push
+          git diff-index --quiet origin || git push
