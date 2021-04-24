@@ -66,6 +66,7 @@ jobs:
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
-          git commit -am "Add binaries"
+          git add ${{ github.workspace }}/pyfunnel/lib
+          git commit -m "Add binaries"
           git pull
           git push
