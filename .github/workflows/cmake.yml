@@ -66,7 +66,7 @@ jobs:
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
-          git diff
-          git diff-index --quiet HEAD -- || git commit -am "Add binaries"
+          git fetch
+          git diff-index --quiet origin/${GITHUB_REF} || git commit -am "Add binaries"
           git pull
           git push
