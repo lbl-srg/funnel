@@ -36,7 +36,7 @@ def test_log(test_name, test_dir, tmp_dir, dif_err):
         json.dump(test_log, f)
 
 
-def dif_test(test_dir, rtol=1e-11):
+def dif_test(test_dir, rtol=1e-12):
     """Assess the differences between the current test and the reference test.
     The differences are assessed for x and y values of error.csv files between
     the test run in the current directory (file ./results/error.csv) and
