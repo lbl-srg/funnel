@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.3.1
+
+- Add tube size limit to avoid vanishing tube size in case of relative tolerance and low variable value
 ## Version 0.3.0
 
 - Add local tolerance parameters `ltolx` and `ltoly`
