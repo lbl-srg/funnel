@@ -55,7 +55,7 @@ def dif_test(test_dir, rtol=1e-12):
     dif_y = np.logical_not(np.isclose(test_ref.iloc(axis=1)[1], test_new.iloc(axis=1)[1], rtol=rtol))
     frac_dif_x = sum(dif_x) / len(test_ref)
     frac_dif_y = sum(dif_y) / len(test_ref)
-    pd.options.display.float_format = '{:f}'.format
+    pd.options.display.float_format = '{:.16g}'.format
     if frac_dif_x > 0:
         print('*** x values that differ between reference and test results:')
         print(pd.concat([
