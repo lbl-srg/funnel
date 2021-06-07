@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os, sys
+import os
+import shutil
+import sys
 import re
 import json
 import subprocess
@@ -11,12 +12,11 @@ import subprocess
 import numpy as np
 import pandas as pd
 
-try:  # CI tool
-    import pyfunnel
-except ImportError:  # ctest with no previous `pip install .`
-    pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
-    sys.path.append(pyfunnel_dir)
-    import pyfunnel
+pyfunnel_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
+# Another version of pyfunnel may be installed locally.
+# The following ensures that the current development version is used.
+sys.path.insert(1, pyfunnel_dir)
+import pyfunnel
 
 
 def read_res(test_dir):
