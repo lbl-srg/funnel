@@ -1,20 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-import os, sys, shutil
-import json
-import six
-import re
-
-try:  # CI tool
-    import pyfunnel
-except ImportError:  # ctest with no previous `pip install .`
-    pyfunnel_dir = os.path.join(os.path.dirname(__file__), os.path.pardir)
-    sys.path.append(pyfunnel_dir)
-    import pyfunnel
-
+from test_import import *
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
@@ -49,8 +35,8 @@ if __name__ == "__main__":
                     print(
 """Test {} with data from {} failed on:
 {:%} x points and {:%} y points.""".format(test_log['test_name'], test_log['test_dir'], dif_err[0], dif_err[1]))
-                    pyfunnel.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original')
-                    pyfunnel.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New')
+                    # pyfunnel.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original')
+                    # pyfunnel.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New')
 
                     replace = six.moves.input(
 """Do you want to keep new results from {} and replace results stored in {}?
