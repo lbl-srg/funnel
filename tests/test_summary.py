@@ -1,20 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-import os, sys, shutil
-import json
-import six
-import re
-
-try:  # CI tool
-    import pyfunnel
-except ImportError:  # ctest with no previous `pip install .`
-    pyfunnel_dir = os.path.join(os.path.dirname(__file__), os.path.pardir)
-    sys.path.append(pyfunnel_dir)
-    import pyfunnel
-
+from test_import import *
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
