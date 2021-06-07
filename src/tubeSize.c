@@ -135,10 +135,10 @@ void set_tube_size(struct data *tube_size, struct data *refData, struct toleranc
       }
       if (equ(tube_size->x[i], 0))
       /* Still possible if magnitude is 0 or rtol is 0 or ltol is 0 or local value is 0.
-       * Then we consider both rtol and ltol as absolute.
+       * Then we consider a tube size limit value of 1e-10.
        */
       {
-        tube_size->x[i] = max(tube_size->x[i], max(tol.rtolx, tol.ltolx));
+        tube_size->x[i] = max(tube_size->x[i], 1e-10);
       }
     }
     /* Same logic for y variable. */
@@ -150,7 +150,7 @@ void set_tube_size(struct data *tube_size, struct data *refData, struct toleranc
       }
       if (equ(tube_size->y[i], 0))
       {
-        tube_size->y[i] = max(tube_size->y[i], max(tol.rtoly, tol.ltoly));
+        tube_size->y[i] = max(tube_size->y[i], 1e-10);
       }
     }
   }
