@@ -65,7 +65,9 @@ jobs:
         if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
         uses: actions/upload-artifact@v2
         with:
+          name: ${{ matrix.os }}-artifact
           path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/' || 'pyfunnel/lib/darwin64/' }}
+          if-no-files-found: error
 
   push:
     needs: build
@@ -83,6 +85,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:
+          name: ${{ matrix.os }}-artifact
           path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/' || 'pyfunnel/lib/darwin64/' }}
 
       - name: Display structure of downloaded files
