@@ -5,7 +5,6 @@ on: [push]
 env:
   BUILD_TYPE: Release
   GH_USERNAME: ${{ github.actor }}
-  BINARY_PATH: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/*' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/*' || 'pyfunnel/lib/darwin64/*' }}
 
 jobs:
   build:
@@ -67,7 +66,7 @@ jobs:
         if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
         uses: actions/upload-artifact@v2
         with:
-          path: $BINARY_PATH
+          path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/*' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/*' || 'pyfunnel/lib/darwin64/*' }}
 
   push:
     needs: build
@@ -77,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v2
 
       - name: Push changes to remote
