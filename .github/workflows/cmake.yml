@@ -63,7 +63,7 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Upload artifacts
-        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8') && $PUSH_ARTIFACT == 'true’
+        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8') && $PUSH_ARTIFACT == 'true'
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.os }}-artifact
@@ -71,7 +71,7 @@ jobs:
           if-no-files-found: error
 
   push:
-    if: $PUSH_ARTIFACT == 'true’
+    if: $PUSH_ARTIFACT == 'true'
 
     needs: build
 
