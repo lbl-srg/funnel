@@ -65,18 +65,29 @@ jobs:
         if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
         uses: actions/upload-artifact@v2
         with:
-          path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64' || 'pyfunnel/lib/darwin64' }}
+          path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/' || 'pyfunnel/lib/darwin64/' }}
 
   push:
     needs: build
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest]
+        python-version: ['3.8']
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Download artifacts
         uses: actions/download-artifact@v2
+        with:
+          path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/' || 'pyfunnel/lib/darwin64/' }}
+
+      - name: Display structure of downloaded files
+        run: ls -Rl
+        working-directory: pyfunnel/lib
 
       - name: Push changes to remote
         run: |
