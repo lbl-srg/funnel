@@ -5,6 +5,7 @@ on: [push]
 env:
   BUILD_TYPE: Release
   GH_USERNAME: ${{ github.actor }}
+  BINARY_PATH: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/*' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/*' || 'pyfunnel/lib/darwin64/*' }}
 
 jobs:
   build:
@@ -12,8 +13,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['2.7', '3.8']
+        os: [macos-latest]
+        python-version: ['3.8']
 
     steps:
       - uses: actions/checkout@v2
@@ -61,8 +62,25 @@ jobs:
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
 
-      - name: Push changes to remote
+      - name: Upload artifacts
+        working-directory: ${{ github.workspace }}
         if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
+        uses: actions/upload-artifact@v2
+        with:
+          path: $BINARY_PATH
+
+  push:
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v2
+
+      - name: Push changes to remote
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
