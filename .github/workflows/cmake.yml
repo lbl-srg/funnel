@@ -5,7 +5,7 @@ on: [push]
 env:
   BUILD_TYPE: Release
   GH_USERNAME: ${{ github.actor }}
-  PUSH_ARTIFACT: ${{ contains(github.event.head_commit.message, 'push artifact') || github.ref == 'refs/heads/master' }}
+  PUSH_ARTIFACT: ${{ contains(github.event.head_commit.message, 'push artifact') || github.ref == 'refs/heads/master' }} #  will be cast to a string, although it is set as a Boolean
 
 jobs:
   build:
@@ -63,7 +63,7 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Upload artifacts
-        if: $PUSH_ARTIFACT && contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
+        if: env.PUSH_ARTIFACT == 'true’ && contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.os }}-artifact
@@ -71,7 +71,7 @@ jobs:
           if-no-files-found: error
 
   push:
-    if: $PUSH_ARTIFACT
+    if: env.PUSH_ARTIFACT == 'true’
 
     needs: build
 
