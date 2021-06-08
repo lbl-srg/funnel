@@ -62,11 +62,10 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Upload artifacts
-        working-directory: ${{ github.workspace }}
         if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
         uses: actions/upload-artifact@v2
         with:
-          path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64/*' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64/*' || 'pyfunnel/lib/darwin64/*' }}
+          path: ${{ matrix.os == 'ubuntu-latest' && 'pyfunnel/lib/linux64' || matrix.os == 'windows-latest' && 'pyfunnel/lib/win64' || 'pyfunnel/lib/darwin64' }}
 
   push:
     needs: build
