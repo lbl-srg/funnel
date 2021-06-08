@@ -5,6 +5,7 @@ on: [push]
 env:
   BUILD_TYPE: Release
   GH_USERNAME: ${{ github.actor }}
+  PUSH_ARTIFACT: ${{ contains(github.event.head_commit.message, 'push artifact') || github.ref == 'refs/heads/master' }}
 
 jobs:
   build:
@@ -12,8 +13,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest]
-        python-version: ['3.8']
+        os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['2.7', '3.8']
 
     steps:
       - uses: actions/checkout@v2
@@ -62,7 +63,7 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Upload artifacts
-        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
+        if: $PUSH_ARTIFACT && contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.os }}-artifact
@@ -70,14 +71,16 @@ jobs:
           if-no-files-found: error
 
   push:
+    if: $PUSH_ARTIFACT
+
     needs: build
 
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [macos-latest]
-        python-version: ['3.8']
+        os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['2.7', '3.8']
 
     steps:
       - uses: actions/checkout@v2
