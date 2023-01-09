@@ -17,7 +17,9 @@ with open(version_path) as f:
 
 # Readme.
 readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md'))
-with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
+# with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
+#     README = f.read()
+with open(readme_path) as f:
     README = f.read()
 
 setup(
@@ -31,7 +33,7 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     license="3-clause BSD",
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
+    python_requires='>2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*',
     install_requires=['six>=1.11'],
     packages=[MAIN_PACKAGE],
     include_package_data=True,
@@ -39,7 +41,6 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: C',
         'Intended Audience :: End Users/Desktop',

@@ -3,7 +3,5 @@ six==1.14.0
 
 # Test and documentation
 pandas==1.2.4; python_version>='3.6'
-pandas==0.24.2; python_version~='2.7'
-setuptools==46.0.0; python_version>='3.6'
-setuptools==65.5.1; python_version~='2.7'
+setuptools==65.5.1; python_version>='3.6'
 wheel
