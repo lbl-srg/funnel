@@ -20,7 +20,7 @@
 *   (all other errors like memory, file access, bad argument...
 *   are still output to stderr.)
 */
-FILE *log_file;
+extern FILE *log_file;
 
 /*
  * Function: compareAndReport

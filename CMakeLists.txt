@@ -34,7 +34,7 @@ else()
 endif()
 
 # Set compiling and linking options.
-set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC")
+set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC -fcommon")
 set(WIN_COMPILE_FLAGS "/Wall /O2")
 set(UNIX_LINK_FLAGS "-fPIC")
 
