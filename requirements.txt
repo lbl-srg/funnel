@@ -5,5 +5,3 @@ six==1.14.0
 pandas==1.2.4; python_version>='3.6'
 setuptools==65.5.1; python_version>='3.6'
 wheel
-
-dlib==19.4
