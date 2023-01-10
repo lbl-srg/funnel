@@ -53,6 +53,7 @@ jobs:
           run: cmake .. -A x64
         else:
           run: cmake ..
+        fi
 
 
       - name: Build
