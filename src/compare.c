@@ -5,6 +5,8 @@
 #define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
 #endif
 
+FILE *log_file;
+
 /*
  * Function: buildPath
  * -----------------------
