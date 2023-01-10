@@ -50,7 +50,7 @@ jobs:
         # and build directories, but this is only available with CMake 3.13 and higher.
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
         run: |
-          if: [contains(matrix.os, 'windows')]; then
+          if: contains(matrix.os, 'windows') then
             cmake .. -A x64
           else
             cmake ..
