@@ -34,7 +34,7 @@ jobs:
           python -m pip install --user --upgrade pip
           echo ${{ github.workspace }}
           python -m pip install --user -r ${{ github.workspace }}/requirements.txt
-          if ( "${{ matrix.os }}" =~ .*"windows".* ); then python -m pip install --user dlib==19.4; fi
+          if ( "${{ matrix.os }}" =~ .*"windows".* ) python -m pip install --user dlib==19.4
 
 
       - name: Create Build Environment
