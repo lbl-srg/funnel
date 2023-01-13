@@ -4,6 +4,9 @@
 
 - Add tube size limit to avoid vanishing tube size in case of relative tolerance and low variable value
 - Change print format for higher precision (`%.16g`)
+- Drop the Python 2
+- Update the setuptool version to latest
+- Optimize source codes to avod warnings
 ## Version 0.3.0
 
 - Add local tolerance parameters `ltolx` and `ltoly`
