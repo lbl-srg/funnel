@@ -24,7 +24,7 @@ jobs:
           cmake-version: '3.24.x'
 
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
