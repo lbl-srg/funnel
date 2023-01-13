@@ -14,7 +14,7 @@
 #
 
 cmake_policy(SET CMP0048 NEW)
-cmake_minimum_required(VERSION 3.11...3.19)
+cmake_minimum_required(VERSION 3.11...3.24)
 file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
 project(funnel VERSION ${VERSION} LANGUAGES C)
 enable_testing()
@@ -34,7 +34,7 @@ else()
 endif()
 
 # Set compiling and linking options.
-set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC -fcommon")
+set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -O3 -fPIC -fcommon")
 set(WIN_COMPILE_FLAGS "/Wall /O2")
 set(UNIX_LINK_FLAGS "-fPIC")
 
