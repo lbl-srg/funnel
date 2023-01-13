@@ -29,15 +29,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Python dependencies
-        # shell: bash
         run: |
           python -VV
           python -m pip install --user --upgrade pip
           python -m pip install --user -r ${{ github.workspace }}/requirements.txt
-          # python -m pip install --user -r '${{ github.workspace }}/requirements.txt'
-
-          # if ([[ "${{ matrix.os }}" =~ .*"windows".* ]]); then python -m pip install --user dlib; fi
-
 
       - name: Create Build Environment
         # Some projects don't allow in-source building, so create a separate build directory
@@ -54,7 +49,6 @@ jobs:
         # Note the current convention is to use the -S and -B options here to specify source
         # and build directories, but this is only available with CMake 3.13 and higher.
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-        # run: if ([[ ${{ matrix.os }} =~ .*"windows".* ]]); then cmake .. -A x64; else cmake ..; fi
         run: cmake ..
 
       - name: Build
