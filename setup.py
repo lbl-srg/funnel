@@ -17,8 +17,6 @@ with open(version_path) as f:
 
 # Readme.
 readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'README.md'))
-# with io.open(readme_path, encoding='utf-8') as f:  # io.open for Python 2 support with encoding
-#     README = f.read()
 with open(readme_path) as f:
     README = f.read()
 
