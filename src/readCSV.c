@@ -61,6 +61,7 @@ struct data readCSV(const char * filename, int skipLines) {
   fp = fopen(filename, "r");
   if (!(fp)){
     fprintf(stderr, "Cannot open file: %s\n", filename);
+    exit(1);
   }
   
   time = malloc(sizeof(double) * arraySize);
@@ -80,6 +81,11 @@ struct data readCSV(const char * filename, int skipLines) {
   for (i=0; i<skipLines; i++) {
     // skip the first "skipLines" lines
     if (fgets(buf,100,fp) == NULL){
+      if (ferror(fp)) {
+        fprintf(stderr, "Error: Failed to skip the first %d lines in file %s\n", skipLines, filename);
+      } else {
+        fprintf(stderr, "End-of-File reached.\n");
+      }
       exit(1);
     }
   }
