@@ -46,7 +46,7 @@ CONFIG_DEFAULT = dict(
 LINUX_DEFAULT = None
 if platform.system() == 'Linux':
     try:
-        LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
+        LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser 2>/dev/null', shell=True))
     except BaseException:
         pass
 
@@ -373,11 +373,14 @@ class MyHTTPServer(HTTPServer):
         cmd = 'import webbrowser; webbrowser.get().open("http://localhost:{}/funnel")'.format(
             self.server_port
         )
+        launch_browser = True
         if browser is None:
             # This assignment cannot be done with browser = kwargs.pop('browser', CONFIG['BROWSER'])
             # as another module can call browse(browser=None).
             browser = CONFIG['BROWSER']
-        if browser is not None:
+        if browser is None:  # If browser is still undefined do not try to open it, simply launch server.
+            launch_browser = False
+        else:  # Modify browser launch command to include method argument or value from config file.
             webbrowser.get(browser)  # Throw exception in case of missing browser.
             # Pass browser name within quotes.
             cmd = re.sub(r'get\(\)', 'get("{}")'.format(browser), cmd)
@@ -385,16 +388,18 @@ class MyHTTPServer(HTTPServer):
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
+
         try:
             self.server_launch()
             # Launch browser as a subprocess command to avoid web browser error into terminal.
-            with open(os.devnull, 'w') as pipe:
-                proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+            if launch_browser:
+                with open(os.devnull, 'w') as pipe:
+                    proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
             # Watch syslog for error.
             chrome_error = False
             if platform.system() == 'Linux':
-                if (browser is None and 'chrome' in LINUX_DEFAULT) or (
-                        browser is not None and 'chrome' in browser):
+                if (browser is None and LINUX_DEFAULT is not None and 'chrome' in LINUX_DEFAULT) or (
+                    browser is not None and 'chrome' in browser):
                     with open('/var/log/syslog') as f:
                         for l in follow(f, 2):
                             if 'ERROR:gles2_cmd_decoder' in l:
@@ -407,10 +412,10 @@ class MyHTTPServer(HTTPServer):
                 while True:  # Prompt user to retry.
                     inp = input(
                         ('Launching browser yields syslog errors, '
-                         'probably because Chrome is used and the display entered screensaver mode.\n'
-                         'All related processes have been killed by precaution.\n'
-                         'If you have Firefox installed and want to use it persistently, enter p\n'
-                         'Otherwise, do you simply want to retry ([y]/n/p)? '))
+                            'probably because Chrome is used and the display entered screensaver mode.\n'
+                            'All related processes have been killed by precaution.\n'
+                            'If you have Firefox installed and want to use it persistently, enter p\n'
+                            'Otherwise, do you simply want to retry ([y]/n/p)? '))
                     if inp not in ['y', 'n', 'p']:
                         continue
                     else:
@@ -430,12 +435,11 @@ class MyHTTPServer(HTTPServer):
                 else:
                     raise KeyboardInterrupt
             if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
-                print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
+                print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
+                      'http://localhost:{}/funnel'.format(self.server_port))
             wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
-        except Exception as e:
-            print(e)
         finally:
             os.chdir(cur_dir)
             try:  # Objects may not be defined in case of exception.
