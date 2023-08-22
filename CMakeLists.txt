@@ -14,7 +14,7 @@
 #
 
 cmake_policy(SET CMP0048 NEW)
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.22)
 file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
 project(funnel VERSION ${VERSION} LANGUAGES C)
 enable_testing()
@@ -34,16 +34,14 @@ else()
 endif()
 
 # Set compiling and linking options.
-set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC")
-set(WIN_COMPILE_FLAGS "/Wall /O2")
-set(UNIX_LINK_FLAGS "-fPIC")
-
-if(LINUX OR MACOSX)  # CMake 3.13.*: support for add_compile_options and add_link_options
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${UNIX_COMPILE_FLAGS}")
-    SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${UNIX_LINK_FLAGS}")
+if(LINUX OR MACOSX)
+    set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC")
+    set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
 else()
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WIN_COMPILE_FLAGS}")
+    set(CMAKE_C_FLAGS "/Wall /O2")
 endif()
+
+message("CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 
 # Set target directories.
 # NOTE: always add quotes to protect spaces in path when setting new variables.
