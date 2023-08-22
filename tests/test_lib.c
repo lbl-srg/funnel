@@ -13,7 +13,7 @@
 #include <dlfcn.h>
 #endif
 
-int main() {
+int main(void) {
     char *error;
     char* libname;
     typedef struct data (*_read_csv)(const char*, int);
