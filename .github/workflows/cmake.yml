@@ -73,4 +73,4 @@ jobs:
           git add ${{ github.workspace }}/pyfunnel/lib
           git commit -m "Add binaries" --allow-empty
           git pull
-          git push --force
+          git push
