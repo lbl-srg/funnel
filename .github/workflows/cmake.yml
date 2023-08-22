@@ -12,10 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        # os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
-        os: [ubuntu-latest]
-        # python-version: ['3.8', '3.9']
-        python-version: ['3.9']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9']
 
     steps:
       - uses: actions/checkout@v3
@@ -67,19 +65,11 @@ jobs:
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
 
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
       - name: Push changes to remote
-        if: |
-          contains(matrix.os, 'latest') && contains(matrix.python-version, '3.9') &&
-          (github.event_name == 'pull_request') && (github.event.pull_request.base.ref == 'master')
+        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.9')
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git add ${{ github.workspace }}/pyfunnel/lib
           git commit -m "Add binaries" --allow-empty
-          git pull
-          git push
+          git push --force
