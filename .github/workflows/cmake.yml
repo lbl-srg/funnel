@@ -72,4 +72,5 @@ jobs:
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git add ${{ github.workspace }}/pyfunnel/lib
           git commit -m "Add binaries" --allow-empty
+          git pull
           git push --force
