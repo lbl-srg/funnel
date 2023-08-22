@@ -35,7 +35,7 @@ endif()
 
 # Set compiling and linking options.
 if(LINUX OR MACOSX)
-    set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -o3 -fPIC")
+    set(CMAKE_C_FLAGS "-fPIC -Wall -Wextra -Werror -Wfloat-equal -Wpedantic -O3")
     set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
 else()
     set(CMAKE_C_FLAGS "/Wall /O2")
