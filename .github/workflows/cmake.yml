@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['2.7', '3.8']
+        python-version: ['3.6', '3.9']
 
     steps:
       - uses: actions/checkout@v2
@@ -62,7 +62,7 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Push changes to remote
-        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
+        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.9')
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
