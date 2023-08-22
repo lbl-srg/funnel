@@ -70,6 +70,7 @@ jobs:
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
+          git config --global pull.rebase false
           git add ${{ github.workspace }}/pyfunnel/lib
           git commit -m "Add ${{ matrix.os }} binaries" --allow-empty
           git pull
