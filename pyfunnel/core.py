@@ -411,11 +411,14 @@ class MyHTTPServer(HTTPServer):
                 inp = 'y'
                 while True:  # Prompt user to retry.
                     inp = input(
-                        ('Launching browser yields syslog errors, '
+                        (
+                            'Launching browser yields syslog errors, '
                             'probably because Chrome is used and the display entered screensaver mode.\n'
                             'All related processes have been killed by precaution.\n'
                             'If you have Firefox installed and want to use it persistently, enter p\n'
-                            'Otherwise, do you simply want to retry ([y]/n/p)? '))
+                            'Otherwise, do you simply want to retry ([y]/n/p)? '
+                        )
+                    )
                     if inp not in ['y', 'n', 'p']:
                         continue
                     else:
