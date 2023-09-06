@@ -412,11 +412,17 @@ class MyHTTPServer(HTTPServer):
             if platform.system() == 'Linux':
                 if (browser is None and LINUX_DEFAULT is not None and 'chrome' in LINUX_DEFAULT) or (
                     browser is not None and 'chrome' in browser):
-                    with open('/var/log/syslog') as f:
-                        for l in follow(f, 2):
-                            if 'ERROR:gles2_cmd_decoder' in l:
-                                chrome_error = True
-                                break
+                    log_path = '/var/log/syslog'  # Ubuntu
+                    if not os.path.exists(log_path):
+                        log_path = '/var/log/messages'  # RHEL/CentOS
+                    if not os.path.exists(log_path):
+                        log_path = None
+                    if log_path is not None:
+                        with open(log_path) as f:
+                            for l in follow(f, 2):
+                                if 'ERROR:gles2_cmd_decoder' in l:
+                                    chrome_error = True
+                                    break
             if chrome_error:
                 proc.terminate()  # Terminating the process does not stop Chrome in background.
                 subprocess.check_call(['pkill', 'chrome'])  # This does.
