@@ -42,7 +42,9 @@ CONFIG_DEFAULT = dict(
     BROWSER=None,
 )
 
-# Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Ubuntu.
+# Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Linux.
+# This is only for guarding against Chromium bug (excess logging on /var/log/syslog).
+# The browser name retrieved in LINUX_DEFAULT is not compatible with browser names from the webbrowser module.
 LINUX_DEFAULT = None
 if platform.system() == 'Linux':
     try:
@@ -359,10 +361,10 @@ class MyHTTPServer(HTTPServer):
             print('Could not close logger: {}'.format(e))
 
     def browse(self, *args, **kwargs):
-        """Launch server and web browser.
+        """Launch server, and web browser if available.
 
         kwargs:
-            browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
+            browser (str): name of browser, see https://docs.python.org/3/library/webbrowser.html
             timeout (float): maximum time (s) before server shutdown
         """
         global CONFIG
@@ -377,12 +379,22 @@ class MyHTTPServer(HTTPServer):
         if browser is None:
             # This assignment cannot be done with browser = kwargs.pop('browser', CONFIG['BROWSER'])
             # as another module can call browse(browser=None).
+            # browser may still be None after this assignment, which means "use default browser".
             browser = CONFIG['BROWSER']
-        if browser is None:  # If browser is still undefined do not try to open it, simply launch server.
+        # We now test for the existence of a GUI browser.
+        try:
+            browser_ctrl = webbrowser.get(browser)
+            if 'BackgroundBrowser' in str(browser_ctrl.__class__):
+                launch_browser = False
+        except webbrowser.Error:
             launch_browser = False
-        else:  # Modify browser launch command to include method argument or value from config file.
-            webbrowser.get(browser)  # Throw exception in case of missing browser.
-            # Pass browser name within quotes.
+
+        # Create command to launch browser in subprocess.
+        cmd = 'import webbrowser; webbrowser.get().open("http://localhost:{}/funnel")'.format(
+            self.server_port
+        )
+        # Add browser name within quotes but only if not None.
+        if browser is not None:
             cmd = re.sub(r'get\(\)', 'get("{}")'.format(browser), cmd)
         webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
@@ -427,7 +439,7 @@ class MyHTTPServer(HTTPServer):
                     # Current module for future calls to the function.
                     CONFIG['BROWSER'] = 'firefox'
                     save_config()  # Configuration file for future imports.
-                    browser = 'firefox'  # Current function for immediate retry.
+                    browser = 'firefox'  # Use firefox browser for immediate retry.
                     cmd = re.sub(r'get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
                 if inp == 'y' or inp == 'p':
@@ -437,9 +449,9 @@ class MyHTTPServer(HTTPServer):
                         proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
                 else:
                     raise KeyboardInterrupt
-            if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
-                print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
-                      'http://localhost:{}/funnel'.format(self.server_port))
+
+            print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
+                  'http://localhost:{}/funnel'.format(self.server_port))
             wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
