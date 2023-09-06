@@ -48,7 +48,7 @@
  * --------------------
  *   creates new linked list node
  */
-node_t * createNode() {
+node_t * createNode(void) {
   node_t* temp;
   temp = malloc(sizeof(node_t));
   if (temp == NULL){

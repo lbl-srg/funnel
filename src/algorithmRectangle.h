@@ -13,7 +13,7 @@ typedef struct node {
   struct node * next;
 } node_t;
 
-node_t * createNode();
+node_t * createNode(void);
 
 node_t * addNode(node_t* head, double newVal);
 

@@ -69,7 +69,7 @@ The software is tested on the following platforms.
   * Windows x64
   * macOS
 
-A Python binding is available to access the library. It is compatible with Python 2 and 3.
+A Python binding is available to access the library. It is supported on Python versions 3.8 through 3.9.
 
 ### Installing
 
@@ -140,7 +140,7 @@ $ python ../../pyfunnel/pyfunnel.py --reference trended.csv --test simulated.csv
 
 ### System Requirements
 
-The cross-platform build system relies on CMake (version between `3.11.*` and `3.19.*`).
+The cross-platform build system relies on CMake (version `3.22`).
 
 The distributed binaries are built with Microsoft Visual Studio C/C++ compiler
 (Windows), Clang (macOS) and GCC (Linux).

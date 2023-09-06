@@ -16,13 +16,6 @@
 #define MAX 100
 
 /*
-*   Descriptor of the file used for logging the numerical processing errors
-*   (all other errors like memory, file access, bad argument...
-*   are still output to stderr.)
-*/
-FILE *log_file;
-
-/*
  * Function: compareAndReport
  * -----------------------
  *   This function does the actual computations. It is introduced so that it
