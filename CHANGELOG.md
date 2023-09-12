@@ -1,12 +1,16 @@
 # Change Log
 
+## Version 1.0.0
+
+- Add macOS universal build
+- Add support for headless Linux
+- Other bug fixes and improvements
+
 ## Version 0.3.1
 
 - Add tube size limit to avoid vanishing tube size in case of relative tolerance and low variable value
 - Change print format for higher precision (`%.16g`)
-- Drop the Python 2
-- Update the setuptool version to latest
-- Optimize source codes to avod warnings
+
 ## Version 0.3.0
 
 - Add local tolerance parameters `ltolx` and `ltoly`
