@@ -42,11 +42,13 @@ CONFIG_DEFAULT = dict(
     BROWSER=None,
 )
 
-# Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Ubuntu.
+# Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Linux.
+# This is only for guarding against Chromium bug (excess logging on /var/log/syslog).
+# The browser name retrieved in LINUX_DEFAULT is not compatible with browser names from the webbrowser module.
 LINUX_DEFAULT = None
 if platform.system() == 'Linux':
     try:
-        LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser', shell=True))
+        LINUX_DEFAULT = str(subprocess.check_output('xdg-settings get default-web-browser 2>/dev/null', shell=True))
     except BaseException:
         pass
 
@@ -359,10 +361,10 @@ class MyHTTPServer(HTTPServer):
             print('Could not close logger: {}'.format(e))
 
     def browse(self, *args, **kwargs):
-        """Launch server and web browser.
+        """Launch server, and web browser if available.
 
         kwargs:
-            browser (str): name of browser, see https://docs.python.org/3.8/library/webbrowser.html
+            browser (str): name of browser, see https://docs.python.org/3/library/webbrowser.html
             timeout (float): maximum time (s) before server shutdown
         """
         global CONFIG
@@ -373,44 +375,68 @@ class MyHTTPServer(HTTPServer):
         cmd = 'import webbrowser; webbrowser.get().open("http://localhost:{}/funnel")'.format(
             self.server_port
         )
+        launch_browser = True
         if browser is None:
             # This assignment cannot be done with browser = kwargs.pop('browser', CONFIG['BROWSER'])
             # as another module can call browse(browser=None).
+            # browser may still be None after this assignment, which means "use default browser".
             browser = CONFIG['BROWSER']
+        # We now test for the existence of a GUI browser.
+        try:
+            browser_ctrl = webbrowser.get(browser)
+            if 'BackgroundBrowser' in str(browser_ctrl.__class__):
+                launch_browser = False
+        except webbrowser.Error:
+            launch_browser = False
+
+        # Create command to launch browser in subprocess.
+        cmd = 'import webbrowser; webbrowser.get().open("http://localhost:{}/funnel")'.format(
+            self.server_port
+        )
+        # Add browser name within quotes but only if not None.
         if browser is not None:
-            webbrowser.get(browser)  # Throw exception in case of missing browser.
-            # Pass browser name within quotes.
             cmd = re.sub(r'get\(\)', 'get("{}")'.format(browser), cmd)
         webbrowser_cmd = [sys.executable, '-c', cmd]
         # Move to directory with *.csv before launching local server.
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
+
         try:
             self.server_launch()
             # Launch browser as a subprocess command to avoid web browser error into terminal.
-            with open(os.devnull, 'w') as pipe:
-                proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+            if launch_browser:
+                with open(os.devnull, 'w') as pipe:
+                    proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
             # Watch syslog for error.
             chrome_error = False
             if platform.system() == 'Linux':
-                if (browser is None and 'chrome' in LINUX_DEFAULT) or (
-                        browser is not None and 'chrome' in browser):
-                    with open('/var/log/syslog') as f:
-                        for l in follow(f, 2):
-                            if 'ERROR:gles2_cmd_decoder' in l:
-                                chrome_error = True
-                                break
+                if (browser is None and LINUX_DEFAULT is not None and 'chrome' in LINUX_DEFAULT) or (
+                    browser is not None and 'chrome' in browser):
+                    log_path = '/var/log/syslog'  # Ubuntu
+                    if not os.path.exists(log_path):
+                        log_path = '/var/log/messages'  # RHEL/CentOS
+                    if not os.path.exists(log_path):
+                        log_path = None
+                    if log_path is not None:
+                        with open(log_path) as f:
+                            for l in follow(f, 2):
+                                if 'ERROR:gles2_cmd_decoder' in l:
+                                    chrome_error = True
+                                    break
             if chrome_error:
                 proc.terminate()  # Terminating the process does not stop Chrome in background.
                 subprocess.check_call(['pkill', 'chrome'])  # This does.
                 inp = 'y'
                 while True:  # Prompt user to retry.
                     inp = input(
-                        ('Launching browser yields syslog errors, '
-                         'probably because Chrome is used and the display entered screensaver mode.\n'
-                         'All related processes have been killed by precaution.\n'
-                         'If you have Firefox installed and want to use it persistently, enter p\n'
-                         'Otherwise, do you simply want to retry ([y]/n/p)? '))
+                        (
+                            'Launching browser yields syslog errors, '
+                            'probably because Chrome is used and the display entered screensaver mode.\n'
+                            'All related processes have been killed by precaution.\n'
+                            'If you have Firefox installed and want to use it persistently, enter p\n'
+                            'Otherwise, do you simply want to retry ([y]/n/p)? '
+                        )
+                    )
                     if inp not in ['y', 'n', 'p']:
                         continue
                     else:
@@ -419,7 +445,7 @@ class MyHTTPServer(HTTPServer):
                     # Current module for future calls to the function.
                     CONFIG['BROWSER'] = 'firefox'
                     save_config()  # Configuration file for future imports.
-                    browser = 'firefox'  # Current function for immediate retry.
+                    browser = 'firefox'  # Use firefox browser for immediate retry.
                     cmd = re.sub(r'get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
                 if inp == 'y' or inp == 'p':
@@ -429,13 +455,12 @@ class MyHTTPServer(HTTPServer):
                         proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
                 else:
                     raise KeyboardInterrupt
-            if timeout > 10:  # Do not pollute terminal if HTML page is served only for a short time.
-                print('Server will run for {} (s) or until KeyboardInterrupt.'.format(timeout))
+
+            print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
+                  'http://localhost:{}/funnel'.format(self.server_port))
             wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
-        except Exception as e:
-            print(e)
         finally:
             os.chdir(cur_dir)
             try:  # Objects may not be defined in case of exception.

@@ -22,14 +22,14 @@
  * Function: file_exist
  * -----------------
  *  Test if file is in file system (with no dependency to unistd.h (access()): not available on Windows).
- *  
+ *
  *  filename: path to file
- *  
+ *
  *  returns: TRUE if exists
  */
 int file_exist (const char *filename)
 {
-  struct stat buffer;   
+  struct stat buffer;
   return (stat(filename, &buffer) == 0);
 }
 
@@ -54,16 +54,18 @@ struct data readCSV(const char * filename, int skipLines) {
 
   FILE *fp;
 
-  if (!file_exist(filename)){
+  if (file_exist(filename))
+  {
+    fp = fopen(filename, "r");
+    if (!(fp)) {
+      fprintf(stderr, "Cannot open file: %s\n", filename);
+      exit(1);
+    }
+  } else {
     fprintf(stderr, "No such file: %s\n", filename);
     exit(1);
   }
-  fp = fopen(filename, "r");
-  if (!(fp)){
-    fprintf(stderr, "Cannot open file: %s\n", filename);
-    exit(1);
-  }
-  
+
   time = malloc(sizeof(double) * arraySize);
   if (time == NULL){
     fputs("Error: Failed to allocate memory for time.\n", stderr);
@@ -79,14 +81,9 @@ struct data readCSV(const char * filename, int skipLines) {
   memset(value,0,sizeof(double)*arraySize);
 
   for (i=0; i<skipLines; i++) {
-    // skip the first "skipLines" lines
-    if (fgets(buf,100,fp) == NULL){
-      if (ferror(fp)) {
-        fprintf(stderr, "Error: Failed to skip the first %d lines in file %s\n", skipLines, filename);
-      } else {
-        fprintf(stderr, "End-of-File reached.\n");
-      }
-      exit(1);
+    if (fgets(buf, 100, fp) == NULL) { // skip the first "skipLines" lines
+    	fputs("Error: Failed to skip lines with fgets.\n", stderr);
+	    exit(1);
     }
   }
 
@@ -105,6 +102,7 @@ struct data readCSV(const char * filename, int skipLines) {
     }
     rowCount++;
   }
+
   fclose(fp);
 
   inputs.x = time;

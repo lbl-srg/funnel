@@ -12,19 +12,28 @@ jobs:
 
     strategy:
       matrix:
+<<<<<<< HEAD
         os: [ubuntu-18.04, ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.8']
+=======
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9']
+>>>>>>> master
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1.12.1
+        if: startsWith(matrix.os, 'windows')
 
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.13
         with:
-          cmake-version: '3.24.x'
+          cmake-version: '3.22.x'
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -62,12 +71,12 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Push changes to remote
-        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.8')
+        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.9')
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git config --global pull.rebase false
           git add ${{ github.workspace }}/pyfunnel/lib
-          git commit -m "Add binaries" --allow-empty
+          git commit -m "Add ${{ matrix.os }} binaries" --allow-empty
           git pull
           git push

@@ -14,7 +14,7 @@
 #
 
 cmake_policy(SET CMP0048 NEW)
-cmake_minimum_required(VERSION 3.11...3.24)
+cmake_minimum_required(VERSION 3.22)
 file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
 project(funnel VERSION ${VERSION} LANGUAGES C)
 enable_testing()
@@ -34,16 +34,14 @@ else()
 endif()
 
 # Set compiling and linking options.
-set(UNIX_COMPILE_FLAGS "-Wall -Wextra -Werror -Wfloat-equal -Wpedantic -O3 -fPIC")
-set(WIN_COMPILE_FLAGS "/Wall /O2")
-set(UNIX_LINK_FLAGS "-fPIC")
-
-if(LINUX OR MACOSX)  # CMake 3.13.*: support for add_compile_options and add_link_options
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${UNIX_COMPILE_FLAGS}")
-    SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${UNIX_LINK_FLAGS}")
+if(LINUX OR MACOSX)
+    set(CMAKE_C_FLAGS "-fPIC -Wall -Wextra -Werror -Wfloat-equal -Wpedantic -O3")
+    set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
 else()
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WIN_COMPILE_FLAGS}")
+    set(CMAKE_C_FLAGS "/Wall /O2")
 endif()
+
+message("CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 
 # Set target directories.
 # NOTE: always add quotes to protect spaces in path when setting new variables.
@@ -81,7 +79,8 @@ add_subdirectory(tests)
 ############################################################
 
 # Manage tests.
-include(FindPythonInterp)
+find_package (Python)
+message("Python interpreter used for testing: ${Python_EXECUTABLE}")
 set(CTEST_OUTPUT_ON_FAILURE ON)  # verbose if failed test
 set(CMAKE_TEST_DIR "${CMAKE_SOURCE_DIR}/tests")
 
@@ -102,14 +101,14 @@ add_test(
 set(TEST_ARGS_0 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_0
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_0}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_0}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 ### Wrong arguments
 set(TEST_ARGS_1 --reference wrong.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_1
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_1}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_1}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file")
@@ -117,7 +116,7 @@ set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file"
 set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(
     NAME test_py_2
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
@@ -142,7 +141,7 @@ foreach(t RANGE ${len_tests})
     )
     add_test(
         NAME ${test_name}
-        COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" ${test_name} ${test_dir} ${tmp_dir}
+        COMMAND ${Python_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" ${test_name} ${test_dir} ${tmp_dir}
         WORKING_DIRECTORY ${tmp_dir}
     )
     if (${test_case} MATCHES "fail4")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
@@ -156,7 +155,7 @@ endforeach()
 ## Plot function testing.
 add_test(
     NAME test_plot
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_TEST_DIR}/test_plot.py" "${CMAKE_TEST_DIR}/fail1/results"
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_TEST_DIR}/test_plot.py" "${CMAKE_TEST_DIR}/fail1/results"
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
@@ -164,7 +163,7 @@ set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Err
 ## Configure pre/post test.
 set(summary_path "${CMAKE_TEST_DIR}/test_summary.py")
 set(CTEST_CUSTOM_POST_TEST
-    "${PYTHON_EXECUTABLE} ${summary_path} ${CMAKE_TEST_DIR}"
+    "${Python_EXECUTABLE} ${summary_path} ${CMAKE_TEST_DIR}"
 )
 set(content "# Numerics testing configuration file
     set(CTEST_CUSTOM_PRE_TEST
