@@ -65,9 +65,9 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 The software is tested on the following platforms.
 
-  * Linux x64
-  * Windows x64
-  * macOS
+  * Linux x64 (Ubuntu 22.04)
+  * Windows x64 (Windows Server 2022)
+  * macOS x64 and arm64 (macOS 12)
 
 A Python binding is available to access the library. It is supported on Python versions 3.8 through 3.9.
 
