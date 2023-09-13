@@ -1,6 +1,12 @@
 name: CMake
 
-on: [push]
+on:
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
 
 env:
   BUILD_TYPE: Release
@@ -66,12 +72,16 @@ jobs:
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Push binaries
-        if: contains(matrix.os, 'latest') && contains(matrix.python-version, '3.9') && github.event.pull_request.merged == true
+        if: |
+          contains(matrix.os, 'latest') &&
+          contains(matrix.python-version, '3.9') &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/master'
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git config --global pull.rebase false
-          git pull
           git add ${{ github.workspace }}/pyfunnel/lib
           git diff-index --quiet HEAD || git commit -m "Add ${{ matrix.os }} binaries"
+          git pull
           git push
