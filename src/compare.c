@@ -5,8 +5,6 @@
 #define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
 #endif
 
-FILE *log_file;
-
 /*
 *   Descriptor of the file used for logging the numerical processing errors
 *   (all other errors like memory, file access, bad argument...
