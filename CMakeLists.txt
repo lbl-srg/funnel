@@ -16,6 +16,14 @@
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.22)
 file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
+
+# Configure macOS universal build.
+# This should be set prior to the first project() or enable_language() command invocation because
+# it may influence configuration of the toolchain and flags.
+# This is ignored on platforms other than Apple.
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
+
+# Set up project.
 project(funnel VERSION ${VERSION} LANGUAGES C)
 enable_testing()
 
@@ -30,7 +38,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
     set(MACOSX 1)
     message("Mac OS X system detected.")
 else()
-    message(WARNING "OS unknown!")
+    message(FATAL_ERROR "OS unknown!")
 endif()
 
 # Set compiling and linking options.
