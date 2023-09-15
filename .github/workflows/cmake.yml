@@ -80,10 +80,7 @@ jobs:
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
-          git config --global pull.rebase false
-          git stash
-          git pull
-          git stash apply
+          git config --global pull.rebase true
           git add ${{ github.workspace }}/pyfunnel/lib
 
       - name: Push Linux & macOS binaries
@@ -92,8 +89,7 @@ jobs:
           contains(matrix.python-version, '3.9') &&
           github.event_name == 'push' &&
           github.ref == 'refs/heads/master'
-        run: |
-          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git push; }
+        run: git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
 
       - name: Push Windows binaries
         if: |
@@ -101,5 +97,5 @@ jobs:
           contains(matrix.python-version, '3.9') &&
           github.event_name == 'push' &&
           github.ref == 'refs/heads/master'
-        run: |
-          git diff-index --quiet HEAD; if(-not $?) { (git commit -m "Add ${{ matrix.os }} binaries") -and (git push) }
+        # We use cmd /c because powershell <7 does not support chain operators.
+        run: cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push )'
