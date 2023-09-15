@@ -83,7 +83,7 @@ jobs:
 
       - name: Push Linux & macOS binaries
         if: |
-          (matrix.os == 'ubuntu-latest || matrix.os == 'macos-latest') &&
+          (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest') &&
           contains(matrix.python-version, '3.9')
         run: git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
 
