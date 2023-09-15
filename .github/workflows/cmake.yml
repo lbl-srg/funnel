@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9']
+        python-version: ['3.9']
 
     steps:
       - uses: actions/checkout@v3
@@ -74,9 +74,7 @@ jobs:
       - name: Stage binaries
         if: |
           contains(matrix.os, 'latest') &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.9')
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
@@ -86,17 +84,13 @@ jobs:
       - name: Push Linux & macOS binaries
         if: |
           (matrix.os == 'ubuntu-latest || matrix.os == 'macos-latest') &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.9')
         run: git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
 
       - name: Push Windows binaries
         if: |
           matrix.os == 'windows-latest' &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.9')
         run: |
           git diff-index --quiet HEAD
           if(-Not $?) { git commit -m "Add ${{ matrix.os }} binaries"; git pull; git push }
