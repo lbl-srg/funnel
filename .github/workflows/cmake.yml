@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.9']
+        python-version: ['3.8', '3.9']
 
     steps:
       - uses: actions/checkout@v4
@@ -66,15 +66,17 @@ jobs:
         shell: bash
         run: cmake --build . --target install --config $BUILD_TYPE
 
-      # - name: Test
-      #   working-directory: ${{ github.workspace }}/build
-      #   shell: bash
-      #   run: ctest -C $BUILD_TYPE --verbose
+      - name: Test
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: ctest -C $BUILD_TYPE --verbose
 
       - name: Stage binaries
         if: |
           contains(matrix.os, 'latest') &&
-          contains(matrix.python-version, '3.9')
+          contains(matrix.python-version, '3.9') &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/master'
         run: |
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
@@ -87,13 +89,17 @@ jobs:
       - name: Push Linux & macOS binaries
         if: |
           (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest') &&
-          contains(matrix.python-version, '3.9')
+          contains(matrix.python-version, '3.9') &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/master'
         run: |
           git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git push; }
 
       - name: Push Windows binaries
         if: |
           matrix.os == 'windows-latest' &&
-          contains(matrix.python-version, '3.9')
+          contains(matrix.python-version, '3.9') &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/master'
         run: |
           git diff-index --quiet HEAD; if(-not $?) { (git commit -m "Add ${{ matrix.os }} binaries") -and (git push) }
