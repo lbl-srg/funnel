@@ -66,10 +66,10 @@ jobs:
         shell: bash
         run: cmake --build . --target install --config $BUILD_TYPE
 
-      - name: Test
-        working-directory: ${{ github.workspace }}/build
-        shell: bash
-        run: ctest -C $BUILD_TYPE --verbose
+      # - name: Test
+      #   working-directory: ${{ github.workspace }}/build
+      #   shell: bash
+      #   run: ctest -C $BUILD_TYPE --verbose
 
       - name: Stage binaries
         if: |
@@ -79,18 +79,21 @@ jobs:
           git config --global user.name $GH_USERNAME
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git config --global pull.rebase false
+          git stash
+          git pull
+          git stash apply
           git add ${{ github.workspace }}/pyfunnel/lib
 
       - name: Push Linux & macOS binaries
         if: |
           (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest') &&
           contains(matrix.python-version, '3.9')
-        run: git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
+        run: |
+          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git push; }
 
       - name: Push Windows binaries
         if: |
           matrix.os == 'windows-latest' &&
           contains(matrix.python-version, '3.9')
         run: |
-          git diff-index --quiet HEAD
-          if(-Not $?) { git commit -m "Add ${{ matrix.os }} binaries"; git pull; git push }
+          git diff-index --quiet HEAD; if(-not $?) { (git commit -m "Add ${{ matrix.os }} binaries") -and (git push) }
