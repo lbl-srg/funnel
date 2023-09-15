@@ -10,7 +10,7 @@ on:
 
 env:
   BUILD_TYPE: Release
-  GH_USERNAME: ${{ github.actor }}
+  GH_USERNAME: github-actions[bot]
 
 jobs:
   build:
@@ -78,8 +78,6 @@ jobs:
           github.event_name == 'push' &&
           github.ref == 'refs/heads/master'
         run: |
-          git config --global user.name $GH_USERNAME
-          git config --global user.email $GH_USERNAME@users.noreply.github.com
           git config --global pull.rebase true
           git add ${{ github.workspace }}/pyfunnel/lib
 
@@ -89,13 +87,19 @@ jobs:
           contains(matrix.python-version, '3.9') &&
           github.event_name == 'push' &&
           github.ref == 'refs/heads/master'
-        run: git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
+        run: |
+          git config --global user.name "${GH_USERNAME}"
+          git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
+          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
 
+      # We use cmd /c because powershell <7 does not support chain operators.
       - name: Push Windows binaries
         if: |
           matrix.os == 'windows-latest' &&
           contains(matrix.python-version, '3.9') &&
           github.event_name == 'push' &&
           github.ref == 'refs/heads/master'
-        # We use cmd /c because powershell <7 does not support chain operators.
-        run: cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push )'
+        run: |
+          git config --global user.name "${{ env.GH_USERNAME }}"
+          git config --global user.email "${{ env.GH_USERNAME }}@users.noreply.github.com"
+          cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push )'
