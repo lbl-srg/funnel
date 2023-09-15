@@ -71,7 +71,7 @@ jobs:
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
 
-      - name: Push binaries
+      - name: Stage binaries
         if: |
           contains(matrix.os, 'latest') &&
           contains(matrix.python-version, '3.9') &&
@@ -82,4 +82,21 @@ jobs:
           git config --global user.email $GH_USERNAME@users.noreply.github.com
           git config --global pull.rebase false
           git add ${{ github.workspace }}/pyfunnel/lib
-          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
+
+      - name: Push Linux & macOS binaries
+        if: |
+          (matrix.os == 'ubuntu-latest || matrix.os == 'macos-latest') &&
+          contains(matrix.python-version, '3.9') &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/master'
+        run: git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
+
+      - name: Push Windows binaries
+        if: |
+          matrix.os == 'windows-latest' &&
+          contains(matrix.python-version, '3.9') &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/master'
+        run: |
+          git diff-index --quiet HEAD
+          if(-Not $?) { git commit -m "Add ${{ matrix.os }} binaries"; git pull; git push }
