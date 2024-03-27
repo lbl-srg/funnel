@@ -54,27 +54,29 @@ struct data readCSV(const char * filename, int skipLines) {
 
   FILE *fp;
 
-  if (file_exist(filename))
+  if (!file_exist(filename))
   {
-    fp = fopen(filename, "r");
-    if (!(fp)) {
-      fprintf(stderr, "Cannot open file: %s\n", filename);
-      exit(1);
-    }
-  } else {
     fprintf(stderr, "No such file: %s\n", filename);
+    exit(1);
+  }
+
+  fp = fopen(filename, "r");
+  if (!(fp)) {
+    fprintf(stderr, "Cannot open file: %s\n", filename);
     exit(1);
   }
 
   time = malloc(sizeof(double) * arraySize);
   if (time == NULL){
     fputs("Error: Failed to allocate memory for time.\n", stderr);
+    fclose(fp);
     exit(1);
   }
   value = malloc(sizeof(double) * arraySize);
   if (value == NULL){
-	  fputs("Error: Failed to allocate memory for value.\n", stderr);
-	  exit(1);
+    fputs("Error: Failed to allocate memory for value.\n", stderr);
+    fclose(fp);
+    exit(1);
   }
 
   memset(time,0,sizeof(double)*arraySize);
@@ -82,8 +84,9 @@ struct data readCSV(const char * filename, int skipLines) {
 
   for (i=0; i<skipLines; i++) {
     if (fgets(buf, 100, fp) == NULL) { // skip the first "skipLines" lines
-    	fputs("Error: Failed to skip lines with fgets.\n", stderr);
-	    exit(1);
+      fputs("Error: Failed to skip lines with fgets.\n", stderr);
+      fclose(fp);
+      exit(1);
     }
   }
 
@@ -95,6 +98,7 @@ struct data readCSV(const char * filename, int skipLines) {
       double *value_tmp = realloc(value, sizeof(double)*(arraySize+1));
       if (time_tmp == NULL || value_tmp == NULL) {
         fputs("Fatal error -- out of memory!\n", stderr);
+        fclose(fp);
         exit(1);
       }
       time = time_tmp;
