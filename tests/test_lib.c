@@ -38,7 +38,7 @@ int main(void) {
     #if defined(_WIN32)     /* Win32 or Win64              */
 
     libname = "funnel.dll";
-    HINSTANCE handle = LoadLibrary(libname);
+    HINSTANCE handle = LoadLibraryA(libname);
     if (handle == NULL)
     {
         fputs("Load failed\n", stderr);
@@ -110,7 +110,7 @@ int main(void) {
     }
 
     #if defined(_WIN32)     /* Win32 or Win64              */
-    CloseHandle(handle);
+    FreeLibrary(handle);
     #else
     dlclose(handle);
     #endif
