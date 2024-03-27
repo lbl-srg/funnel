@@ -101,19 +101,18 @@ Run funnel binary from terminal.
 Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --output OUTPUT       Path of directory to store output data
-  --atolx ATOLX         Absolute tolerance along x axis
-  --atoly ATOLY         Absolute tolerance along y axis
-  --ltolx LTOLX         Relative tolerance along x axis (relatively to the local value)
-  --ltoly LTOLY         Relative tolerance along y axis (relatively to the local value)
-  --rtolx RTOLX         Relative tolerance along x axis (relatively to the range)
-  --rtoly RTOLY         Relative tolerance along y axis (relatively to the range)
+  -h, --help              show this help message and exit
+  --output OUTPUT         Path of directory to store output data
+  --atolx ATOLX           Absolute tolerance along x axis
+  --atoly ATOLY           Absolute tolerance along y axis
+  --ltolx LTOLX           Relative tolerance along x axis (relatively to the local value)
+  --ltoly LTOLY           Relative tolerance along y axis (relatively to the local value)
+  --rtolx RTOLX           Relative tolerance along x axis (relatively to the range)
+  --rtoly RTOLY           Relative tolerance along y axis (relatively to the range)
 
 required named arguments:
-  --reference REFERENCE
-                        Path of CSV file with reference data
-  --test TEST           Path of CSV file with test data
+  --reference REFERENCE   Path of two-column CSV file with reference data
+  --test TEST             Path of two-column CSV file with test data
 
 Full documentation at https://github.com/lbl-srg/funnel
 ```

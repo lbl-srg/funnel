@@ -31,12 +31,12 @@ if __name__ == "__main__":
 
     required_named.add_argument(
         "--reference",
-        help="Path of CSV file with reference data",
+        help="Path of two-column CSV file with reference data",
         required=True
     )
     required_named.add_argument(
         "--test",
-        help="Path of CSV file with test data",
+        help="Path of two-column CSV file with test data",
         required=True
     )
     parser.add_argument(
@@ -89,6 +89,8 @@ if __name__ == "__main__":
         data[s] = dict(x=[], y=[])
         with open(vars(args)[s]) as csvfile:
             spamreader = csv.reader(csvfile)
+            if (len(next(spamreader) > 2)):
+                raise RuntimeError("The {} CSV file cannot have more than two columns.".format(s))
             for row in spamreader:
                 try:
                     data[s]['x'].append(float(row[0]))
