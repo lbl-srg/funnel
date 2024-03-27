@@ -89,7 +89,7 @@ if __name__ == "__main__":
         data[s] = dict(x=[], y=[])
         with open(vars(args)[s]) as csvfile:
             spamreader = csv.reader(csvfile)
-            if (len(next(spamreader) > 2)):
+            if (len(next(spamreader)) > 2):
                 raise RuntimeError("The {} CSV file cannot have more than two columns.".format(s))
             for row in spamreader:
                 try:
