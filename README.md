@@ -96,7 +96,7 @@ The module `pyfunnel.py` can also be run with the following command line interfa
 ```
 usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT] [--atolx ATOLX] [--atoly ATOLY] [--ltolx LTOLX] [--ltoly LTOLY] [--rtolx RTOLX] [--rtoly RTOLY]
 
-Run funnel binary from terminal.
+Run funnel binary from terminal on two two-column CSV files.
 
 Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
 

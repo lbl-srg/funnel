@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
-            'Run funnel binary from terminal.\n\n'
+            'Run funnel binary from terminal on two two-column CSV files.\n\n'
             'Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` '
             'into the output directory (`./results` by default).'),
         epilog='Full documentation at https://github.com/lbl-srg/funnel'
@@ -89,8 +89,8 @@ if __name__ == "__main__":
         data[s] = dict(x=[], y=[])
         with open(vars(args)[s]) as csvfile:
             spamreader = csv.reader(csvfile)
-            if (len(next(spamreader)) > 2):
-                raise RuntimeError("The {} CSV file cannot have more than two columns.".format(s))
+            if (len(next(spamreader)) != 2):
+                raise RuntimeError("The {} CSV file must have exactly two columns.".format(s))
             for row in spamreader:
                 try:
                     data[s]['x'].append(float(row[0]))
