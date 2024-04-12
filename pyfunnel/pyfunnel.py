@@ -88,8 +88,8 @@ if __name__ == "__main__":
     for s in ('reference', 'test'):
         data[s] = dict(x=[], y=[])
         with open(vars(args)[s]) as csvfile:
-            spamreader = csv.reader(csvfile)
-            if (len(next(spamreader)) != 2):
+            spamreader = list(csv.reader(csvfile))
+            if (len(spamreader[0]) != 2):
                 raise IOError("The {} CSV file must have exactly two columns.".format(s))
             for row in spamreader:
                 try:
