@@ -88,10 +88,10 @@ if __name__ == "__main__":
     for s in ('reference', 'test'):
         data[s] = dict(x=[], y=[])
         with open(vars(args)[s]) as csvfile:
-            spamreader = list(csv.reader(csvfile))
-            if (len(spamreader[0]) != 2):
-                raise IOError("The {} CSV file must have exactly two columns.".format(s))
+            spamreader = csv.reader(csvfile)
             for row in spamreader:
+                if len(row) != 2:
+                    raise IOError("The {} CSV file must have exactly two columns.".format(s))
                 try:
                     data[s]['x'].append(float(row[0]))
                     data[s]['y'].append(float(row[1]))
