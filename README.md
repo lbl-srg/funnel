@@ -65,7 +65,7 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 The software is tested on the following platforms.
 
-  * Linux x64 (Ubuntu 22.04)
+  * Linux x64 (Ubuntu 20.04)
   * Windows x64 (Windows Server 2022)
   * macOS x64 and arm64 (macOS 12)
 
