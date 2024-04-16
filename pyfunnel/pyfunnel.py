@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
-            'Run funnel binary from terminal.\n\n'
+            'Run funnel binary from terminal on two two-column CSV files.\n\n'
             'Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` '
             'into the output directory (`./results` by default).'),
         epilog='Full documentation at https://github.com/lbl-srg/funnel'
@@ -31,12 +31,12 @@ if __name__ == "__main__":
 
     required_named.add_argument(
         "--reference",
-        help="Path of CSV file with reference data",
+        help="Path of two-column CSV file with reference data",
         required=True
     )
     required_named.add_argument(
         "--test",
-        help="Path of CSV file with test data",
+        help="Path of two-column CSV file with test data",
         required=True
     )
     parser.add_argument(
@@ -89,7 +89,13 @@ if __name__ == "__main__":
         data[s] = dict(x=[], y=[])
         with open(vars(args)[s]) as csvfile:
             spamreader = csv.reader(csvfile)
-            for row in spamreader:
+            for i, row in enumerate(spamreader):
+                if (l := len(row)) != 2:
+                    raise IOError(
+                        "The {} CSV file must have exactly two columns. Row {} contains {} elements.".format(
+                            s, i, l
+                        )
+                    )
                 try:
                     data[s]['x'].append(float(row[0]))
                     data[s]['y'].append(float(row[1]))
