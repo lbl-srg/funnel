@@ -90,7 +90,7 @@ jobs:
         run: |
           git config --global user.name "${GH_USERNAME}"
           git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
-          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
+          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push --allow-empty; }
 
       # We use cmd /c because powershell <7 does not support chain operators.
       - name: Push Windows binaries
@@ -102,4 +102,4 @@ jobs:
         run: |
           git config --global user.name "${{ env.GH_USERNAME }}"
           git config --global user.email "${{ env.GH_USERNAME }}@users.noreply.github.com"
-          cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push )'
+          cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push --allow-empty )'
