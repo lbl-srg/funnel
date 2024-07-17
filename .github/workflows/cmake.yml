@@ -83,7 +83,7 @@ jobs:
 
       - name: Push Linux & macOS binaries
         if: |
-          (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest') &&
+          (contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')) &&
           contains(matrix.python-version, '3.9') &&
           github.event_name == 'push' &&
           github.ref == 'refs/heads/master'
