@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 1.0.1
+
+- Fix dependency version on Ubuntu 20.04
+- Improve documentation and error handling related to two-column CSV file limitation
+
 ## Version 1.0.0
 
 - Add macOS universal build
