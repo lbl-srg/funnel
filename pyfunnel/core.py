@@ -116,12 +116,12 @@ def exit_test(logger, list_files=None):
     """
     content = logger.getvalue().decode('utf8')
     if list_files is not None:
-        raw_pattern = 'GET.*?{}.*?(200|304)'  # *? for non-greedy search
-        for i, l in enumerate(list_files):
-            if i == 0:
-                pattern = raw_pattern.format(l)
-            else:
-                pattern = '{}(.*\n)*.*{}'.format(pattern, raw_pattern.format(l))
+        raw_pattern = r'GET.*?{}.*?(200|304)'
+        pattern = raw_pattern.format(re.escape(list_files[0]))  # *? for non-greedy search
+        for file_path in list_files[1:] if len(list_files) > 1 else []:
+            pattern = r'{}(.*\n)*.*{}'.format(
+                re.escape(pattern),
+                re.escape(raw_pattern.format(file_path)))
         return bool(re.search(pattern, content))
     else:
         return False
