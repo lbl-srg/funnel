@@ -16,6 +16,7 @@
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.22)
 file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
+string(STRIP ${VERSION} VERSION)
 
 # Configure macOS universal build.
 # This should be set prior to the first project() or enable_language() command invocation because
