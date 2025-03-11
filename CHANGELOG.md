@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.2
+
+- Bug fixes
+
 ## Version 1.0.1
 
 - Fix dependency version on Ubuntu 20.04
