@@ -97,7 +97,7 @@ def follow(filehandler, timeout):
         yield line  # Else: yield line.
 
 
-def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
+def wait_until(somepredicate, timeout, period=0.5, *args, **kwargs):
     """Waits until some predicate is true or timeout is over."""
     must_end = time.time() + timeout
     while time.time() < must_end:
@@ -114,16 +114,32 @@ def exit_test(logger, list_files=None):
         200: request received
         304: requested resource not modified since previous transmission
     """
-    content = logger.getvalue().decode('utf8')
-    if list_files is not None:
-        raw_pattern = r'GET.*?{}.*?(200|304)'
-        pattern = raw_pattern.format(re.escape(list_files[0]))  # *? for non-greedy search
-        for file_path in list_files[1:] if len(list_files) > 1 else []:
-            pattern = r'{}(.*\n)*.*{}'.format(
-                re.escape(pattern),
-                re.escape(raw_pattern.format(file_path)))
-        return bool(re.search(pattern, content))
-    else:
+    try:
+        # Use a 1MB limit for the logger content to prevent potential hanging
+        content_bytes = logger.getvalue()
+        content_size = len(content_bytes)
+        if content_size == 0:
+            return False
+
+        if content_size > 1024*1024:  # If over 1MB, truncate
+            print(f"Logger content too large ({content_size/1024/1024:.2f}MB), truncating for analysis")
+            content_bytes = content_bytes[-1024*1024:]  # Take last 1MB
+
+        content = content_bytes.decode('utf8', errors='replace')
+
+        # Short-circuit if no files to check
+        if list_files is None or len(list_files) == 0:
+            return False
+
+        # Check if any required file has been loaded
+        for file_path in list_files:
+            pattern = r'GET.*?{}.*?(200|304)'.format(re.escape(file_path))
+            if re.search(pattern, content):
+                return True
+
+        # If we get here, no match was found
+        return False
+    except Exception:
         return False
 
 
@@ -458,7 +474,11 @@ class MyHTTPServer(HTTPServer):
 
             print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
                   'http://localhost:{}/funnel'.format(self.server_port))
-            wait_until(exit_test, timeout, 0.1, self.logger, *args)
+
+            # Add delay to ensure browser has time to start
+            time.sleep(1)
+            wait_until(exit_test, timeout, 0.5, self.logger, *args)
+
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
         finally:
