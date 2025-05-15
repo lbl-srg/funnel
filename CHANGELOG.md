@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.3
+
+- Fix plotting issues ([#88](https://github.com/lbl-srg/funnel/issues/88))
+
 ## Version 1.0.2
 
 - Bug fixes
