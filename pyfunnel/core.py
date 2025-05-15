@@ -472,8 +472,8 @@ class MyHTTPServer(HTTPServer):
                 else:
                     raise KeyboardInterrupt
 
-            print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
-                  'http://localhost:{}/funnel'.format(self.server_port))
+            print(f'Results available at http://localhost:{self.server_port}/funnel\n'
+                  f'(Press Ctrl+C to shut down server and continue.)')
 
             # Add delay to ensure browser has time to start
             time.sleep(1)
