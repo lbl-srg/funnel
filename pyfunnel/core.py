@@ -14,6 +14,7 @@ import numbers
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 import threading
@@ -365,6 +366,14 @@ class MyHTTPServer(HTTPServer):
         self.thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         self.thread.start()
 
+    def is_server_alive(self):
+        """Check if the server is accepting connections."""
+        try:
+            with socket.create_connection(("localhost", self.server_port), timeout=1) as sock:
+                return True
+        except (socket.timeout, ConnectionRefusedError):
+            return False
+
     def server_close(self):
         # Invoke to close logger.
         # makes execution stall on Windows if main thread
@@ -419,6 +428,12 @@ class MyHTTPServer(HTTPServer):
 
         try:
             self.server_launch()
+
+            # Wait for server to be ready to accept connections
+            server_ready = wait_until(self.is_server_alive, 5, 0.1)
+            if not server_ready:
+                print("Warning: Server may not be ready to accept connections")
+
             # Launch browser as a subprocess command to avoid web browser error into terminal.
             if launch_browser:
                 with open(os.devnull, 'w') as pipe:
@@ -475,8 +490,6 @@ class MyHTTPServer(HTTPServer):
             print(f'Results available at http://localhost:{self.server_port}/funnel\n'
                   f'(Press Ctrl+C to shut down server and continue.)')
 
-            # Add delay to ensure browser has time to start
-            time.sleep(1)
             wait_until(exit_test, timeout, 0.5, self.logger, *args)
 
         except KeyboardInterrupt:
