@@ -4,5 +4,5 @@ six==1.14.0
 # Test and documentation
 numpy<2; python_version>='3.8'
 pandas==1.5.3; python_version>='3.8'
-setuptools==70.0.0; python_version>='3.8'
+setuptools==78.1.1; python_version>='3.8'
 wheel
