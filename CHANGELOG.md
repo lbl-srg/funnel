@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 1.0.3
+
+- Changed web server to be non-blocking if timeout is set to 0.
+
 ## Version 1.0.2
 
 - Bug fixes
