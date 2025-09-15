@@ -102,9 +102,9 @@ def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
     must_end = time.time() + timeout
     while time.time() < must_end:
         if somepredicate(*args, **kwargs):
-            return True
+            return
         time.sleep(period)
-    return False
+    return
 
 
 def exit_test(logger, list_files=None):
@@ -456,9 +456,13 @@ class MyHTTPServer(HTTPServer):
                 else:
                     raise KeyboardInterrupt
 
-            print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
-                  'http://localhost:{}/funnel'.format(self.server_port))
-            wait_until(exit_test, timeout, 0.1, self.logger, *args)
+            if timeout < 0.00001:
+                worker = threading.Thread(target=wait_until(exit_test, timeout, 0.1, self.logger, *args))
+                worker.start()
+            else:
+                print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
+                      'http://localhost:{}/funnel'.format(self.server_port))
+                wait_until(exit_test, timeout, 0.1, self.logger, *args)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
         finally:
