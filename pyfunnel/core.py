@@ -7,8 +7,6 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-# Python standard library imports.
-from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 import io
 import numbers
 import os
@@ -20,14 +18,14 @@ import sys
 import threading
 import time
 import webbrowser
-try:
-    from http.server import HTTPServer, SimpleHTTPRequestHandler  # Python 3
-except ImportError:
-    from SimpleHTTPServer import BaseHTTPServer
-    HTTPServer = BaseHTTPServer.HTTPServer
-    from SimpleHTTPServer import SimpleHTTPRequestHandler  # Python 2
+
+# Python standard library imports.
+from ctypes import POINTER, c_char_p, c_double, c_int, cdll
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
 # Third-party module or package imports.
 import six
+
 # Code repository sub-package imports.
 
 
@@ -40,7 +38,7 @@ __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funne
 
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.pyfunnel')  # os.environ.get('HOME')=None on Windows.
 CONFIG_DEFAULT = dict(
-    BROWSER=None,
+    BROWSER=None,  # type: Optional[str]
 )
 
 # Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Linux.
@@ -342,7 +340,7 @@ def compareAndReport(
 #####################
 
 
-class MyHTTPServer(HTTPServer):
+class MyHTTPServer(ThreadingHTTPServer):
     """Add custom server_launch, server_close and browse methods."""
 
     def __init__(self, *args, **kwargs):
@@ -355,7 +353,7 @@ class MyHTTPServer(HTTPServer):
         str_html = kwargs.pop('str_html', None)
         url_html = kwargs.pop('url_html', None)
         browse_dir = kwargs.pop('browse_dir', os.getcwd())
-        HTTPServer.__init__(self, *args)
+        ThreadingHTTPServer.__init__(self, *args)
         self._STR_HTML = re.sub(r'\$SERVER_PORT', str(self.server_port), str_html)
         self._URL_HTML = url_html
         self._BROWSE_DIR = browse_dir
@@ -384,6 +382,15 @@ class MyHTTPServer(HTTPServer):
             self.logger.close()
         except Exception as e:
             print('Could not close logger: {}'.format(e))
+
+    def terminate_safely(self, process, timeout=2.0):
+        if process is not None and process.poll() is None:
+            try:
+                process.terminate()
+                process.wait(timeout=timeout)  # Wait for a maximum of timeout
+            except subprocess.TimeoutExpired:
+                process.kill()  # Force kill if terminate didn't work
+                process.wait()  # Wait for kill to complete
 
     def browse(self, *args, **kwargs):
         """Launch server, and web browser if available.
@@ -426,6 +433,7 @@ class MyHTTPServer(HTTPServer):
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
 
+        proc = None
         try:
             self.server_launch()
 
@@ -438,6 +446,7 @@ class MyHTTPServer(HTTPServer):
             if launch_browser:
                 with open(os.devnull, 'w') as pipe:
                     proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+
             # Watch syslog for error.
             chrome_error = False
             if platform.system() == 'Linux':
@@ -454,8 +463,9 @@ class MyHTTPServer(HTTPServer):
                                 if 'ERROR:gles2_cmd_decoder' in l:
                                     chrome_error = True
                                     break
+
             if chrome_error:
-                proc.terminate()  # Terminating the process does not stop Chrome in background.
+                self.terminate_safely(proc)  # Terminating the process does not stop Chrome in background.
                 subprocess.check_call(['pkill', 'chrome'])  # This does.
                 inp = 'y'
                 while True:  # Prompt user to retry.
@@ -496,15 +506,13 @@ class MyHTTPServer(HTTPServer):
             print('KeyboardInterrupt')
         finally:
             os.chdir(cur_dir)
-            try:  # Objects may not be defined in case of exception.
-                self.server_close()
-                proc.terminate()
-            except BaseException:
-                pass
+            self.server_close()
+            self.terminate_safely(proc)
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
     """Enable logging message and modify response header."""
+    server: MyHTTPServer  # type: ignore[override]
 
     def log_message(self, format, *args):
         try:
@@ -520,24 +528,21 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             print(e)
 
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin'.encode('utf8'),
-                         '*'.encode('utf8'))
-        self.send_header('Access-Control-Allow-Methods'.encode('utf8'),
-                         'GET, POST, OPTIONS'.encode('utf8'))
-        self.send_header('Access-Control-Allow-Headers'.encode('utf8'),
-                         'X-Requested-With'.encode('utf8'))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With')
         SimpleHTTPRequestHandler.end_headers(self)
 
     def send_head(self):
         if (self.server._URL_HTML is not None) and \
            (self.translate_path(self.path).endswith(self.server._URL_HTML)):
             f = io.BytesIO()
-            f.write(self.server._STR_HTML.encode('utf8'))
+            f.write(self.server._STR_HTML.encode('utf-8'))
             length = f.tell()
             f.seek(0)
             self.send_response(200)
-            self.send_header("Content-type".encode('utf8'), "text/html".encode('utf8'))
-            self.send_header("Content-Length".encode('utf8'), str(length).encode('utf8'))
+            self.send_header("Content-type", "text/html")
+            self.send_header("Content-Length", str(length))
             self.end_headers()
             return f
         else:
