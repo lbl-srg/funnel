@@ -1,6 +1,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
     <style>
       html,
@@ -30,28 +31,36 @@
         // Show loading indicator
         myDiv.innerHTML = '<div style="text-align:center;padding-top:100px;">Loading data...</div>';
 
-        Promise.all([
-          fetch("http://localhost:$SERVER_PORT/reference.csv").then((response) => {
-            if (!response.ok) throw new Error(`Error fetching reference.csv: ${response.status}`);
-            return response.text();
-          }),
-          fetch("http://localhost:$SERVER_PORT/test.csv").then((response) => {
-            if (!response.ok) throw new Error(`Error fetching test.csv: ${response.status}`);
-            return response.text();
-          }),
-          fetch("http://localhost:$SERVER_PORT/errors.csv").then((response) => {
-            if (!response.ok) throw new Error(`Error fetching errors.csv: ${response.status}`);
-            return response.text();
-          }),
-          fetch("http://localhost:$SERVER_PORT/lowerBound.csv").then((response) => {
-            if (!response.ok) throw new Error(`Error fetching lowerBound.csv: ${response.status}`);
-            return response.text();
-          }),
-          fetch("http://localhost:$SERVER_PORT/upperBound.csv").then((response) => {
-            if (!response.ok) throw new Error(`Error fetching upperBound.csv: ${response.status}`);
-            return response.text();
-          }),
-        ])
+        // Check if server is accessible first
+        fetch(`http://localhost:$SERVER_PORT/`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Server not accessible (status: ${response.status})`);
+            }
+            // Server is accessible, proceed with data loading
+            return Promise.all([
+              fetch("http://localhost:$SERVER_PORT/reference.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching reference.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/test.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching test.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/errors.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching errors.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/lowerBound.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching lowerBound.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/upperBound.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching upperBound.csv: ${response.status}`);
+                return response.text();
+              }),
+            ]);
+          })
           .then((responses) => {
             const [refCsv, testCsv, errCsv, lowCsv, uppCsv] = responses;
 
@@ -74,9 +83,14 @@
           })
           .catch((error) => {
             console.error("Error loading data:", error);
+            let errorMessage = error.message;
+            if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+              errorMessage = 'Server connection failed. Make sure the Python server is running.';
+            }
             document.getElementById("myDiv").innerHTML = `<div style="color:red;text-align:center;padding-top:100px;">
-                  Error loading data: ${error.message}<br>
-                  <button onclick="makeplot()">Retry</button>
+                  Error loading data: ${errorMessage}<br>
+                  <small>Server URL: http://localhost:$SERVER_PORT/</small><br><br>
+                  <button onclick="makePlot()">Retry</button>
               </div>`;
           });
       }
@@ -197,7 +211,7 @@
             console.error("Error rendering plot:", error);
             document.getElementById("myDiv").innerHTML = `<div style="color:red;text-align:center;padding-top:100px;">
                         Error rendering plot: ${error.message}<br>
-                        <button onclick="makeplot()">Retry</button>
+                        <button onclick="makePlot()">Retry</button>
                     </div>`;
           });
       }
