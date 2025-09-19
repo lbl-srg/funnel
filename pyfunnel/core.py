@@ -282,8 +282,8 @@ def compareAndReport(
     outputDirectory = outputDirectory.encode('utf-8')
 
     # Load library.
+    lib_path = _get_lib_path('funnel')
     try:
-        lib_path = _get_lib_path('funnel')
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
         raise RuntimeError(
