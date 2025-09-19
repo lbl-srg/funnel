@@ -87,11 +87,6 @@
             if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
               errorMessage = 'Server connection failed. Make sure the Python server is running.';
             }
-            document.getElementById("myDiv").innerHTML = `<div style="color:red;text-align:center;padding-top:100px;">
-                  Error loading data: ${errorMessage}<br>
-                  <small>Server URL: http://localhost:$SERVER_PORT/</small><br><br>
-                  <button onclick="makePlot()">Retry</button>
-              </div>`;
           });
       }
 
@@ -209,10 +204,6 @@
           })
           .catch(function (error) {
             console.error("Error rendering plot:", error);
-            document.getElementById("myDiv").innerHTML = `<div style="color:red;text-align:center;padding-top:100px;">
-                        Error rendering plot: ${error.message}<br>
-                        <button onclick="makePlot()">Retry</button>
-                    </div>`;
           });
       }
       // Function to check if Plotly is loaded and then make the plot
