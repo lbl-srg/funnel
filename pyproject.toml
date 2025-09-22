@@ -27,7 +27,8 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
     "pandas>=2.0.0",
-    "python-semantic-release>=8.7.0"
+    "python-semantic-release>=8.7.0",
+    "twine>=4.0.0"
 ]
 
 [project.urls]
@@ -43,7 +44,7 @@ version = {attr = "pyfunnel.__version__"}
 pyfunnel = ["templates/*", "lib/*"]
 
 [tool.semantic_release]
-build_command = "python -m build"
+build_command = "python -m build --sdist --wheel ."
 dist_path = "dist/"
 upload_to_pypi = false
 upload_to_release = true
@@ -58,7 +59,7 @@ prerelease = false
 
 # Allow testing from feature branches
 [tool.semantic_release.branches.feature]
-match = "issue_.*"
+match = "issue.*"
 prerelease = true
 prerelease_token = "dev"
 

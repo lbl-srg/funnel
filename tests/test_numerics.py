@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from test_import import *
+from .test_import import *
 
 if __name__ == "__main__":
     test_name = sys.argv[1]
