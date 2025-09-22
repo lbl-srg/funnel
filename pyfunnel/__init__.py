@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-    Python binding for funnel library.
+Python binding for funnel library.
 """
 
-from __future__ import absolute_import
-
+# Main public API functions that users should be able to import directly from pyfunnel
 from .core import CORSRequestHandler, MyHTTPServer, compareAndReport, plot_funnel
 
-__version__ = "1.0.2"
+__version__ = '1.0.2'
