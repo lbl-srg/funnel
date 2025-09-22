@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel>=0.37.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyfunnel"
+dynamic = ["version"]
+authors = [
+    {name = "A. Gautier", email = "agautier@lbl.gov"},
+]
+description = "Comparison tool for two (x, y) data sets given tolerances in x and y directions"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: C",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Utilities",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pandas>=2.0.0",
+    "python-semantic-release>=8.7.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/lbl-srg/funnel"
+
+[tool.setuptools.packages.find]
+include = ["pyfunnel*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyfunnel.__version__"}
+
+[tool.setuptools.package-data]
+pyfunnel = ["templates/*", "lib/*"]
+
+[tool.semantic_release]
+build_command = "python -m build"
+dist_path = "dist/"
+upload_to_pypi = false
+upload_to_release = true
+commit_message = "chore(release): {version}"
+tag_format = "v{version}"
+changelog_file = "CHANGELOG.md"
+
+# Release groups configuration for v10+
+[tool.semantic_release.branches.main]
+match = "master"
+prerelease = false
+
+# Allow testing from feature branches
+[tool.semantic_release.branches.feature]
+match = "issue_.*"
+prerelease = true
+prerelease_token = "dev"
+
+[tool.semantic_release.files."pyfunnel/__init__.py"]
+search = "__version__ = \"{current_version}\""
+replace = "__version__ = \"{new_version}\""

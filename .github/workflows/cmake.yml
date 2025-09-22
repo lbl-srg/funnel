@@ -18,8 +18,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
         run: |
           python -VV
           python -m pip install --user --upgrade pip
-          python -m pip install --user -r ${{ github.workspace }}/requirements.txt
+          python -m pip install --user -e ".[dev]"
 
       - name: Create Build Environment
         # Some projects don't allow in-source building, so create a separate build directory

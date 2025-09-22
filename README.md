@@ -65,7 +65,7 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 The software is tested on the following platforms.
 
-  * Linux x64 (Ubuntu 20.04)
+  * Linux x64 (Ubuntu 24.04)
   * Windows x64 (Windows Server 2022)
   * macOS x64 and arm64 (macOS 12)
 
@@ -77,7 +77,7 @@ The Python binding is delivered as a package named `pyfunnel`, available on PyPI
 
 For development, additional dependencies are needed and can be installed with
 
-`pip install -r requirements.txt`
+`pip install -e ".[dev]"`
 
 ### Main Functions
 

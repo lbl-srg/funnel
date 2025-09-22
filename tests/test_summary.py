@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from test_import import *
+from .test_import import *
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
@@ -38,7 +38,7 @@ if __name__ == "__main__":
                     # pyfunnel.plot_funnel(os.path.join(test_log['test_dir'], 'results'), title='Original')
                     # pyfunnel.plot_funnel(os.path.join(test_log['tmp_dir'], 'results'), title='New')
 
-                    replace = six.moves.input(
+                    replace = input(
 """Do you want to keep new results from {} and replace results stored in {}?
 Yes (y) or no (n):""".format(test_log['test_name'], test_log['test_dir']))
 
