@@ -8,14 +8,15 @@ import argparse
 import csv
 import os
 import sys
-import textwrap
 
 try:
-    from . import core  # When installed as package
+    from . import core  # For when the package is installed
 except ImportError:
-    import core  # When run directly
+    import core  # For direct execution: python pyfunnel/pyfunnel.py
 
-if __name__ == "__main__":
+
+def main():
+    """Main entry point for the pyfunnel command-line interface."""
 
     # Configure the argument parser.
     parser = argparse.ArgumentParser(
@@ -23,64 +24,47 @@ if __name__ == "__main__":
         description=(
             'Run funnel binary from terminal on two two-column CSV files.\n\n'
             'Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` '
-            'into the output directory (`./results` by default).'),
-        epilog='Full documentation at https://github.com/lbl-srg/funnel'
+            'into the output directory (`./results` by default).'
+        ),
+        epilog='Full documentation at https://github.com/lbl-srg/funnel',
     )
     required_named = parser.add_argument_group('required named arguments')
 
     required_named.add_argument(
-        "--reference",
-        help="Path of two-column CSV file with reference data",
-        required=True
+        '--reference', help='Path of two-column CSV file with reference data', required=True
     )
     required_named.add_argument(
-        "--test",
-        help="Path of two-column CSV file with test data",
-        required=True
+        '--test', help='Path of two-column CSV file with test data', required=True
     )
     parser.add_argument(
-        "--output",
-        help="Path of directory to store output data",
+        '--output',
+        help='Path of directory to store output data',
     )
+    parser.add_argument('--atolx', type=float, help='Absolute tolerance along x axis')
+    parser.add_argument('--atoly', type=float, help='Absolute tolerance along y axis')
     parser.add_argument(
-        "--atolx",
+        '--ltolx',
         type=float,
-        help="Absolute tolerance along x axis"
+        help='Relative tolerance along x axis (relatively to the local value)',
     )
     parser.add_argument(
-        "--atoly",
+        '--ltoly',
         type=float,
-        help="Absolute tolerance along y axis"
+        help='Relative tolerance along y axis (relatively to the local value)',
     )
     parser.add_argument(
-        "--ltolx",
-        type=float,
-        help="Relative tolerance along x axis (relatively to the local value)"
+        '--rtolx', type=float, help='Relative tolerance along x axis (relatively to the range)'
     )
     parser.add_argument(
-        "--ltoly",
-        type=float,
-        help="Relative tolerance along y axis (relatively to the local value)"
-    )
-    parser.add_argument(
-        "--rtolx",
-        type=float,
-        help="Relative tolerance along x axis (relatively to the range)"
-    )
-    parser.add_argument(
-        "--rtoly",
-        type=float,
-        help="Relative tolerance along y axis (relatively to the range)"
+        '--rtoly', type=float, help='Relative tolerance along y axis (relatively to the range)'
     )
 
     # Parse the arguments.
     args = parser.parse_args()
 
     # Check the arguments.
-    assert os.path.isfile(args.reference),\
-        "No such file: {}".format(args.reference)
-    assert os.path.isfile(args.test),\
-        "No such file: {}".format(args.test)
+    assert os.path.isfile(args.reference), 'No such file: {}'.format(args.reference)
+    assert os.path.isfile(args.test), 'No such file: {}'.format(args.test)
 
     # Extract data from files.
     data = dict()
@@ -91,7 +75,7 @@ if __name__ == "__main__":
             for i, row in enumerate(spamreader):
                 if (l := len(row)) != 2:
                     raise IOError(
-                        "The {} CSV file must have exactly two columns. Row {} contains {} elements.".format(
+                        'The {} CSV file must have exactly two columns. Row {} contains {} elements.'.format(
                             s, i, l
                         )
                     )
@@ -117,3 +101,7 @@ if __name__ == "__main__":
     )
 
     sys.exit(rc)
+
+
+if __name__ == '__main__':
+    main()
