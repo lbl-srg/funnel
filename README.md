@@ -69,7 +69,7 @@ The software is tested on the following platforms.
   * Windows x64 (Windows Server 2022)
   * macOS x64 and arm64 (macOS 12)
 
-A Python binding is available to access the library. It is supported on Python versions 3.8 through 3.9.
+A Python binding is available to access the library. It is supported on Python versions 3.8 through 3.12.
 
 ### Installing
 

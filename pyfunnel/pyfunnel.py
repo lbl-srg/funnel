@@ -4,17 +4,16 @@
 #######################################################
 # Python binding for funnel library: compareAndReport
 #######################################################
-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import argparse
 import csv
 import os
-import textwrap
 import sys
+import textwrap
 
-import core
-
+try:
+    from . import core  # When installed as package
+except ImportError:
+    import core  # When run directly
 
 if __name__ == "__main__":
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from .test_import import *
+from test_import import *
 
 if __name__ == "__main__":
     cmake_test_dir = sys.argv[1]
