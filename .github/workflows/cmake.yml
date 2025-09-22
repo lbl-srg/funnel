@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - 'master'
+  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release
@@ -73,9 +74,11 @@ jobs:
 
       - name: Stage binaries
         if: |
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.12') &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'workflow_dispatch')
+          )
         run: |
           git config --global pull.rebase true
           git add ${{ github.workspace }}/pyfunnel/lib
@@ -83,9 +86,11 @@ jobs:
       - name: Push Linux & macOS binaries
         if: |
           (contains(matrix.os, 'ubuntu') || matrix.os == 'macos-latest') &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.12') &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'workflow_dispatch')
+          )
         run: |
           git config --global user.name "${GH_USERNAME}"
           git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
@@ -95,9 +100,11 @@ jobs:
       - name: Push Windows binaries
         if: |
           matrix.os == 'windows-latest' &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.12') &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'workflow_dispatch')
+          )
         run: |
           git config --global user.name "${{ env.GH_USERNAME }}"
           git config --global user.email "${{ env.GH_USERNAME }}@users.noreply.github.com"

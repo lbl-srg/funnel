@@ -19,6 +19,7 @@ cmake_minimum_required(VERSION 3.22)
 file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/__init__.py" INIT_PY_CONTENT)
 string(REGEX MATCH "__version__ = \"([^\"]+)\"" VERSION_MATCH "${INIT_PY_CONTENT}")
 string(REGEX REPLACE "__version__ = \"([^\"]+)\"" "\\1" VERSION "${VERSION_MATCH}")
+message("Project version is: ${VERSION}.")
 
 # Configure macOS universal build.
 # This should be set prior to the first project() or enable_language() command invocation because
@@ -93,7 +94,8 @@ add_subdirectory(tests)
 find_package (Python)
 message("Python interpreter used for testing: ${Python_EXECUTABLE}")
 set(CTEST_OUTPUT_ON_FAILURE ON)  # verbose if failed test
-set(CMAKE_TEST_DIR "${CMAKE_SOURCE_DIR}/tests")
+set(CMAKE_TEST_DIR_NAME "tests")
+set(CMAKE_TEST_DIR "${CMAKE_SOURCE_DIR}/${CMAKE_TEST_DIR_NAME}")
 
 ## Build test exe.
 add_test(
@@ -152,7 +154,7 @@ foreach(t RANGE ${len_tests})
     )
     add_test(
         NAME ${test_name}
-        COMMAND ${Python_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" ${test_name} ${test_dir} ${tmp_dir}
+        COMMAND ${Python_EXECUTABLE} -m ${CMAKE_TEST_DIR_NAME}.test_numerics ${test_name} ${test_dir} ${tmp_dir}
         WORKING_DIRECTORY ${tmp_dir}
     )
     if (${test_case} MATCHES "fail4")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
@@ -166,15 +168,14 @@ endforeach()
 ## Plot function testing.
 add_test(
     NAME test_plot
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_TEST_DIR}/test_plot.py" "${CMAKE_TEST_DIR}/fail1/results"
+    COMMAND ${Python_EXECUTABLE} -m ${CMAKE_TEST_DIR_NAME}.test_plot ${CMAKE_TEST_DIR}/fail1/results
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
 ## Configure pre/post test.
-set(summary_path "${CMAKE_TEST_DIR}/test_summary.py")
 set(CTEST_CUSTOM_POST_TEST
-    "${Python_EXECUTABLE} ${summary_path} ${CMAKE_TEST_DIR}"
+    "${Python_EXECUTABLE} -m ${CMAKE_TEST_DIR_NAME}.test_summary ${CMAKE_TEST_DIR}"
 )
 set(content "# Numerics testing configuration file
     set(CTEST_CUSTOM_PRE_TEST
