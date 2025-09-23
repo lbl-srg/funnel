@@ -35,7 +35,7 @@ dev = [
 Homepage = "https://github.com/lbl-srg/funnel"
 
 [project.scripts]
-pyfunnel = "pyfunnel.pyfunnel:main"
+funnel = "pyfunnel.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["pyfunnel*"]

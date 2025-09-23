@@ -1,18 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#######################################################
-# Python binding for funnel library: compareAndReport
-#######################################################
+"""Standalone command-line interface for the funnel C library.
+
+This script provides a direct interface to the 'compareAndReport' function of the funnel
+library through the pyfunnel Python bindings. It can be executed standalone
+without installing the pyfunnel package, or run as part of an installed package.
+"""
+
 import argparse
 import csv
 import os
 import sys
+from pathlib import Path
 
-try:
-    from . import core  # For when the package is installed
-except ImportError:
-    import core  # For direct execution: python pyfunnel/pyfunnel.py
+# Add current directory to path if needed (CLI script run without package install)
+if __name__ == "__main__":
+    current_dir = Path(__file__).parent
+    if str(current_dir) not in sys.path:
+        sys.path.insert(0, str(current_dir))
+
+from pyfunnel import compareAndReport
 
 
 def main():
@@ -23,8 +31,24 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
             'Run funnel binary from terminal on two two-column CSV files.\n\n'
-            'Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` '
-            'into the output directory (`./results` by default).'
+            'The tool computes the deviation of test data beyond the funnel envelope\n'
+            'generated around reference data.\n'
+            'It outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`,\n'
+            '`reference.csv`, `test.csv` into the output directory (`./results` by default).\n\n'
+            'Each CSV file must contain two columns: x (independent variable, e.g., time)\n'
+            'and y (dependent variable, e.g., temperature, pressure). The funnel boundaries\n'
+            'are computed based on tolerances that can be set independently for x and y.\n\n'
+            'Tolerance can be specified in three forms for each variable:\n'
+            '  - Absolute tolerance\n'
+            '  - Relative to variable value\n'
+            '  - Relative to variable range\n'
+            'If not set, the default tolerance is zero. For each direction, the funnel\n'
+            'is sized based on the maximum of the three tolerance calculations.\n\n'
+            'Examples:\n'
+            '  # If pyfunnel package is installed:\n'
+            '  funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002\n'
+            '  # If package is not installed (run from the funnel source directory):\n'
+            '  python pyfunnel/cli.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002'
         ),
         epilog='Full documentation at https://github.com/lbl-srg/funnel',
     )
@@ -86,7 +110,7 @@ def main():
                     pass
 
     # Call the function.
-    rc = core.compareAndReport(
+    rc = compareAndReport(
         xReference=data['reference']['x'],
         yReference=data['reference']['y'],
         xTest=data['test']['x'],

@@ -113,14 +113,14 @@ add_test(
 set(TEST_ARGS_0 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_0
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_0}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/cli.py" ${TEST_ARGS_0}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 ### Wrong arguments
 set(TEST_ARGS_1 --reference wrong.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_1
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_1}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/cli.py" ${TEST_ARGS_1}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file")
@@ -128,7 +128,7 @@ set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file"
 set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(
     NAME test_py_2
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/cli.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")

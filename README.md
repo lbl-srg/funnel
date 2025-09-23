@@ -91,31 +91,12 @@ The package `pyfunnel` provides the following functions.
   * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
     Displays plot in default browser. See function docstring for further details.
 
-The module `pyfunnel.py` can also be run with the following command line interface.
+A standalone CLI script `pyfunnel/cli.py` is available, which is also accessible via the
+`funnel` entry point when the package is installed.
+To access the usage instructions, use one of the following:
 
-```
-usage: pyfunnel.py [-h] --reference REFERENCE --test TEST [--output OUTPUT] [--atolx ATOLX] [--atoly ATOLY] [--ltolx LTOLX] [--ltoly LTOLY] [--rtolx RTOLX] [--rtoly RTOLY]
-
-Run funnel binary from terminal on two two-column CSV files.
-
-Output `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv` into the output directory (`./results` by default).
-
-optional arguments:
-  -h, --help              show this help message and exit
-  --output OUTPUT         Path of directory to store output data
-  --atolx ATOLX           Absolute tolerance along x axis
-  --atoly ATOLY           Absolute tolerance along y axis
-  --ltolx LTOLX           Relative tolerance along x axis (relatively to the local value)
-  --ltoly LTOLY           Relative tolerance along y axis (relatively to the local value)
-  --rtolx RTOLX           Relative tolerance along x axis (relatively to the range)
-  --rtoly RTOLY           Relative tolerance along y axis (relatively to the range)
-
-required named arguments:
-  --reference REFERENCE   Path of two-column CSV file with reference data
-  --test TEST             Path of two-column CSV file with test data
-
-Full documentation at https://github.com/lbl-srg/funnel
-```
+- Installed package: `funnel --help`
+- Standalone: `python pyfunnel/cli.py --help`
 
 ### Example
 
@@ -132,7 +113,7 @@ From a Python shell with `./tests/test_bin` as the current working directory, ru
 ```
 Or from a terminal with `./tests/test_bin` as the current working directory, run
 ```
-$ python ../../pyfunnel/pyfunnel.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+$ python ../../pyfunnel/cli.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 ```
 
 ## Build from Source
