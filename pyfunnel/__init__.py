@@ -2,16 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Python binding for funnel library.
+Python binding for funnel library.
 """
 
-from __future__ import absolute_import
+# Main public API functions that users should be able to import directly from pyfunnel
+from .core import CORSRequestHandler, MyHTTPServer, compareAndReport, plot_funnel
 
-import os
-
-from .core import compareAndReport, MyHTTPServer, CORSRequestHandler, plot_funnel
-
-# Version.
-version_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'VERSION'))
-with open(version_path) as f:
-    __version__ = f.read().strip()
+__all__ = ['CORSRequestHandler', 'MyHTTPServer', 'compareAndReport', 'plot_funnel']
+__version__ = '1.0.2'  # DO NOT CHANGE: this is automatically updated with 'cz bump'

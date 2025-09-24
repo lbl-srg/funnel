@@ -15,8 +15,9 @@
 
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.22)
-file(READ "${CMAKE_SOURCE_DIR}/pyfunnel/VERSION" VERSION)
-string(STRIP ${VERSION} VERSION)
+
+set(VERSION "1.0.2")  # DO NOT CHANGE: this is automatically updated with 'cz bump'
+message("Project version is: ${VERSION}.")
 
 # Configure macOS universal build.
 # This should be set prior to the first project() or enable_language() command invocation because
@@ -110,14 +111,14 @@ add_test(
 set(TEST_ARGS_0 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_0
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_0}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/cli.py" ${TEST_ARGS_0}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 ### Wrong arguments
 set(TEST_ARGS_1 --reference wrong.csv --test simulated.csv --atolx 0.002 --atoly 0.002 --output results)
 add_test(
     NAME test_py_1
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_1}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/cli.py" ${TEST_ARGS_1}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file")
@@ -125,7 +126,7 @@ set_tests_properties(test_py_1 PROPERTIES PASS_REGULAR_EXPRESSION "No such file"
 set(TEST_ARGS_2 --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002)
 add_test(
     NAME test_py_2
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/pyfunnel.py" ${TEST_ARGS_2}
+    COMMAND ${Python_EXECUTABLE} "${CMAKE_SOURCE_DIR}/pyfunnel/cli.py" ${TEST_ARGS_2}
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_py_2 PROPERTIES PASS_REGULAR_EXPRESSION "Output directory not specified")
@@ -150,7 +151,7 @@ foreach(t RANGE ${len_tests})
     )
     add_test(
         NAME ${test_name}
-        COMMAND ${Python_EXECUTABLE} "${CMAKE_TEST_DIR}/test_numerics.py" ${test_name} ${test_dir} ${tmp_dir}
+        COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_numerics.py ${test_name} ${test_dir} ${tmp_dir}
         WORKING_DIRECTORY ${tmp_dir}
     )
     if (${test_case} MATCHES "fail4")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
@@ -164,15 +165,14 @@ endforeach()
 ## Plot function testing.
 add_test(
     NAME test_plot
-    COMMAND ${Python_EXECUTABLE} "${CMAKE_TEST_DIR}/test_plot.py" "${CMAKE_TEST_DIR}/fail1/results"
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_plot.py ${CMAKE_TEST_DIR}/fail1/results
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
 ## Configure pre/post test.
-set(summary_path "${CMAKE_TEST_DIR}/test_summary.py")
 set(CTEST_CUSTOM_POST_TEST
-    "${Python_EXECUTABLE} ${summary_path} ${CMAKE_TEST_DIR}"
+    "${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_summary.py ${CMAKE_TEST_DIR}"
 )
 set(content "# Numerics testing configuration file
     set(CTEST_CUSTOM_PRE_TEST

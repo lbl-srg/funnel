@@ -5,10 +5,6 @@
 # Core functions for funnel Python binding
 #######################################################
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-# Python standard library imports.
-from ctypes import cdll, POINTER, c_double, c_int, c_char_p
 import io
 import numbers
 import os
@@ -19,16 +15,8 @@ import sys
 import threading
 import time
 import webbrowser
-try:
-    from http.server import HTTPServer, SimpleHTTPRequestHandler  # Python 3
-except ImportError:
-    from SimpleHTTPServer import BaseHTTPServer
-    HTTPServer = BaseHTTPServer.HTTPServer
-    from SimpleHTTPServer import SimpleHTTPRequestHandler  # Python 2
-# Third-party module or package imports.
-import six
-# Code repository sub-package imports.
-
+from ctypes import POINTER, c_char_p, c_double, c_int, cdll
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
 
@@ -39,7 +27,7 @@ __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funne
 
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.pyfunnel')  # os.environ.get('HOME')=None on Windows.
 CONFIG_DEFAULT = dict(
-    BROWSER=None,
+    BROWSER=None,  # type: Optional[str]
 )
 
 # Get the real browser name in case webbrowser.get(browser).name returns 'xdg-open' on Linux.
@@ -221,7 +209,7 @@ def compareAndReport(
     if outputDirectory is None:
         print("Output directory not specified: results are stored in subdirectory `results` by default.")
         outputDirectory = "results"
-    assert isinstance(outputDirectory, six.string_types),\
+    assert isinstance(outputDirectory, str),\
         "Path of output directory is not a string type."
     # Value
     assert len(xReference) == len(yReference),\
@@ -487,12 +475,9 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             print(e)
 
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin'.encode('utf8'),
-                         '*'.encode('utf8'))
-        self.send_header('Access-Control-Allow-Methods'.encode('utf8'),
-                         'GET, POST, OPTIONS'.encode('utf8'))
-        self.send_header('Access-Control-Allow-Headers'.encode('utf8'),
-                         'X-Requested-With'.encode('utf8'))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With')
         SimpleHTTPRequestHandler.end_headers(self)
 
     def send_head(self):
@@ -503,8 +488,8 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             length = f.tell()
             f.seek(0)
             self.send_response(200)
-            self.send_header("Content-type".encode('utf8'), "text/html".encode('utf8'))
-            self.send_header("Content-Length".encode('utf8'), str(length).encode('utf8'))
+            self.send_header("Content-type", "text/html")
+            self.send_header("Content-Length", str(length))
             self.end_headers()
             return f
         else:

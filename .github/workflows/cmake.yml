@@ -7,6 +7,15 @@ on:
   push:
     branches:
       - 'master'
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+    outputs:
+      result:
+        description: "Build result"
+        value: ${{ jobs.build.outputs.result }}
 
 env:
   BUILD_TYPE: Release
@@ -14,15 +23,22 @@ env:
 
 jobs:
   build:
+    if: |
+      !contains(github.event.head_commit.message, 'skip ci') &&
+      !contains(github.event.head_commit.message, 'ci skip')
     runs-on: ${{ matrix.os }}
+    outputs:
+      result: ${{ steps.test.outcome }}
 
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.12']
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_call' && inputs.ref || github.ref }}
 
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.12.1
@@ -42,7 +58,7 @@ jobs:
         run: |
           python -VV
           python -m pip install --user --upgrade pip
-          python -m pip install --user -r ${{ github.workspace }}/requirements.txt
+          python -m pip install --user -e ".[dev]"
 
       - name: Create Build Environment
         # Some projects don't allow in-source building, so create a separate build directory
@@ -62,20 +78,24 @@ jobs:
         run: cmake ..
 
       - name: Build
+        id: build
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: cmake --build . --target install --config $BUILD_TYPE
 
       - name: Test
+        id: test
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
 
       - name: Stage binaries
         if: |
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.12') &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'workflow_dispatch')
+          )
         run: |
           git config --global pull.rebase true
           git add ${{ github.workspace }}/pyfunnel/lib
@@ -83,9 +103,11 @@ jobs:
       - name: Push Linux & macOS binaries
         if: |
           (contains(matrix.os, 'ubuntu') || matrix.os == 'macos-latest') &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.12') &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'workflow_dispatch')
+          )
         run: |
           git config --global user.name "${GH_USERNAME}"
           git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
@@ -95,9 +117,11 @@ jobs:
       - name: Push Windows binaries
         if: |
           matrix.os == 'windows-latest' &&
-          contains(matrix.python-version, '3.9') &&
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/master'
+          contains(matrix.python-version, '3.12') &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+            (github.event_name == 'workflow_dispatch')
+          )
         run: |
           git config --global user.name "${{ env.GH_USERNAME }}"
           git config --global user.email "${{ env.GH_USERNAME }}@users.noreply.github.com"
