@@ -89,7 +89,7 @@ jobs:
           if [ -f ".staging-validated" ]; then
             echo "✅ Staging validation marker found:"
             cat .staging-validated
-            
+
             # Verify the marker contains the expected version
             if grep -q "Version: ${{ steps.get-version.outputs.version }}" .staging-validated; then
               echo "✅ Validation marker matches expected version"
@@ -143,49 +143,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
-          fetch-depth: 0
 
-      - name: Extract changelog for version
-        id: changelog
+      - name: Extract release notes from changelog
+        id: release_notes
         run: |
           VERSION="${{ needs.validate-staging.outputs.release-version }}"
 
-          # Extract changelog section for this version
-          sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' > release-notes.md
-
-          # If no bracketed version found, try without brackets
-          if [ ! -s release-notes.md ]; then
-            sed -n "/## $VERSION/,/## /p" CHANGELOG.md | sed '$d' > release-notes.md
-          fi
-
+          # Extract content between version headers
+          CONTENT=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
           echo "Release notes:"
-          cat release-notes.md
+          echo "$CONTENT"
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.validate-staging.outputs.release-tag }}
-          release_name: Release ${{ needs.validate-staging.outputs.release-tag }}
-          body_path: release-notes.md
-          draft: false
-          prerelease: false
-
-  publish-to-pypi:
-    needs: [validate-staging, merge-to-master, create-github-release]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout master
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+          # Handle multiline content for GitHub Actions
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Install build dependencies
         run: |
@@ -194,6 +166,16 @@ jobs:
 
       - name: Build package
         run: python -m build --sdist --wheel .
+
+      - name: Create GH Release (draft)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ needs.validate-staging.outputs.release-tag }}" dist/* \
+            --title "${{ needs.validate-staging.outputs.release-tag }}" \
+            --notes "${{ steps.release_notes.outputs.content }}" \
+            --draft \
+            --verify-tag
 
       - name: Publish to PyPI
         env:
