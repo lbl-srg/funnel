@@ -2,21 +2,16 @@ name: Staging Release
 
 on:
   workflow_dispatch:
-    inputs:
-      force_version:
-        description: 'Force a specific version (optional)'
-        required: false
-        type: string
 
 env:
   GH_USERNAME: github-actions[bot]
 
 jobs:
-  semantic-release:
+  version-bump:
     runs-on: ubuntu-latest
     outputs:
-      new-release-published: ${{ steps.semantic.outputs.new-release-published }}
-      new-release-version: ${{ steps.semantic.outputs.new-release-version }}
+      new-release-published: ${{ steps.cz.outputs.new-release-published }}
+      new-release-version: ${{ steps.cz.outputs.new-release-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[publish]"
 
       - name: Create staging branch from current branch
         run: |
@@ -42,18 +37,10 @@ jobs:
           # Create fresh staging branch from current HEAD (overwrites existing)
           git checkout -B staging HEAD
 
-      - name: Run semantic-release
-        id: semantic
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump version and update changelog
+        id: cz
         run: |
-          if [ -n "${{ github.event.inputs.force_version }}" ]; then
-            echo "Force releasing version ${{ github.event.inputs.force_version }}"
-            semantic-release version --force ${{ github.event.inputs.force_version }}
-          else
-            semantic-release version
-          fi
-
+          cz bump
           # Check if a new release was created
           if git describe --tags --exact-match HEAD 2>/dev/null; then
             echo "new-release-published=true" >> $GITHUB_OUTPUT
@@ -63,39 +50,22 @@ jobs:
           fi
 
       - name: Push staging branch
-        if: steps.semantic.outputs.new-release-published == 'true'
+        if: steps.cz.outputs.new-release-published == 'true'
         run: |
-          git push origin staging
+          git push --force-with-lease origin staging
 
-  trigger-cmake-build:
-    needs: semantic-release
-    if: needs.semantic-release.outputs.new-release-published == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger CMake workflow
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const result = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'cmake.yml',
-              ref: 'staging'
-            });
-            console.log('Triggered CMake workflow:', result.status);
-
-      - name: Wait for CMake workflow completion
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: staging
-          check-name: 'build'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 30
+  cmake-build:
+    needs: version-bump
+    if: needs.version-bump.outputs.new-release-published == 'true'
+    uses: ./.github/workflows/cmake.yml
+    with:
+      ref: staging
 
   publish-test-pypi:
-    needs: [semantic-release, trigger-cmake-build]
-    if: needs.semantic-release.outputs.new-release-published == 'true'
+    needs: [version-bump, cmake-build]
+    if:  |
+     needs.version-bump.outputs.new-release-published == 'true' &&
+     needs.cmake-build.outputs.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout staging branch
@@ -134,17 +104,17 @@ jobs:
 
           # Install from Test PyPI
           # The `--extra-index-url https://pypi.org/simple/` ensures dependencies are installed from regular PyPI
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ pyfunnel==${{ needs.semantic-release.outputs.new-release-version }}
+          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ pyfunnel==${{ needs.version-bump.outputs.new-release-version }}
 
           # Find the pyfunnel installation directory
           PYFUNNEL_DIR=$(python -c "import pyfunnel; import os; print(os.path.dirname(pyfunnel.__file__))")
           echo "PyFunnel installed at: $PYFUNNEL_DIR"
 
-          # Copy test data to current directory (tests expect relative paths)
+          # Copy test data to current directory
           cp -r "$PYFUNNEL_DIR/../tests" .
 
           # Run the test from the directory with test data
-          python -m tests.numerics test tests/success1 .
+          cd tests/test_bin && funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 
           # Clean up test artifacts
           cd .. && rm -rf test-install
@@ -153,8 +123,7 @@ jobs:
         run: |
           # Create validation marker indicating successful staging pipeline
           echo "Staging pipeline completed successfully on $(date)" > .staging-validated
-          echo "Version: ${{ needs.semantic-release.outputs.new-release-version }}" >> .staging-validated
-          echo "Tag: v${{ needs.semantic-release.outputs.new-release-version }}" >> .staging-validated
+          echo "Version: ${{ needs.version-bump.outputs.new-release-version }}" >> .staging-validated
           echo "Test PyPI: Verified" >> .staging-validated
           echo "Binaries: Built and committed" >> .staging-validated
 
@@ -165,16 +134,16 @@ jobs:
           git push origin staging
 
   notify-completion:
-    needs: [semantic-release, trigger-cmake-build, publish-test-pypi]
+    needs: [version-bump, cmake-build, publish-test-pypi]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Summary
         run: |
           echo "## Staging Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **New Release Published**: ${{ needs.semantic-release.outputs.new-release-published }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.semantic-release.outputs.new-release-published }}" == "true" ]; then
-            echo "- **Version**: v${{ needs.semantic-release.outputs.new-release-version }}" >> $GITHUB_STEP_SUMMARY
-            echo "- **CMake Build**: ${{ needs.trigger-cmake-build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Release Published**: ${{ needs.version-bump.outputs.new-release-published }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.version-bump.outputs.new-release-published }}" == "true" ]; then
+            echo "- **Version**: ${{ needs.version-bump.outputs.new-release-version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **CMake Build**: ${{ needs.cmake-build.outputs.result }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Test PyPI Publish**: ${{ needs.publish-test-pypi.result }}" >> $GITHUB_STEP_SUMMARY
           fi

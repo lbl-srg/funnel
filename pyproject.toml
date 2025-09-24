@@ -1,10 +1,6 @@
-[build-system]
-requires = ["setuptools>=70.0.0", "wheel>=0.37.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "pyfunnel"
-dynamic = ["version"]
+version = "1.0.2"  # DO NOT CHANGE: this is automatically updated with 'cz bump'
 authors = [
     {name = "A. Gautier", email = "agautier@lbl.gov"},
 ]
@@ -27,9 +23,15 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
     "pandas>=2.0.0",
-    "python-semantic-release>=8.7.0",
-    "twine>=4.0.0"
 ]
+publish = [
+    "commitizen>=4.8.2",
+    "twine>=4.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel>=0.37.0"]
+build-backend = "setuptools.build_meta"
 
 [project.urls]
 Homepage = "https://github.com/lbl-srg/funnel"
@@ -46,26 +48,13 @@ version = {attr = "pyfunnel.__version__"}
 [tool.setuptools.package-data]
 pyfunnel = ["templates/*", "lib/*"]
 
-[tool.semantic_release]
-build_command = "python -m build --sdist --wheel ."
-dist_path = "dist/"
-upload_to_pypi = false
-upload_to_release = true
-commit_message = "chore(release): {version}"
-tag_format = "v{version}"
-changelog_file = "CHANGELOG.md"
-
-# Release groups configuration for v10+
-[tool.semantic_release.branches.main]
-match = "master"
-prerelease = false
-
-# Allow testing from feature branches
-[tool.semantic_release.branches.feature]
-match = "issue.*"
-prerelease = true
-prerelease_token = "dev"
-
-[tool.semantic_release.files."pyfunnel/__init__.py"]
-search = "__version__ = \"{current_version}\""
-replace = "__version__ = \"{new_version}\""
+[tool.commitizen]
+version_provider = "pep621"
+version_scheme = "semver"
+tag_format = "v$version"
+version_files = [
+    "pyfunnel/__init__.py:__version__",
+    "CMakeLists.txt:VERSION",
+]
+update_changelog_on_bump = true
+changelog_incremental = true

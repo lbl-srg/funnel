@@ -7,7 +7,15 @@ on:
   push:
     branches:
       - 'master'
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+    outputs:
+      result:
+        description: "Build result"
+        value: ${{ jobs.build.outputs.result }}
 
 env:
   BUILD_TYPE: Release
@@ -15,7 +23,12 @@ env:
 
 jobs:
   build:
+    if: |
+      !contains(github.event.head_commit.message, 'skip ci') &&
+      !contains(github.event.head_commit.message, 'ci skip')
     runs-on: ${{ matrix.os }}
+    outputs:
+      result: ${{ steps.test.outcome }}
 
     strategy:
       matrix:
@@ -24,6 +37,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_call' && inputs.ref || github.ref }}
 
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.12.1
@@ -63,11 +78,13 @@ jobs:
         run: cmake ..
 
       - name: Build
+        id: build
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: cmake --build . --target install --config $BUILD_TYPE
 
       - name: Test
+        id: test
         working-directory: ${{ github.workspace }}/build
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
