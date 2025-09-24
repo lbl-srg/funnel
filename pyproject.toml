@@ -48,6 +48,9 @@ version = {attr = "pyfunnel.__version__"}
 [tool.setuptools.package-data]
 pyfunnel = ["templates/*", "lib/*"]
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.commitizen]
 version_provider = "pep621"
 version_scheme = "semver"
