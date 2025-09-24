@@ -40,7 +40,7 @@ jobs:
       - name: Bump version and update changelog
         id: cz
         run: |
-          cz bump --increment MINOR
+          cz bump --increment PATCH
           # Check if a new release was created
           if git describe --tags --exact-match HEAD 2>/dev/null; then
             echo "new-release-published=true" >> $GITHUB_OUTPUT
@@ -81,7 +81,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: staging
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -103,27 +102,29 @@ jobs:
         run: |
           python -m twine upload --repository testpypi dist/*
 
+  test-published-version:
+    needs: [version-bump, cmake-build, publish-test-pypi]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+
       - name: Test installation from Test PyPI
         run: |
           # Wait a bit for Test PyPI to propagate
-          sleep 60
+          sleep 120
 
           # Install from Test PyPI
           # The `--extra-index-url https://pypi.org/simple/` ensures dependencies are installed from regular PyPI
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ pyfunnel==${{ needs.version-bump.outputs.new-release-version }}
 
-          # Clone only test data
-          git clone --no-checkout ${{ github.server_url }}/${{ github.repository }}.git
-          cd ${{ github.event.repository.name }}
-          git sparse-checkout init --cone
-          git sparse-checkout set tests
-          git checkout
-
           # Run the test from the directory with test data
           cd tests/test_bin && funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 
           # Clean up test artifacts
-          cd ../../.. && rm -rf ${{ github.event.repository.name }}
+          rm -rf results
 
       - name: Create staging validation marker
         run: |
@@ -140,7 +141,7 @@ jobs:
           git push origin staging
 
   notify-completion:
-    needs: [version-bump, cmake-build, publish-test-pypi]
+    needs: [version-bump, cmake-build, publish-test-pypi, test-published-version]
     if: always()
     runs-on: ubuntu-latest
     steps:

@@ -46,7 +46,13 @@ include = ["pyfunnel*"]
 version = {attr = "pyfunnel.__version__"}
 
 [tool.setuptools.package-data]
-pyfunnel = ["templates/*", "lib/*"]
+pyfunnel = [
+  "README.md",
+  "LICENSE.txt",
+  "COPYRIGHT.txt",
+  "templates/*",
+  "lib/**/*",
+]
 
 [tool.setuptools]
 include-package-data = true
