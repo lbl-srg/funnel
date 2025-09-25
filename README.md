@@ -24,36 +24,34 @@ than a simulation model that is considered to be the original specification.
 
 ![Funnel Plot](https://github.com/lbl-srg/funnel/raw/master/img/plot_image.svg)
 
-
 ### Method to Compute the Funnel
 
 The funnel is computed as follows.
 
-  1. Tolerance areas (based on L1-norm) are built around each reference data point.
+1. Tolerance areas (based on L1-norm) are built around each reference data point.
+   - The tolerance parameters correspond to the half-width and half-height of the
+     tolerance areas. They default to 0.
 
-     * The tolerance parameters correspond to the half-width and half-height of the
-    tolerance areas. They default to 0.
+   - When using `atolx` and `atoly`, the tolerance is considered as absolute
+     (same unit as `x` and `y`).
 
-     * When using `atolx` and `atoly`, the tolerance is considered as absolute
-    (same unit as `x` and `y`).
+   - When using `ltolx` and `ltoly`, the tolerance is considered relative
+     to the local value of `x` and `y`.
 
-     * When using `ltolx` and `ltoly`, the tolerance is considered relative
-    to the local value of `x` and `y`.
+   - When using `rtolx` and `rtoly`, the tolerance is considered relative
+     to the range of `x` and `y`. This option is available mainly for compatibility with
+     the algorithm implemented in [csv-compare](https://github.com/modelica-tools/csv-compare)
+     for relative comparison. It should be used with caution.
 
-     * When using `rtolx` and `rtoly`, the tolerance is considered relative
-    to the range of `x` and `y`. This option is available mainly for compatibility with
-    the algorithm implemented in [csv-compare](https://github.com/modelica-tools/csv-compare)
-    for relative comparison. It should be used with caution.
+2. The algorithm selects which corners of the tolerance rectangles
+   are used to build the envelopes based on the change in the derivative sign at
+   each reference point.
 
-  2. The algorithm selects which corners of the tolerance rectangles
-  are used to build the envelopes based on the change in the derivative sign at
-  each reference point.
-
-  3. Intersection boundary points are computed when a selected corner
-  happens not to be in the logical order with the next one on the `x` scale
-  (i.e., at a local extremum).
-  New envelopes are then built encompassing all boundary points, and points strictly
-  within the envelopes are dropped.
+3. Intersection boundary points are computed when a selected corner
+   happens not to be in the logical order with the next one on the `x` scale
+   (i.e., at a local extremum).
+   New envelopes are then built encompassing all boundary points, and points strictly
+   within the envelopes are dropped.
 
 The comparison then simply consists of interpolating the upper and lower envelopes
 at the `x` test values and comparing the yielded `y_up` and `y_low` values with the `y` test values.
@@ -65,9 +63,9 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 The software is tested on the following platforms.
 
-  * Linux x64 (Ubuntu 24.04)
-  * Windows x64 (Windows Server 2022)
-  * macOS x64 and arm64 (macOS 12)
+- Linux x64 (Ubuntu 24.04)
+- Windows x64 (Windows Server 2022)
+- macOS x64 and arm64 (macOS 12)
 
 A Python binding is available to access the library. It is supported on Python versions 3.8 through 3.12.
 
@@ -80,12 +78,12 @@ The Python binding is delivered as a package named `pyfunnel`, available on PyPI
 The software is primarily intended to be used by means of a Python binding.
 The package `pyfunnel` provides the following functions.
 
-  * `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
-    Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
-    into the output directory (`./results` by default).
+- `compareAndReport`: calls `funnel` binary with list-like objects as `x`, `y` reference and test values.
+  Outputs `errors.csv`, `lowerBound.csv`, `upperBound.csv`, `reference.csv`, `test.csv`
+  into the output directory (`./results` by default).
 
-  * `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
-    Displays plot in default browser. See function docstring for further details.
+- `plot_funnel`: plots `funnel` results stored in the directory which path is provided as argument.
+  Displays plot in default browser. See function docstring for further details.
 
 A standalone CLI script `pyfunnel/cli.py` is available, which is also accessible via the
 `funnel` entry point when the package is installed.
@@ -107,9 +105,11 @@ From a Python shell with `./tests/test_bin` as the current working directory, ru
 ... xTest=test.iloc(axis=1)[0], yTest=test.iloc(axis=1)[1], atolx=0.002, atoly=0.002)
 >>> pyfunnel.plot_funnel('results')
 ```
+
 Or from a terminal with `./tests/test_bin` as the current working directory, run
-```
-$ python ../../pyfunnel/cli.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+
+```bash
+python ../../pyfunnel/cli.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 ```
 
 ## Build from Source
@@ -125,18 +125,21 @@ The distributed binaries are built with Microsoft Visual Studio C/C++ compiler
 
 To compile, link and install, from the top-level directory, run the following commands
 
-```
-mkdir build
-cd build
-cmake ..                           (add `-A x64` on Windows to compile in 64 bits)
-cmake --build . --target install   (add `--config Release` on Windows)
+```bash
+mkdir -p build && cd build
+cmake ..  # Add `-A x64` on Windows to compile in 64 bits
+cmake --build . --target install --config Release
 ```
 
 To run the tests, from `./build` run
 
+```bash
+ctest -C Release --verbose
 ```
-ctest                               (add `-C Release` on Windows)
-```
+
+## Contributing
+
+Please see our [contributing guidelines](CONTRIBUTING.md).
 
 ## License
 
