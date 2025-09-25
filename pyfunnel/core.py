@@ -17,7 +17,7 @@ import threading
 import time
 import webbrowser
 from ctypes import POINTER, c_char_p, c_double, c_int, cdll
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
 
