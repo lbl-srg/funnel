@@ -2,6 +2,15 @@ name: Staging Release
 
 on:
   workflow_dispatch:
+    inputs:
+      installation_mode:
+        description: 'Installation and testing mode'
+        required: false
+        type: choice
+        options:
+          - 'test-pypi'
+          - 'source'
+        default: 'source'
 
 env:
   GH_USERNAME: github-actions[bot]
@@ -10,7 +19,7 @@ jobs:
   version-bump:
     runs-on: ubuntu-latest
     outputs:
-      new-release-published: ${{ steps.cz.outputs.new-release-published }}
+      new-release-created: ${{ steps.cz.outputs.new-release-created }}
       new-release-version: ${{ steps.cz.outputs.new-release-version }}
     steps:
       - name: Checkout
@@ -40,41 +49,33 @@ jobs:
       - name: Bump version and update changelog
         id: cz
         run: |
-          cz bump --increment PATCH
+          cz bump
           # Check if a new release was created
           if git describe --tags --exact-match HEAD 2>/dev/null; then
-            echo "new-release-published=true" >> $GITHUB_OUTPUT
+            echo "new-release-created=true" >> $GITHUB_OUTPUT
             echo "new-release-version=$(git describe --tags --exact-match HEAD | sed 's/^v//')" >> $GITHUB_OUTPUT
           else
-            echo "new-release-published=false" >> $GITHUB_OUTPUT
+            echo "new-release-created=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Push staging branch
-        if: steps.cz.outputs.new-release-published == 'true'
+        if: steps.cz.outputs.new-release-created == 'true'
         run: |
           git push --force-with-lease origin staging
 
-  # cmake-build:
-  #   needs: version-bump
-  #   if: needs.version-bump.outputs.new-release-published == 'true'
-  #   uses: ./.github/workflows/cmake.yml
-  #   with:
-  #     ref: staging
-  #
   cmake-build:
     needs: version-bump
-    if: needs.version-bump.outputs.new-release-published == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      result: 'success'
-    steps:
-      - run: echo "CMake build placeholder - always succeeds"
+    if: needs.version-bump.outputs.new-release-created == 'true'
+    uses: ./.github/workflows/cmake.yml
+    with:
+      ref: staging
 
   publish-test-pypi:
     needs: [version-bump, cmake-build]
     if:  |
-     needs.version-bump.outputs.new-release-published == 'true' &&
-     needs.cmake-build.outputs.result == 'success'
+     needs.version-bump.outputs.new-release-created == 'true' &&
+     needs.cmake-build.outputs.result == 'success' &&
+     github.event.inputs.installation_mode == 'test-pypi'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout staging branch
@@ -102,8 +103,9 @@ jobs:
         run: |
           python -m twine upload --repository testpypi dist/*
 
-  test-published-version:
-    needs: [version-bump, cmake-build, publish-test-pypi]
+  test-package:
+    needs: [version-bump, cmake-build]
+    if: needs.version-bump.outputs.new-release-created == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout staging branch
@@ -111,7 +113,8 @@ jobs:
         with:
           ref: staging
 
-      - name: Test installation from Test PyPI
+      - name: Install from Test PyPI
+        if: github.event.inputs.installation_mode == 'test-pypi'
         run: |
           # Wait a bit for Test PyPI to propagate
           sleep 120
@@ -120,6 +123,15 @@ jobs:
           # The `--extra-index-url https://pypi.org/simple/` ensures dependencies are installed from regular PyPI
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ pyfunnel==${{ needs.version-bump.outputs.new-release-version }}
 
+      - name: Install from source
+        if: github.event.inputs.installation_mode == 'source'
+        run: |
+          # Install from source
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+      - name: Run test
+        run: |
           # Run the test from the directory with test data
           cd tests/test_bin && funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 
@@ -131,7 +143,11 @@ jobs:
           # Create validation marker indicating successful staging pipeline
           echo "Staging pipeline completed successfully on $(date)" > .staging-validated
           echo "Version: ${{ needs.version-bump.outputs.new-release-version }}" >> .staging-validated
-          echo "Test PyPI: Verified" >> .staging-validated
+          if [ "${{ github.event.inputs.installation_mode }}" == "test-pypi" ]; then
+            echo "Test PyPI: Verified" >> .staging-validated
+          else
+            echo "Source Installation: Verified" >> .staging-validated
+          fi
           echo "Binaries: Built and committed" >> .staging-validated
 
           git config --global user.name "${GH_USERNAME}"
@@ -141,16 +157,19 @@ jobs:
           git push origin staging
 
   notify-completion:
-    needs: [version-bump, cmake-build, publish-test-pypi, test-published-version]
+    needs: [version-bump, cmake-build, publish-test-pypi, test-package]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Summary
         run: |
           echo "## Staging Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **New Release Published**: ${{ needs.version-bump.outputs.new-release-published }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.version-bump.outputs.new-release-published }}" == "true" ]; then
+          echo "- **New Release Published**: ${{ needs.version-bump.outputs.new-release-created }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.version-bump.outputs.new-release-created }}" == "true" ]; then
             echo "- **Version**: ${{ needs.version-bump.outputs.new-release-version }}" >> $GITHUB_STEP_SUMMARY
             echo "- **CMake Build**: ${{ needs.cmake-build.outputs.result }}" >> $GITHUB_STEP_SUMMARY
-            echo "- **Test PyPI Publish**: ${{ needs.publish-test-pypi.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Installation Mode**: ${{ github.event.inputs.installation_mode }}" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ github.event.inputs.installation_mode }}" == "test-pypi" ]; then
+              echo "- **Test PyPI Publish**: ${{ needs.publish-test-pypi.result }}" >> $GITHUB_STEP_SUMMARY
+            fi
           fi

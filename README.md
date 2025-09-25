@@ -75,10 +75,6 @@ A Python binding is available to access the library. It is supported on Python v
 
 The Python binding is delivered as a package named `pyfunnel`, available on PyPI.
 
-For development, additional dependencies are needed and can be installed with
-
-`pip install -e ".[dev]"`
-
 ### Main Functions
 
 The software is primarily intended to be used by means of a Python binding.

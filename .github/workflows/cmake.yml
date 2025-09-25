@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - 'master'
-  push:
-    branches:
-      - 'master'
   workflow_call:
     inputs:
       ref:
@@ -94,7 +91,7 @@ jobs:
           contains(matrix.python-version, '3.12') &&
           (
             (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_dispatch')
+            (github.event_name == 'workflow_call')
           )
         run: |
           git config --global pull.rebase true
@@ -106,7 +103,7 @@ jobs:
           contains(matrix.python-version, '3.12') &&
           (
             (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_dispatch')
+            (github.event_name == 'workflow_call')
           )
         run: |
           git config --global user.name "${GH_USERNAME}"
@@ -120,7 +117,7 @@ jobs:
           contains(matrix.python-version, '3.12') &&
           (
             (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_dispatch')
+            (github.event_name == 'workflow_call')
           )
         run: |
           git config --global user.name "${{ env.GH_USERNAME }}"

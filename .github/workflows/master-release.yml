@@ -49,25 +49,49 @@ jobs:
 
           echo "✅ Staging is $AHEAD commits ahead of master"
 
-      - name: Check for release tag on staging
+      - name: Check version from staging validation
         id: get-version
         run: |
-          # Check if HEAD has a version tag
-          if git describe --tags --exact-match HEAD 2>/dev/null; then
-            TAG=$(git describe --tags --exact-match HEAD)
-            VERSION=$(echo "$TAG" | sed 's/^v//')
-            echo "✅ Found release tag: $TAG"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
-          else
-            echo "❌ No release tag found on staging HEAD"
+          # Check if .staging-validated exists
+          if [ ! -f ".staging-validated" ]; then
+            echo "❌ .staging-validated file not found - staging pipeline may not have completed"
             exit 1
+          fi
+
+          # Extract version from .staging-validated
+          STAGING_VERSION=$(grep "^Version: " .staging-validated | cut -d' ' -f2)
+          if [ -z "$STAGING_VERSION" ]; then
+            echo "❌ Could not extract version from .staging-validated"
+            exit 1
+          fi
+
+          echo "📋 Found staging version: $STAGING_VERSION"
+
+          # Get the latest git tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+
+          echo "🏷️  Latest git tag: $LATEST_TAG (version: $LATEST_VERSION)"
+
+          # Compare versions using sort -V (version sort)
+          HIGHER_VERSION=$(printf "%s\n%s\n" "$LATEST_VERSION" "$STAGING_VERSION" | sort -V | tail -n1)
+
+          if [ "$STAGING_VERSION" = "$LATEST_VERSION" ]; then
+            echo "❌ Staging version ($STAGING_VERSION) is the same as latest tag ($LATEST_TAG)"
+            exit 1
+          elif [ "$HIGHER_VERSION" = "$LATEST_VERSION" ]; then
+            echo "❌ Staging version ($STAGING_VERSION) is older than latest tag ($LATEST_TAG)"
+            exit 1
+          else
+            echo "✅ Staging version ($STAGING_VERSION) is newer than latest tag ($LATEST_TAG)"
+            echo "version=$STAGING_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=v$STAGING_VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Check for changelog entry
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
-          if grep -q "## \[$VERSION\]" CHANGELOG.md || grep -q "## $VERSION" CHANGELOG.md; then
+          if grep -q "## v$VERSION" CHANGELOG.md; then
             echo "✅ Changelog entry found for version $VERSION"
           else
             echo "❌ No changelog entry found for version $VERSION"
@@ -81,25 +105,6 @@ jobs:
             ls -la pyfunnel/lib/
           else
             echo "❌ No binaries found in pyfunnel/lib"
-            exit 1
-          fi
-
-      - name: Check staging validation marker
-        run: |
-          if [ -f ".staging-validated" ]; then
-            echo "✅ Staging validation marker found:"
-            cat .staging-validated
-
-            # Verify the marker contains the expected version
-            if grep -q "Version: ${{ steps.get-version.outputs.version }}" .staging-validated; then
-              echo "✅ Validation marker matches expected version"
-            else
-              echo "❌ Validation marker version mismatch"
-              exit 1
-            fi
-          else
-            echo "❌ No staging validation marker found"
-            echo "Please run the staging-release workflow first"
             exit 1
           fi
 
@@ -133,9 +138,8 @@ jobs:
 
           # Push to master
           git push origin master
-          git push origin --tags
 
-  release-publish:
+  publish-release:
     needs: [validate-staging, merge-to-master]
     runs-on: ubuntu-latest
     steps:
@@ -150,7 +154,7 @@ jobs:
           VERSION="${{ needs.validate-staging.outputs.release-version }}"
 
           # Extract content between version headers
-          CONTENT=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
+          CONTENT=$(sed -n "/^## v$VERSION/,/^## v/p" CHANGELOG.md | sed -n '2,/^## v/p' | sed '/^## v/d')
           echo "Release notes:"
           echo "$CONTENT"
 
@@ -167,15 +171,13 @@ jobs:
       - name: Build package
         run: python -m build --sdist --wheel .
 
-      - name: Create GH Release (draft)
+      - name: Create GH Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+        run: | # The following will create the git tag.
           gh release create "${{ needs.validate-staging.outputs.release-tag }}" dist/* \
             --title "${{ needs.validate-staging.outputs.release-tag }}" \
-            --notes "${{ steps.release_notes.outputs.content }}" \
-            --draft \
-            --verify-tag
+            --notes "${{ steps.release_notes.outputs.content }}"
 
       - name: Publish to PyPI
         env:
@@ -185,7 +187,7 @@ jobs:
           python -m twine upload dist/*
 
   notify-completion:
-    needs: [validate-staging, merge-to-master, release-publish]
+    needs: [validate-staging, merge-to-master, publish-release]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -195,9 +197,9 @@ jobs:
           echo "- **Version**: ${{ needs.validate-staging.outputs.release-tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Staging Validation**: ${{ needs.validate-staging.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Merge to Master**: ${{ needs.merge-to-master.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **GitHub Release**: ${{ needs.release-publish.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **GitHub Release**: ${{ needs.publish-release.result }}" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.publish-to-pypi.result }}" == "success" ]; then
+          if [ "${{ needs.publish-release.result }}" == "success" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "🎉 **Release ${{ needs.validate-staging.outputs.release-tag }} completed successfully!**" >> $GITHUB_STEP_SUMMARY
             echo "- 📦 Available on PyPI: https://pypi.org/project/pyfunnel/${{ needs.validate-staging.outputs.release-version }}/" >> $GITHUB_STEP_SUMMARY
