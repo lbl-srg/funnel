@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## v2.0.0 (2025-09-25)
+
+### BREAKING CHANGE
+
+- The standalone CLI script has been renamed from
+pyfunnel/pyfunnel.py to pyfunnel/cli.py to avoid naming conflicts with
+the package.
+- Python 2 is no longer supported.
+
+### Refactor
+
+- Rename CLI script from pyfunnel.py to cli.py
+- Modernize to Python 3 only and update packaging
+
 ## v1.0.2 (2025-03-11)
 
 - Bug fixes
