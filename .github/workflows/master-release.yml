@@ -1,0 +1,207 @@
+name: Master Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_validation:
+        description: 'Confirm staging has been tested and is ready for release'
+        required: true
+        type: boolean
+        default: false
+
+env:
+  GH_USERNAME: github-actions[bot]
+
+jobs:
+  validate-staging:
+    runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.get-version.outputs.version }}
+      release-tag: ${{ steps.get-version.outputs.tag }}
+    steps:
+      - name: Validate input
+        if: ${{ !github.event.inputs.staging_validation }}
+        run: |
+          echo "❌ Staging validation checkbox must be checked to proceed"
+          exit 1
+
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Check staging branch exists and has commits ahead of master
+        run: |
+          # Ensure we're on staging
+          if [ "$(git branch --show-current)" != "staging" ]; then
+            echo "❌ Not on staging branch"
+            exit 1
+          fi
+
+          # Check if staging is ahead of master
+          git fetch origin master
+          AHEAD=$(git rev-list --count origin/master..staging)
+          if [ "$AHEAD" -eq "0" ]; then
+            echo "❌ Staging branch has no commits ahead of master"
+            exit 1
+          fi
+
+          echo "✅ Staging is $AHEAD commits ahead of master"
+
+      - name: Check version from staging validation
+        id: get-version
+        run: |
+          # Check if .staging-validated exists
+          if [ ! -f ".staging-validated" ]; then
+            echo "❌ .staging-validated file not found - staging pipeline may not have completed"
+            exit 1
+          fi
+
+          # Extract version from .staging-validated
+          STAGING_VERSION=$(grep "^Version: " .staging-validated | cut -d' ' -f2)
+          if [ -z "$STAGING_VERSION" ]; then
+            echo "❌ Could not extract version from .staging-validated"
+            exit 1
+          fi
+
+          echo "📋 Found staging version: $STAGING_VERSION"
+
+          # Get the latest git tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+
+          echo "🏷️  Latest git tag: $LATEST_TAG (version: $LATEST_VERSION)"
+
+          # Compare versions using sort -V (version sort)
+          HIGHER_VERSION=$(printf "%s\n%s\n" "$LATEST_VERSION" "$STAGING_VERSION" | sort -V | tail -n1)
+
+          if [ "$STAGING_VERSION" = "$LATEST_VERSION" ]; then
+            echo "❌ Staging version ($STAGING_VERSION) is the same as latest tag ($LATEST_TAG)"
+            exit 1
+          elif [ "$HIGHER_VERSION" = "$LATEST_VERSION" ]; then
+            echo "❌ Staging version ($STAGING_VERSION) is older than latest tag ($LATEST_TAG)"
+            exit 1
+          else
+            echo "✅ Staging version ($STAGING_VERSION) is newer than latest tag ($LATEST_TAG)"
+            echo "version=$STAGING_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=v$STAGING_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for changelog entry
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          if grep -q "## v$VERSION" CHANGELOG.md; then
+            echo "✅ Changelog entry found for version $VERSION"
+          else
+            echo "❌ No changelog entry found for version $VERSION"
+            exit 1
+          fi
+
+      - name: Check for binaries
+        run: |
+          if [ -d "pyfunnel/lib" ] && [ "$(ls -A pyfunnel/lib)" ]; then
+            echo "✅ Binaries found in pyfunnel/lib"
+            ls -la pyfunnel/lib/
+          else
+            echo "❌ No binaries found in pyfunnel/lib"
+            exit 1
+          fi
+
+  merge-to-master:
+    needs: validate-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge staging to master
+        run: |
+          git config --global user.name "${GH_USERNAME}"
+          git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
+
+          # Fetch staging
+          git fetch origin staging
+
+          # Merge staging into master
+          git merge origin/staging --no-edit
+
+          # Remove the staging validation marker before finalizing
+          if [ -f ".staging-validated" ]; then
+            git rm .staging-validated
+            git commit -m "chore: remove staging validation marker"
+          fi
+
+          # Push to master
+          git push origin master
+
+  publish-release:
+    needs: [validate-staging, merge-to-master]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Extract release notes from changelog
+        id: release_notes
+        run: |
+          VERSION="${{ needs.validate-staging.outputs.release-version }}"
+
+          # Extract content between version headers
+          CONTENT=$(sed -n "/^## v$VERSION/,/^## v/p" CHANGELOG.md | sed -n '2,/^## v/p' | sed '/^## v/d')
+          echo "Release notes:"
+          echo "$CONTENT"
+
+          # Handle multiline content for GitHub Actions
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build package
+        run: python -m build --sdist --wheel .
+
+      - name: Create GH Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: | # The following will create the git tag.
+          gh release create "${{ needs.validate-staging.outputs.release-tag }}" dist/* \
+            --title "${{ needs.validate-staging.outputs.release-tag }}" \
+            --notes "${{ steps.release_notes.outputs.content }}"
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload dist/*
+
+  notify-completion:
+    needs: [validate-staging, merge-to-master, publish-release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Master Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.validate-staging.outputs.release-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Staging Validation**: ${{ needs.validate-staging.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Merge to Master**: ${{ needs.merge-to-master.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **GitHub Release**: ${{ needs.publish-release.result }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.publish-release.result }}" == "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎉 **Release ${{ needs.validate-staging.outputs.release-tag }} completed successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "- 📦 Available on PyPI: https://pypi.org/project/pyfunnel/${{ needs.validate-staging.outputs.release-version }}/" >> $GITHUB_STEP_SUMMARY
+            echo "- 🏷️ GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-staging.outputs.release-tag }}" >> $GITHUB_STEP_SUMMARY
+          fi

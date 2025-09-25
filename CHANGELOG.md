@@ -1,30 +1,37 @@
-# Change Log
+# CHANGELOG
 
-## Version 1.0.3
+## v2.0.0 (2025-09-25)
 
-- Fix plotting issues ([#88](https://github.com/lbl-srg/funnel/issues/88))
+### BREAKING CHANGE
 
-## Version 1.0.2
+- The standalone CLI script has been renamed from
+pyfunnel/pyfunnel.py to pyfunnel/cli.py to avoid naming conflicts with
+the package.
+- Python 2 is no longer supported.
+
+### Refactor
+
+- Rename CLI script from pyfunnel.py to cli.py
+- Modernize to Python 3 only and update packaging
+
+## v1.0.2 (2025-03-11)
 
 - Bug fixes
 
-## Version 1.0.1
+## v1.0.1 (2024-07-17)
 
 - Fix dependency version on Ubuntu 20.04
 - Improve documentation and error handling related to two-column CSV file limitation
 
-## Version 1.0.0
+## v1.0.0 (2023-09-15)
 
 - Add macOS universal build
 - Add support for headless Linux
 - Other bug fixes and improvements
-
-## Version 0.3.1
-
 - Add tube size limit to avoid vanishing tube size in case of relative tolerance and low variable value
 - Change print format for higher precision (`%.16g`)
 
-## Version 0.3.0
+## v0.3.0 (2021-03-23)
 
 - Add local tolerance parameters `ltolx` and `ltoly`
 - Allow for not specifying any tolerance parameter (defaults to 0)

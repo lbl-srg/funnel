@@ -1,0 +1,67 @@
+[project]
+name = "pyfunnel"
+version = "2.0.0"  # DO NOT CHANGE: this is automatically updated with 'cz bump'
+authors = [
+    {name = "A. Gautier", email = "agautier@lbl.gov"},
+]
+description = "Comparison tool for two (x, y) data sets given tolerances in x and y directions"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: C",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Utilities",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pandas>=2.0.0",
+]
+publish = [
+    "commitizen>=4.8.2",
+    "twine>=4.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel>=0.37.0"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/lbl-srg/funnel"
+
+[project.scripts]
+funnel = "pyfunnel.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pyfunnel*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyfunnel.__version__"}
+
+[tool.setuptools.package-data]
+pyfunnel = [
+  "templates/*",
+  "lib/**/*",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.commitizen]
+version_provider = "pep621"
+version_scheme = "semver"
+tag_format = "v$version"
+version_files = [
+    "pyfunnel/__init__.py:__version__",
+    "CMakeLists.txt:VERSION",
+]
+update_changelog_on_bump = true
+changelog_incremental = true

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os
-import shutil
-import sys
-import re
 import json
+import os
+import re
+import shutil
 import subprocess
+import sys
 
 import numpy as np
 import pandas as pd

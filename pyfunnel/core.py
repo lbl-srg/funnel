@@ -5,8 +5,6 @@
 # Core functions for funnel Python binding
 #######################################################
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import io
 import numbers
 import os
@@ -18,16 +16,8 @@ import sys
 import threading
 import time
 import webbrowser
-
-# Python standard library imports.
 from ctypes import POINTER, c_char_p, c_double, c_int, cdll
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-
-# Third-party module or package imports.
-import six
-
-# Code repository sub-package imports.
-
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
 
@@ -236,7 +226,7 @@ def compareAndReport(
     if outputDirectory is None:
         print("Output directory not specified: results are stored in subdirectory `results` by default.")
         outputDirectory = "results"
-    assert isinstance(outputDirectory, six.string_types),\
+    assert isinstance(outputDirectory, str),\
         "Path of output directory is not a string type."
     # Value
     assert len(xReference) == len(yReference),\
