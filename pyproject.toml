@@ -6,6 +6,7 @@ authors = [
 ]
 description = "Comparison tool for two (x, y) data sets given tolerances in x and y directions"
 readme = "README.md"
+license = {file = "LICENSE.txt"}
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -47,9 +48,6 @@ version = {attr = "pyfunnel.__version__"}
 
 [tool.setuptools.package-data]
 pyfunnel = [
-  "README.md",
-  "LICENSE.txt",
-  "COPYRIGHT.txt",
   "templates/*",
   "lib/**/*",
 ]
