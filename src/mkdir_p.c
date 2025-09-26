@@ -20,6 +20,13 @@
 int mkdir_p(const char *path)
 {
     /* Adapted from http://stackoverflow.com/a/2336245/119527 */
+
+    // Validate input
+    if (strpbrk(path, "*|<>?\"") != NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
     const size_t len = strlen(path);
     char *_path = NULL;
     char *p;
