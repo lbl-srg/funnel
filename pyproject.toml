@@ -6,12 +6,12 @@ authors = [
 ]
 description = "Comparison tool for two (x, y) data sets given tolerances in x and y directions"
 readme = "README.md"
-license = {file = "LICENSE.txt"}
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: C",
     "Intended Audience :: End Users/Desktop",
@@ -28,6 +28,7 @@ dev = [
 publish = [
     "commitizen>=4.8.2",
     "twine>=4.0.0",
+    "build>=1.0.0",
 ]
 
 [build-system]

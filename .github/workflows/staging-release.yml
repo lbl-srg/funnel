@@ -90,11 +90,6 @@ jobs:
           path: pyfunnel/lib/
           merge-multiple: true
 
-      - name: Debug - List downloaded artifacts
-        run: |
-          echo "Contents of pyfunnel/lib/ after artifact download:"
-          find pyfunnel/lib/ -type f -ls || echo "No files found"
-
       - name: Setup Python
         uses: actions/setup-python@v4
         with:

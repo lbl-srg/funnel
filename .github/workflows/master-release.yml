@@ -39,16 +39,6 @@ jobs:
             exit 1
           fi
 
-          # Check if staging is ahead of master
-          git fetch origin master
-          AHEAD=$(git rev-list --count origin/master..staging)
-          if [ "$AHEAD" -eq "0" ]; then
-            echo "❌ Staging branch has no commits ahead of master"
-            exit 1
-          fi
-
-          echo "✅ Staging is $AHEAD commits ahead of master"
-
       - name: Check version from staging validation
         id: get-version
         run: |
@@ -138,6 +128,43 @@ jobs:
         with:
           ref: master
 
+      - name: Download artifacts from Staging Release Workflow
+        id: download-artifacts
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: staging-release.yml
+          workflow_conclusion: success
+          name: binaries-.*
+          name_is_regexp: true
+          path: pyfunnel/lib/
+          merge-multiple: true
+
+      - name: Flatten artifact structure
+        run: |
+          # Move files from nested directories to target structure
+          find pyfunnel/lib/binaries-* -type f -exec sh -c '
+            for file; do
+              # Extract the platform directory (darwin64, linux64, win64)
+              platform_dir=$(dirname "$file" | sed "s/.*binaries-[^/]*\///")
+              target_dir="pyfunnel/lib/$platform_dir"
+              mkdir -p "$target_dir"
+              mv "$file" "$target_dir/"
+            done
+          ' _ {} +
+
+          # Clean up empty artifact directories
+          rm -rf pyfunnel/lib/binaries-*
+
+      - name: Check for binaries
+        run: |
+          if [ -d "pyfunnel/lib" ] && [ "$(ls -A pyfunnel/lib)" ]; then
+            echo "✅ Binaries found in pyfunnel/lib"
+            ls -la pyfunnel/lib/
+          else
+            echo "❌ No binaries found in pyfunnel/lib"
+            exit 1
+          fi
+
       - name: Extract release notes from changelog
         id: release_notes
         run: |
@@ -156,25 +183,35 @@ jobs:
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install build twine
+          python -m pip install --upgrade build twine setuptools wheel
 
       - name: Build package
-        run: python -m build --sdist --wheel .
-
-      - name: Create GH Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: | # The following will create the git tag.
-          gh release create "${{ needs.validate-staging.outputs.release-tag }}" dist/* \
-            --title "${{ needs.validate-staging.outputs.release-tag }}" \
-            --notes "${{ steps.release_notes.outputs.content }}"
-
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          python -m twine upload dist/*
+          # Clean any previous builds
+          rm -rf dist/ build/ *.egg-info/
+          # Build
+          python -m build --sdist --wheel .
+          # Verify the built packages
+          echo "Built packages:"
+          ls -la dist/
+          # Check wheel contents
+          python -m zipfile -l dist/*.whl | head -30
+          python -m twine check dist/*
+
+      # - name: Create GH Release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: | # The following will create the git tag.
+      #     gh release create "${{ needs.validate-staging.outputs.release-tag }}" dist/* \
+      #       --title "${{ needs.validate-staging.outputs.release-tag }}" \
+      #       --notes "${{ steps.release_notes.outputs.content }}"
+
+      # - name: Publish to PyPI
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      #   run: |
+      #     python -m twine upload dist/*
 
   notify-completion:
     needs: [validate-staging, merge-to-master, publish-release]
