@@ -86,40 +86,11 @@ jobs:
         shell: bash
         run: ctest -C $BUILD_TYPE --verbose
 
-      - name: Stage binaries
-        if: |
-          contains(matrix.python-version, '3.12') &&
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_call')
-          )
-        run: |
-          git config --global pull.rebase true
-          git add ${{ github.workspace }}/pyfunnel/lib
-
-      - name: Push Linux & macOS binaries
-        if: |
-          (contains(matrix.os, 'ubuntu') || matrix.os == 'macos-latest') &&
-          contains(matrix.python-version, '3.12') &&
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_call')
-          )
-        run: |
-          git config --global user.name "${GH_USERNAME}"
-          git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
-          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
-
-      # We use cmd /c because powershell <7 does not support chain operators.
-      - name: Push Windows binaries
-        if: |
-          matrix.os == 'windows-latest' &&
-          contains(matrix.python-version, '3.12') &&
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_call')
-          )
-        run: |
-          git config --global user.name "${{ env.GH_USERNAME }}"
-          git config --global user.email "${{ env.GH_USERNAME }}@users.noreply.github.com"
-          cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push )'
+      - name: Upload platform-specific binaries as artifacts
+        if: contains(matrix.python-version, '3.12')
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}
+          path: ${{ github.workspace }}/pyfunnel/lib/
+          retention-days: 30
+          if-no-files-found: error
