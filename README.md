@@ -63,9 +63,9 @@ By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it 
 
 The software is tested on the following platforms.
 
-- Linux x64 (Ubuntu 24.04)
-- Windows x64 (Windows Server 2022)
-- macOS x64 and arm64 (macOS 12)
+- Linux x64: Ubuntu 20.04 and 24.04
+- Windows x64: Windows Server 2022
+- macOS x64 and arm64: macOS 14
 
 A Python binding is available to access the library. It is supported on Python versions 3.8 through 3.12.
 
@@ -86,11 +86,7 @@ The package `pyfunnel` provides the following functions.
   Displays plot in default browser. See function docstring for further details.
 
 A standalone CLI script `pyfunnel/cli.py` is available, which is also accessible via the
-`funnel` entry point when the package is installed.
-To access the usage instructions, use one of the following:
-
-- Installed package: `funnel --help`
-- Standalone: `python pyfunnel/cli.py --help`
+`funnel` entry point when the package is installed. To access the usage instructions, run: `funnel --help`
 
 ### Example
 
@@ -109,7 +105,7 @@ From a Python shell with `./tests/test_bin` as the current working directory, ru
 Or from a terminal with `./tests/test_bin` as the current working directory, run
 
 ```bash
-python ../../pyfunnel/cli.py --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
+funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 ```
 
 ## Build from Source
