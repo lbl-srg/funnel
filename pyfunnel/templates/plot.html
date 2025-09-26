@@ -1,120 +1,228 @@
 <html>
-<head>
-  <meta charset="utf-8"/>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-</head>
-<body>
-  <div id="myDiv" style="height: 100%; width: 100%;" class="plotly-graph-div"></div>
-  <script>
-    function makeplot() {
-        Plotly.d3.csv("http://localhost:$SERVER_PORT/reference.csv", function(data_ref){
-            Plotly.d3.csv("http://localhost:$SERVER_PORT/test.csv", function(data_test){
-                Plotly.d3.csv("http://localhost:$SERVER_PORT/errors.csv", function(data_err){
-                    Plotly.d3.csv("http://localhost:$SERVER_PORT/lowerBound.csv", function(data_low){
-                        Plotly.d3.csv("http://localhost:$SERVER_PORT/upperBound.csv", function(data_upp){
-                            var data_raw = {
-                                'ref': data_ref,
-                                'test': data_test,
-                                'err': data_err,
-                                'low': data_low,
-                                'upp': data_upp
-                            };
-                            processAll(data_raw);
-                        });
-                    });
-                });
-            });
-        });
-    };
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #myDiv {
+        height: 100%;
+        width: 100%;
+        min-height: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="myDiv" class="plotly-graph-div"></div>
+    <script>
+      function makePlot() {
+        console.log("Starting plot generation");
+        const myDiv = document.getElementById("myDiv");
+        if (!myDiv) {
+          console.error("Plot container not found");
+          return;
+        }
 
-    function processAll(dataIn) {
+        // Show loading indicator
+        myDiv.innerHTML = '<div style="text-align:center;padding-top:100px;">Loading data...</div>';
+
+        // Check if server is accessible first
+        fetch(`http://localhost:$SERVER_PORT/`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Server not accessible (status: ${response.status})`);
+            }
+            // Server is accessible, proceed with data loading
+            return Promise.all([
+              fetch("http://localhost:$SERVER_PORT/reference.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching reference.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/test.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching test.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/errors.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching errors.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/lowerBound.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching lowerBound.csv: ${response.status}`);
+                return response.text();
+              }),
+              fetch("http://localhost:$SERVER_PORT/upperBound.csv").then((response) => {
+                if (!response.ok) throw new Error(`Error fetching upperBound.csv: ${response.status}`);
+                return response.text();
+              }),
+            ]);
+          })
+          .then((responses) => {
+            const [refCsv, testCsv, errCsv, lowCsv, uppCsv] = responses;
+
+            // Parse CSV data
+            const data_ref = csvToJson(refCsv);
+            const data_test = csvToJson(testCsv);
+            const data_err = csvToJson(errCsv);
+            const data_low = csvToJson(lowCsv);
+            const data_upp = csvToJson(uppCsv);
+
+            var data_raw = {
+              ref: data_ref,
+              test: data_test,
+              err: data_err,
+              low: data_low,
+              upp: data_upp,
+            };
+            console.log("Data loaded successfully");
+            processAll(data_raw);
+          })
+          .catch((error) => {
+            console.error("Error loading data:", error);
+            let errorMessage = error.message;
+            if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+              errorMessage = 'Server connection failed. Make sure the Python server is running.';
+            }
+          });
+      }
+
+      // Helper function to parse CSV text into JSON
+      function csvToJson(csvText) {
+        const lines = csvText.split("\n");
+        const headers = lines[0].split(",");
+
+        return lines
+          .slice(1)
+          .filter((line) => line.trim() !== "")
+          .map((line) => {
+            const values = line.split(",");
+            const row = {};
+
+            headers.forEach((header, index) => {
+              row[header.trim()] = values[index].trim();
+            });
+
+            return row;
+          });
+      }
+
+      function processAll(dataIn) {
         data = {};
-        for(var index in dataIn) {
-            data[index] = processData(dataIn[index]);
+        for (var index in dataIn) {
+          data[index] = processData(dataIn[index]);
         }
         makePlotly(data);
-    };
+      }
 
-    function processData(allRows) {
-        var x = [], y = [];
-        for (var i=0; i<allRows.length; i++) {
-            row = allRows[i];
-            x.push(row['x']);
-            y.push(row['y']);
+      function processData(allRows) {
+        var x = [],
+          y = [];
+        for (var i = 0; i < allRows.length; i++) {
+          row = allRows[i];
+          x.push(row["x"]);
+          y.push(row["y"]);
         }
-        return {x: x, y:y};
-    };
+        return { x: x, y: y };
+      }
 
-    function makePlotly(data){
-        var plotDiv = document.getElementById("plot");
+      function makePlotly(data) {
+        console.log("Creating plot");
         var traces = [
-            {
-                x: data['err'].x,
-                y: data['err'].y,
-                name: 'error',
-                xaxis: 'x',
-                yaxis: 'y2',
-            },
-            {
-                x: data['test'].x,
-                y: data['test'].y,
-                name: 'test',
-            },
-            {
-                name: 'lower bound',
-                x: data['low'].x,
-                y: data['low'].y,
-                showlegend: false,
-                line: {width: 0},
-                mode: 'lines'
-            },
-            {
-                x: data['ref'].x,
-                y: data['ref'].y,
-                name: 'reference',
-                fillcolor: 'rgba(68, 68, 68, 0.3)',
-                fill: 'tonexty',
-            },
-            {
-                name: 'upper bound',
-                x: data['upp'].x,
-                y: data['upp'].y,
-                showlegend: false,
-                fillcolor: 'rgba(68, 68, 68, 0.3)',
-                fill: 'tonexty',
-                line: {width: 0},
-                mode: 'lines'
-            },
+          {
+            x: data["err"].x,
+            y: data["err"].y,
+            name: "error",
+            xaxis: "x",
+            yaxis: "y2",
+          },
+          {
+            x: data["test"].x,
+            y: data["test"].y,
+            name: "test",
+          },
+          {
+            name: "lower bound",
+            x: data["low"].x,
+            y: data["low"].y,
+            showlegend: false,
+            line: { width: 0 },
+            mode: "lines",
+          },
+          {
+            x: data["ref"].x,
+            y: data["ref"].y,
+            name: "reference",
+            fillcolor: "rgba(68, 68, 68, 0.3)",
+            fill: "tonexty",
+          },
+          {
+            name: "upper bound",
+            x: data["upp"].x,
+            y: data["upp"].y,
+            showlegend: false,
+            fillcolor: "rgba(68, 68, 68, 0.3)",
+            fill: "tonexty",
+            line: { width: 0 },
+            mode: "lines",
+          },
         ];
         var layout = {
-            title: {text: '$TITLE'},
-            grid: {rows: 2, columns: 1, subplots: [['xy1'], ['xy2']]},
-            xaxis1: {
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'x',
-                anchor: 'y1',
-            },
-            yaxis1: {
-                domain: [0.3, 1],
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'y',
-            },
-            yaxis2: {
-                domain: [0, 0.18],
-                ticks: 'outside',
-                showline: true,
-                zeroline: false,
-                title: 'error [y]',
-            },
+          title: { text: "$TITLE" },
+          grid: { rows: 2, columns: 1, subplots: [["xy1"], ["xy2"]] },
+          xaxis1: {
+            ticks: "outside",
+            showline: true,
+            zeroline: false,
+            title: "x",
+            anchor: "y1",
+          },
+          yaxis1: {
+            domain: [0.3, 1],
+            ticks: "outside",
+            showline: true,
+            zeroline: false,
+            title: "y",
+          },
+          yaxis2: {
+            domain: [0, 0.18],
+            ticks: "outside",
+            showline: true,
+            zeroline: false,
+            title: "error [y]",
+          },
         };
-        Plotly.newPlot('myDiv', traces, layout, {responsive: true});
-    };
-
-    makeplot();
+        // Create the plot with a callback to handle completion
+        Plotly.newPlot("myDiv", traces, layout, { responsive: true })
+          .then(function () {
+            console.log("Plot rendered successfully");
+            // Force a resize to ensure plot is visible
+            window.dispatchEvent(new Event("resize"));
+          })
+          .catch(function (error) {
+            console.error("Error rendering plot:", error);
+          });
+      }
+      // Function to check if Plotly is loaded and then make the plot
+      function waitForPlotlyAndMakePlot() {
+        if (typeof Plotly !== "undefined") {
+          // Plotly is available, make the plot
+          makePlot();
+        } else {
+          // Plotly not yet available, check again in 100ms
+          setTimeout(waitForPlotlyAndMakePlot, 100);
+        }
+      }
+      // Start the plot process once everything is loaded
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", waitForPlotlyAndMakePlot);
+      } else {
+        // DOM is already loaded, call immediately
+        waitForPlotlyAndMakePlot();
+      }
     </script>
-</body>
+  </body>
 </html>

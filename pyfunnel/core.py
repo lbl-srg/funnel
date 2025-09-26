@@ -10,13 +10,14 @@ import numbers
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 import threading
 import time
 import webbrowser
 from ctypes import POINTER, c_char_p, c_double, c_int, cdll
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 __all__ = ['compareAndReport', 'MyHTTPServer', 'CORSRequestHandler', 'plot_funnel']
 
@@ -85,7 +86,7 @@ def follow(filehandler, timeout):
         yield line  # Else: yield line.
 
 
-def wait_until(somepredicate, timeout, period=0.1, *args, **kwargs):
+def wait_until(somepredicate, timeout, period=0.5, *args, **kwargs):
     """Waits until some predicate is true or timeout is over."""
     must_end = time.time() + timeout
     while time.time() < must_end:
@@ -102,16 +103,32 @@ def exit_test(logger, list_files=None):
         200: request received
         304: requested resource not modified since previous transmission
     """
-    content = logger.getvalue().decode('utf8')
-    if list_files is not None:
-        raw_pattern = r'GET.*?{}.*?(200|304)'
-        pattern = raw_pattern.format(re.escape(list_files[0]))  # *? for non-greedy search
-        for file_path in list_files[1:] if len(list_files) > 1 else []:
-            pattern = r'{}(.*\n)*.*{}'.format(
-                re.escape(pattern),
-                re.escape(raw_pattern.format(file_path)))
-        return bool(re.search(pattern, content))
-    else:
+    try:
+        # Use a 1MB limit for the logger content to prevent potential hanging
+        content_bytes = logger.getvalue()
+        content_size = len(content_bytes)
+        if content_size == 0:
+            return False
+
+        if content_size > 1024*1024:  # If over 1MB, truncate
+            print(f"Logger content too large ({content_size/1024/1024:.2f}MB), truncating for analysis")
+            content_bytes = content_bytes[-1024*1024:]  # Take last 1MB
+
+        content = content_bytes.decode('utf8', errors='replace')
+
+        # Short-circuit if no files to check
+        if list_files is None or len(list_files) == 0:
+            return False
+
+        # Check if any required file has been loaded
+        for file_path in list_files:
+            pattern = r'GET.*?{}.*?(200|304)'.format(re.escape(file_path))
+            if re.search(pattern, content):
+                return True
+
+        # If we get here, no match was found
+        return False
+    except Exception:
         return False
 
 
@@ -255,8 +272,8 @@ def compareAndReport(
     outputDirectory = outputDirectory.encode('utf-8')
 
     # Load library.
+    lib_path = _get_lib_path('funnel')
     try:
-        lib_path = _get_lib_path('funnel')
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
         raise RuntimeError(
@@ -313,7 +330,7 @@ def compareAndReport(
 #####################
 
 
-class MyHTTPServer(HTTPServer):
+class MyHTTPServer(ThreadingHTTPServer):
     """Add custom server_launch, server_close and browse methods."""
 
     def __init__(self, *args, **kwargs):
@@ -326,7 +343,7 @@ class MyHTTPServer(HTTPServer):
         str_html = kwargs.pop('str_html', None)
         url_html = kwargs.pop('url_html', None)
         browse_dir = kwargs.pop('browse_dir', os.getcwd())
-        HTTPServer.__init__(self, *args)
+        ThreadingHTTPServer.__init__(self, *args)
         self._STR_HTML = re.sub(r'\$SERVER_PORT', str(self.server_port), str_html)
         self._URL_HTML = url_html
         self._BROWSE_DIR = browse_dir
@@ -336,6 +353,14 @@ class MyHTTPServer(HTTPServer):
         self.thread = threading.Thread(target=self.serve_forever)
         self.thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         self.thread.start()
+
+    def is_server_alive(self):
+        """Check if the server is accepting connections."""
+        try:
+            with socket.create_connection(("localhost", self.server_port), timeout=1) as sock:
+                return True
+        except (socket.timeout, ConnectionRefusedError):
+            return False
 
     def server_close(self):
         # Invoke to close logger.
@@ -347,6 +372,15 @@ class MyHTTPServer(HTTPServer):
             self.logger.close()
         except Exception as e:
             print('Could not close logger: {}'.format(e))
+
+    def terminate_safely(self, process, timeout=2.0):
+        if process is not None and process.poll() is None:
+            try:
+                process.terminate()
+                process.wait(timeout=timeout)  # Wait for a maximum of timeout
+            except subprocess.TimeoutExpired:
+                process.kill()  # Force kill if terminate didn't work
+                process.wait()  # Wait for kill to complete
 
     def browse(self, *args, **kwargs):
         """Launch server, and web browser if available.
@@ -389,12 +423,20 @@ class MyHTTPServer(HTTPServer):
         cur_dir = os.getcwd()
         os.chdir(self._BROWSE_DIR)
 
+        proc = None
         try:
             self.server_launch()
+
+            # Wait for server to be ready to accept connections
+            server_ready = wait_until(self.is_server_alive, 5, 0.1)
+            if not server_ready:
+                print("Warning: Server may not be ready to accept connections")
+
             # Launch browser as a subprocess command to avoid web browser error into terminal.
             if launch_browser:
                 with open(os.devnull, 'w') as pipe:
                     proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
+
             # Watch syslog for error.
             chrome_error = False
             if platform.system() == 'Linux':
@@ -411,8 +453,9 @@ class MyHTTPServer(HTTPServer):
                                 if 'ERROR:gles2_cmd_decoder' in l:
                                     chrome_error = True
                                     break
+
             if chrome_error:
-                proc.terminate()  # Terminating the process does not stop Chrome in background.
+                self.terminate_safely(proc)  # Terminating the process does not stop Chrome in background.
                 subprocess.check_call(['pkill', 'chrome'])  # This does.
                 inp = 'y'
                 while True:  # Prompt user to retry.
@@ -444,22 +487,22 @@ class MyHTTPServer(HTTPServer):
                 else:
                     raise KeyboardInterrupt
 
-            print('Server will run for {} s (or until KeyboardInterrupt) at:\n'.format(timeout) + \
-                  'http://localhost:{}/funnel'.format(self.server_port))
-            wait_until(exit_test, timeout, 0.1, self.logger, *args)
+            print(f'Results available at http://localhost:{self.server_port}/funnel\n'
+                  f'(Press Ctrl+C to shut down server and continue.)')
+
+            wait_until(exit_test, timeout, 0.5, self.logger, *args)
+
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
         finally:
             os.chdir(cur_dir)
-            try:  # Objects may not be defined in case of exception.
-                self.server_close()
-                proc.terminate()
-            except BaseException:
-                pass
+            self.server_close()
+            self.terminate_safely(proc)
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
     """Enable logging message and modify response header."""
+    server: MyHTTPServer  # type: ignore[override]
 
     def log_message(self, format, *args):
         try:
@@ -484,7 +527,7 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
         if (self.server._URL_HTML is not None) and \
            (self.translate_path(self.path).endswith(self.server._URL_HTML)):
             f = io.BytesIO()
-            f.write(self.server._STR_HTML.encode('utf8'))
+            f.write(self.server._STR_HTML.encode('utf-8'))
             length = f.tell()
             f.seek(0)
             self.send_response(200)
