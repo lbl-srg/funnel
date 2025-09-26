@@ -137,7 +137,7 @@ jobs:
           name: binaries-.*
           name_is_regexp: true
           path: pyfunnel/lib/
-          merge-multiple: true
+          merge_multiple: true
 
       - name: Flatten artifact structure
         run: |
