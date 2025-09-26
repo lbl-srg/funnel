@@ -1,5 +1,6 @@
 # Binaries
 *.py[cod]
+pyfunnel/lib
 
 # Object files
 *.o

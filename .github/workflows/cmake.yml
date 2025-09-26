@@ -25,11 +25,11 @@ jobs:
       !contains(github.event.head_commit.message, 'ci skip')
     runs-on: ${{ matrix.os }}
     outputs:
-      result: ${{ steps.test.outcome }}
+      result: ${{ startsWith(matrix.os, 'ubuntu') && steps.ubuntu-test.outcome || steps.test.outcome }}
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, windows-2022, macos-14]
         python-version: ['3.8', '3.12']
 
     steps:
@@ -37,11 +37,73 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_call' && inputs.ref || github.ref }}
 
-      - name: Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1.12.1
+      - name: Get runner UID/GID
+        if: startsWith(matrix.os, 'ubuntu')
+        id: runner-info
+        run: echo "uid=$(id -u)" >> $GITHUB_OUTPUT && echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+
+      - name: Build in container for Ubuntu 20.04 (for broader compatibility)
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ubuntu:20.04
+          options: -v ${{ github.workspace }}:/home/runner/funnel
+          shell: bash
+          run: |
+            export DEBIAN_FRONTEND=noninteractive
+            export TZ=UTC
+            apt update
+            apt install -y software-properties-common build-essential wget
+            # Python install and venv setup
+            if [ "${{ matrix.python-version }}" == "3.8" ]; then
+              apt install -y python3 python3-pip python3-venv
+              PYTHON_CMD=python3
+            else
+              add-apt-repository ppa:deadsnakes/ppa
+              apt update && apt install -y \
+                python${{ matrix.python-version }} \
+                python${{ matrix.python-version }}-venv \
+                python${{ matrix.python-version }}-dev \
+                curl
+              PYTHON_CMD=python${{ matrix.python-version }}
+              # Install pip for the specific Python version
+              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+              $PYTHON_CMD get-pip.py
+              rm get-pip.py
+            fi
+            # Create group and user matching the runner
+            groupadd -g ${{ steps.runner-info.outputs.gid }} runnergroup
+            useradd -u ${{ steps.runner-info.outputs.uid }} -g runnergroup -m runner
+            chown -R runner:runnergroup /home/runner
+            # Build and test funnel as runner
+            su runner << 'EOF'
+            # CMake install
+            cd /home/runner
+            CMAKE_VERSION=3.22.6
+            wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+            tar -xzf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+            export PATH=$PWD/cmake-${CMAKE_VERSION}-linux-x86_64/bin:$PATH
+            echo "CMake version: " && cmake --version
+            # Create and activate virtual environment
+            $PYTHON_CMD -m venv /venv
+            source /venv/bin/activate
+            echo "Python version: " && python --version
+            cd /home/runner/funnel
+            pip install --upgrade pip
+            pip install ".[dev]"  # In Python 3.8 editable mode still requires setup.py
+            mkdir -p build && cd build && cmake ..
+            cmake --build . --target install --config ${{ env.BUILD_TYPE }}
+            ctest -C ${{ env.BUILD_TYPE }} --verbose
+            cd /home/runner/funnel
+            rm -rf pyfunnel.egg-info
+            EOF
+
+      - name: Enable Developer Command Prompt on Windows
         if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1.12.1
 
       - name: Setup cmake
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         uses: jwlawson/actions-setup-cmake@v1.13
         with:
           cmake-version: '3.22.x'
@@ -58,6 +120,7 @@ jobs:
           python -m pip install --user -e ".[dev]"
 
       - name: Create Build Environment
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         # Some projects don't allow in-source building, so create a separate build directory
         # We'll use this as our working directory for all subsequent commands.
         run: |
@@ -65,61 +128,39 @@ jobs:
           cmake -E make_directory ${{ github.workspace }}/build
 
       - name: Configure CMake
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         # Use a bash shell so we can use the same syntax for environment variable
         # access regardless of the host operating system
         shell: bash
         working-directory: ${{ github.workspace }}/build
-        # Note the current convention is to use the -S and -B options here to specify source
-        # and build directories, but this is only available with CMake 3.13 and higher.
-        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
         run: cmake ..
 
       - name: Build
         id: build
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         working-directory: ${{ github.workspace }}/build
         shell: bash
-        run: cmake --build . --target install --config $BUILD_TYPE
+        run: cmake --build . --target install --config ${{ env.BUILD_TYPE }}
 
       - name: Test
         id: test
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         working-directory: ${{ github.workspace }}/build
         shell: bash
-        run: ctest -C $BUILD_TYPE --verbose
+        run: ctest -C ${{ env.BUILD_TYPE }} --verbose
 
-      - name: Stage binaries
-        if: |
-          contains(matrix.python-version, '3.12') &&
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_call')
-          )
+      - name: Test simple test in latest Ubuntu
+        id: ubuntu-test
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
-          git config --global pull.rebase true
-          git add ${{ github.workspace }}/pyfunnel/lib
+          # Run the test from the directory with test data
+          cd tests/test_bin && funnel --reference trended.csv --test simulated.csv --atolx 0.002 --atoly 0.002
 
-      - name: Push Linux & macOS binaries
-        if: |
-          (contains(matrix.os, 'ubuntu') || matrix.os == 'macos-latest') &&
-          contains(matrix.python-version, '3.12') &&
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_call')
-          )
-        run: |
-          git config --global user.name "${GH_USERNAME}"
-          git config --global user.email "${GH_USERNAME}@users.noreply.github.com"
-          git diff-index --quiet HEAD || { git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push; }
-
-      # We use cmd /c because powershell <7 does not support chain operators.
-      - name: Push Windows binaries
-        if: |
-          matrix.os == 'windows-latest' &&
-          contains(matrix.python-version, '3.12') &&
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-            (github.event_name == 'workflow_call')
-          )
-        run: |
-          git config --global user.name "${{ env.GH_USERNAME }}"
-          git config --global user.email "${{ env.GH_USERNAME }}@users.noreply.github.com"
-          cmd /c 'git diff-index --quiet HEAD || ( git commit -m "Add ${{ matrix.os }} binaries" && git pull && git push )'
+      - name: Upload platform-specific binaries as artifacts
+        if: contains(matrix.python-version, '3.12')
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}
+          path: ${{ github.workspace }}/pyfunnel/lib/
+          retention-days: 30
+          if-no-files-found: error

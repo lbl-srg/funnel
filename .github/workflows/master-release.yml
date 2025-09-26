@@ -98,16 +98,6 @@ jobs:
             exit 1
           fi
 
-      - name: Check for binaries
-        run: |
-          if [ -d "pyfunnel/lib" ] && [ "$(ls -A pyfunnel/lib)" ]; then
-            echo "✅ Binaries found in pyfunnel/lib"
-            ls -la pyfunnel/lib/
-          else
-            echo "❌ No binaries found in pyfunnel/lib"
-            exit 1
-          fi
-
   merge-to-master:
     needs: validate-staging
     runs-on: ubuntu-latest
