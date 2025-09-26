@@ -1,6 +1,6 @@
 [project]
 name = "pyfunnel"
-version = "2.0.0"  # DO NOT CHANGE: this is automatically updated with 'cz bump'
+version = "2.0.1"  # DO NOT CHANGE: this is automatically updated with 'cz bump'
 authors = [
     {name = "A. Gautier", email = "agautier@lbl.gov"},
 ]

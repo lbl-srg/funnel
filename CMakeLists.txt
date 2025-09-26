@@ -16,7 +16,7 @@
 cmake_policy(SET CMP0048 NEW)
 cmake_minimum_required(VERSION 3.22)
 
-set(VERSION "2.0.0")  # DO NOT CHANGE: this is automatically updated with 'cz bump'
+set(VERSION "2.0.1")  # DO NOT CHANGE: this is automatically updated with 'cz bump'
 message("Project version is: ${VERSION}.")
 
 # Configure macOS universal build.

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v2.0.1 (2025-09-26)
+
+### Fix
+
+- Resolve execution hang and improve plotting display
+- Restore compatibility with Ubuntu 20.04
+
 ## v2.0.0 (2025-09-25)
 
 ### BREAKING CHANGE
