@@ -25,10 +25,6 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-#ifndef equ
-#define equ(a,b) (fabs(a-b) < 1e-10 ? true : false)
-#endif
-
 /*
  * Function: interpolateValues
  * ---------------------------
@@ -53,20 +49,22 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
   double* targetY = malloc(targetLength * sizeof(double));
   if (targetY == NULL){
   	  fputs("Error: Failed to allocate memory for targetY.\n", stderr);
-  	  exit(1);
+  	  return NULL;
   }
   int j = 1;
   double x, x0, x1, y0, y1;
 
   for (i=0; i<targetLength; i++) {
-    // Prevent extrapolating
+    /* Prevent extrapolating: hold the last source value for the remainder.
+       Shrinking the buffer here was unsafe -- compare() is handed the target
+       length regardless and read past the end -- and realloc(p, 0) at i == 0
+       may legitimately return NULL, which was then treated as a failure and
+       terminated the process. */
     if (targetX[i] > sourceX[sourceLength-1]) {
-      double *tmp = realloc(targetY, sizeof(double)*i);
-      if (tmp == NULL){
-    	  fputs("Error: Failed to reallocate memory for tmp.\n", stderr);
-    	  exit(1);
+      int k;
+      for (k = i; k < targetLength; k++) {
+        targetY[k] = sourceY[sourceLength-1];
       }
-      targetY = tmp;
       break;
     }
 
@@ -193,6 +191,16 @@ int validate(
   struct errorReport* err) {
     double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
     double *newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
+    if (newLower == NULL || newUpper == NULL) {
+      fputs("Error: Failed to interpolate the tube curves onto the test grid.\n", stderr);
+      if (newLower != lower.y) free(newLower);
+      if (newUpper != upper.y) free(newUpper);
+      return -1;
+    }
     int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
+    /* interpolateValues returns its own buffer, except in the degenerate case
+       where it hands back the source pointer -- which the caller still owns. */
+    if (newLower != lower.y) free(newLower);
+    if (newUpper != upper.y) free(newUpper);
     return retVal;
 }

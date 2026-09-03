@@ -8,23 +8,6 @@
 #ifndef ALGORITHMRECTANGLE_H_
 #define ALGORITHMRECTANGLE_H_
 
-typedef struct node {
-  double val;
-  struct node * next;
-} node_t;
-
-node_t * createNode(void);
-
-node_t * addNode(node_t* head, double newVal);
-
-int listLen(node_t* head);
-
-double getNth(node_t* head, int index);
-
-double * getListValues(node_t* head);
-
-void lastNodeDeletion(node_t* head);
-
 struct data getLower(struct data *reference, struct data *tube_size);
 
 struct data getUpper(struct data *reference, struct data *tube_size);

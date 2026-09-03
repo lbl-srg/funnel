@@ -34,6 +34,7 @@ int mkdir_p(const char *path)
     _path = (char*)malloc((len+1)*sizeof(char));
     if (_path == NULL){
       perror("Error: Failed to allocate memory for _path in mkdir_p.");
+      return -1;
     }
     errno = 0;
 
@@ -47,8 +48,10 @@ int mkdir_p(const char *path)
             *p = '\0';
 
             if (mkdir(_path, S_IRWXU) != 0) {
-                if (errno != EEXIST)
+                if (errno != EEXIST) {
+                    free(_path);
                     return -1;
+                }
             }
 
             *p = '/';
@@ -56,9 +59,12 @@ int mkdir_p(const char *path)
     }
 
     if (mkdir(_path, S_IRWXU) != 0) {
-        if (errno != EEXIST)
+        if (errno != EEXIST) {
+            free(_path);
             return -1;
+        }
     }
 
+    free(_path);
     return 0;
 }

@@ -5,6 +5,7 @@
 # Core functions for funnel Python binding
 #######################################################
 
+import functools
 import io
 import numbers
 import os
@@ -184,6 +185,49 @@ def _get_lib_path(project_name):
     return os.path.abspath(lib_path)
 
 
+@functools.lru_cache(maxsize=None)
+def _load_lib(lib_path):
+    """Load the funnel shared library once per process and configure its signature.
+
+    ``compareAndReport`` used to call ``cdll.LoadLibrary`` on every invocation.
+    ``dlopen`` is reference counted, so each call bumped a refcount that was never
+    dropped and built a fresh ``CDLL`` wrapper whose ``argtypes``/``restype`` had to
+    be reassigned -- per-call cost and a handle that outlived the call, for a library
+    whose path never changes within a process. Caching on the path keeps the
+    behaviour identical while loading and configuring it exactly once.
+
+    Args:
+        lib_path (str): absolute path to the funnel shared library
+
+    Returns:
+        ctypes.CDLL: loaded library with ``compareAndReport`` signature configured
+    """
+    try:
+        lib = cdll.LoadLibrary(lib_path)
+    except Exception as e:
+        raise RuntimeError(
+            "Could not load funnel library with this path: {}. {}".format(
+                lib_path, e))
+
+    lib.compareAndReport.argtypes = [
+        POINTER(c_double),
+        POINTER(c_double),
+        c_int,
+        POINTER(c_double),
+        POINTER(c_double),
+        c_int,
+        c_char_p,
+        c_double,
+        c_double,
+        c_double,
+        c_double,
+        c_double,
+        c_double]
+    lib.compareAndReport.restype = c_int
+
+    return lib
+
+
 def compareAndReport(
     xReference,
     yReference,
@@ -271,31 +315,8 @@ def compareAndReport(
     # Encode string arguments (in Python 3 c_char_p takes bytes object).
     outputDirectory = outputDirectory.encode('utf-8')
 
-    # Load library.
-    lib_path = _get_lib_path('funnel')
-    try:
-        lib = cdll.LoadLibrary(lib_path)
-    except Exception as e:
-        raise RuntimeError(
-            "Could not load funnel library with this path: {}. {}".format(
-                lib_path, e))
-
-    # Map arguments.
-    lib.compareAndReport.argtypes = [
-        POINTER(c_double),
-        POINTER(c_double),
-        c_int,
-        POINTER(c_double),
-        POINTER(c_double),
-        c_int,
-        c_char_p,
-        c_double,
-        c_double,
-        c_double,
-        c_double,
-        c_double,
-        c_double]
-    lib.compareAndReport.restype = c_int
+    # Load library (once per process) with its arguments already mapped.
+    lib = _load_lib(_get_lib_path('funnel'))
 
     # Run
     try:
