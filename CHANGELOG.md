@@ -1,18 +1,15 @@
 # CHANGELOG
 
-## v2.0.2 (2026-09-08)
+## v2.0.2 (2026-09-10)
 
 ### Fix
 
-- Linear time and memory in compareAndReport, and library-safe error handling
-- Report setData's unallocated-struct error to stderr
+- Eliminate quadratic memory growth in the tube construction
+- Return errors from the library instead of terminating the process
+- Give equ a single, magnitude-relative definition
 - Stop readCSV overflowing its buffers by one element
 - Reject empty or NULL input series in compareAndReport
 - Free input data when directory creation fails in compareAndReport
-- Give equ a single, magnitude-relative definition
-- Compare x endpoints relative to their magnitude
-- Return errors from the library instead of terminating the process
-- Eliminate quadratic memory growth in the tube construction
 
 ### Perf
 
