@@ -195,15 +195,29 @@ int compareAndReport(
   const double rtoly
 ) {
   int retVal;
-  int rc_mkdir = mkdir_p(outputDirectory);
-  struct data *baseCSV = newData(nReference);
-  struct data *testCSV = newData(nTest);
-  struct data *tube_size = newData(nReference);
+  int rc_mkdir;
+  struct data *baseCSV;
+  struct data *testCSV;
+  struct data *tube_size;
   /* Declared here, and zeroed, so that the cleanup at `end` can free them
      whichever `goto end` was taken. */
   struct data lowerCurve = {NULL, NULL, 0};
   struct data upperCurve = {NULL, NULL, 0};
   struct reports validateReport = {{{NULL, NULL, 0}, {NULL, NULL, 0}}};
+
+  /* Reject empty or missing series before any allocation: newData(0) would
+     otherwise hand back a malloc(0) pointer that passes the NULL check, and
+     the x[0] / x[n - 1] accesses below would read out of bounds. */
+  if (tReference == NULL || yReference == NULL || nReference == 0 ||
+      tTest == NULL || yTest == NULL || nTest == 0) {
+    fputs("Error: Reference and test data must each have at least one point.\n", stderr);
+    return -1;
+  }
+
+  rc_mkdir = mkdir_p(outputDirectory);
+  baseCSV = newData(nReference);
+  testCSV = newData(nTest);
+  tube_size = newData(nReference);
   if (baseCSV == NULL || testCSV == NULL || tube_size == NULL) {
     fputs("Error: Failed to allocate memory for the input data.\n", stderr);
     freeData(baseCSV);
