@@ -30,10 +30,6 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-#ifndef equ
-#define equ(a,b) (fabs(a-b) < 1e-10 ? true : false)
-#endif
-
 
 /*
  * Function: minValue

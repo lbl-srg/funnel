@@ -1,10 +1,6 @@
 #include <math.h>
 #include "compare.h"
 
-#ifndef equ
-#define equ(a,b) (fabs((a)-(b)) < 1e-10 ? true : false)  /* (b) required by Win32 compiler for <0 values */
-#endif
-
 /*
 *   Descriptor of the file used for logging the numerical processing errors
 *   (all other errors like memory, file access, bad argument...
@@ -40,7 +36,8 @@ char *buildPath(
     fname = (char*)malloc((strlen(outDir) + strlen(fileName) + 1) * sizeof(char));
 
   if (fname == NULL){
-    perror("Error: Failed to allocate memory for fname in writeToFile.");
+    perror("Error: Failed to allocate memory for fname in buildPath.");
+    return NULL;
   }
 
   strcpy(fname, outDir);
@@ -74,8 +71,9 @@ FILE *init_log(
   const char *fileName
 ) {
   char *fname = buildPath(outDir, fileName);
+  if (fname == NULL) return NULL;
   FILE *fil = fopen(fname, "w+");
-  if (fname != NULL) free(fname);
+  free(fname);
 
   if (fil == NULL){
     perror("Error: Failed to open log.\n");
@@ -102,13 +100,16 @@ int writeToFile(
   size_t i = 0;
 
   char *fname = buildPath(outDir, fileName);
+  if (fname == NULL) return -1;
   FILE *fil = fopen(fname, "w+");
-  if (fname != NULL) free(fname);
 
   if (fil == NULL){
+    /* fname used to be freed before it was printed here. */
     fprintf(log_file, "Error: Failed to open '%s' in writeToFile.\n", fname);
+    free(fname);
     return -1;
   }
+  free(fname);
 
   fprintf(fil, "%s\n", "x,y");
   for (i = 0; i < data->n; i++) {
@@ -126,21 +127,21 @@ struct data *newData(
   struct data *retVal = malloc(sizeof(struct data));
   if (retVal == NULL)
   {
-    fputs("Error: Failed to allocate memory for data.\n", log_file);
+    fputs("Error: Failed to allocate memory for data.\n", stderr);
     return NULL;
   }
   // Try to allocate vector data, free structure if fail.
 
   retVal->x = malloc(n * sizeof(double));
   if (retVal->x == NULL) {
-    fputs("Error: Failed to allocate memory for data.x.\n", log_file);
+    fputs("Error: Failed to allocate memory for data.x.\n", stderr);
     free (retVal);
     return NULL;
   }
 
   retVal->y = malloc(n * sizeof(double));
   if (retVal->y == NULL) {
-    fputs("Error: Failed to allocate memory for data.y.\n", log_file);
+    fputs("Error: Failed to allocate memory for data.y.\n", stderr);
     free (retVal->x);
     free (retVal);
     return NULL;
@@ -160,14 +161,15 @@ void setData(
     memcpy(dat->x, x, sizeof(double) * dat->n);
     memcpy(dat->y, y, sizeof(double) * dat->n);
   } else {
-    fputs("Error: Cannot set data for unallocated struct.\n", log_file);
+    fputs("Error: Cannot set data for unallocated struct.\n", stderr);
   }
 }
 
 void freeData(struct data *dat) {
+  if (dat == NULL) return;
   if (dat->x != NULL) free (dat->x);
   if (dat->y != NULL) free (dat->y);
-  if (dat != NULL) free (dat);
+  free (dat);
 }
 
 /*
@@ -193,18 +195,53 @@ int compareAndReport(
   const double rtoly
 ) {
   int retVal;
-  int rc_mkdir = mkdir_p(outputDirectory);
-  struct data *baseCSV = newData(nReference);
-  struct data *testCSV = newData(nTest);
-  struct data *tube_size = newData(nReference);
+  int rc_mkdir;
+  struct data *baseCSV;
+  struct data *testCSV;
+  struct data *tube_size;
+  /* Declared here, and zeroed, so that the cleanup at `end` can free them
+     whichever `goto end` was taken. */
+  struct data lowerCurve = {NULL, NULL, 0};
+  struct data upperCurve = {NULL, NULL, 0};
+  struct reports validateReport = {{{NULL, NULL, 0}, {NULL, NULL, 0}}};
+
+  /* Reject empty or missing series before any allocation: newData(0) would
+     otherwise hand back a malloc(0) pointer that passes the NULL check, and
+     the x[0] / x[n - 1] accesses below would read out of bounds. */
+  if (tReference == NULL || yReference == NULL || nReference == 0 ||
+      tTest == NULL || yTest == NULL || nTest == 0) {
+    fputs("Error: Reference and test data must each have at least one point.\n", stderr);
+    return -1;
+  }
+
+  rc_mkdir = mkdir_p(outputDirectory);
+  baseCSV = newData(nReference);
+  testCSV = newData(nTest);
+  tube_size = newData(nReference);
+  if (baseCSV == NULL || testCSV == NULL || tube_size == NULL) {
+    fputs("Error: Failed to allocate memory for the input data.\n", stderr);
+    freeData(baseCSV);
+    freeData(testCSV);
+    freeData(tube_size);
+    return -1;
+  }
   setData(baseCSV, tReference, yReference);
   setData(testCSV, tTest, yTest);
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
+    freeData(baseCSV);
+    freeData(testCSV);
+    freeData(tube_size);
     return -1;
   }
   log_file = init_log(outputDirectory, "c_funnel.log");
+  if (log_file == NULL) {
+    /* Losing the log is not a reason to lose the comparison, but every
+       later fprintf() would dereference NULL. */
+    fputs("Error: Failed to open the log file; logging to stderr.\n", stderr);
+    log_file = stderr;
+  }
 
   if (!equ(baseCSV->x[0], testCSV->x[0])){
     fprintf(log_file, "Error: Reference and test data minimum x values are different.\n");
@@ -229,17 +266,15 @@ int compareAndReport(
   set_tube_size(tube_size, baseCSV, tolerances);
 
   // Calculate values of lower and upper curve around base
-  struct data lowerCurve = getLower(baseCSV, tube_size);
-  struct data upperCurve = getUpper(baseCSV, tube_size);
+  lowerCurve = getLower(baseCSV, tube_size);
+  upperCurve = getUpper(baseCSV, tube_size);
 
   // Validate test curve and generate error report
-  if (lowerCurve.n == 0 || lowerCurve.n == 0){
+  if (lowerCurve.n == 0 || upperCurve.n == 0){
     fputs("Error: lower or upper curve has 0 elements.\n", log_file);
     retVal = 1;
     goto end;
   }
-  struct reports validateReport;
-
   retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
   if (retVal != 0){
     fputs("Error: Failed to run validate function.\n", log_file);
@@ -277,6 +312,17 @@ int compareAndReport(
     freeData(baseCSV);
     freeData(testCSV);
     freeData(tube_size);
-    fclose(log_file);
+    /* getLower/getUpper and validate hand back heap arrays that nothing else
+       owns; without these the whole per-call working set stayed allocated for
+       the lifetime of the process that loaded the library. */
+    if (lowerCurve.x != NULL) free(lowerCurve.x);
+    if (lowerCurve.y != NULL) free(lowerCurve.y);
+    if (upperCurve.x != NULL) free(upperCurve.x);
+    if (upperCurve.y != NULL) free(upperCurve.y);
+    if (validateReport.errors.original.x != NULL) free(validateReport.errors.original.x);
+    if (validateReport.errors.original.y != NULL) free(validateReport.errors.original.y);
+    if (validateReport.errors.diff.x != NULL) free(validateReport.errors.diff.x);
+    if (validateReport.errors.diff.y != NULL) free(validateReport.errors.diff.y);
+    if (log_file != stderr) fclose(log_file);
     return retVal;
 }

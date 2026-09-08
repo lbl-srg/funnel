@@ -32,7 +32,11 @@ publish = [
 ]
 
 [build-system]
-requires = ["setuptools>=78.1.1", "wheel>=0.37.0"]
+requires = [
+    "setuptools>=78.1.1; python_version >= '3.9'",
+    "setuptools>=75.3.2,<75.4.0; python_version < '3.9'",
+    "wheel>=0.37.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project.urls]

@@ -45,7 +45,9 @@ int file_exist (const char *filename)
  */
 struct data readCSV(const char * filename, int skipLines) {
   int i;
-  struct data inputs;
+  /* On any failure this is returned unchanged: n == 0 tells the caller that
+     nothing was read. Terminating the process is not a library's decision. */
+  struct data inputs = {NULL, NULL, 0};
   double *time;
   double *value;
   int arraySize = 1;
@@ -57,36 +59,42 @@ struct data readCSV(const char * filename, int skipLines) {
   if (!file_exist(filename))
   {
     fprintf(stderr, "No such file: %s\n", filename);
-    exit(1);
+    return inputs;
   }
 
   fp = fopen(filename, "r");
   if (!(fp)) {
     fprintf(stderr, "Cannot open file: %s\n", filename);
-    exit(1);
+    return inputs;
   }
 
-  time = malloc(sizeof(double) * arraySize);
+  /* fscanf() below writes time[rowCount]/value[rowCount] before the
+     rowCount == arraySize test grows the buffers, so their capacity is kept
+     one element ahead of arraySize (as the realloc in the loop already does). */
+  time = malloc(sizeof(double) * (arraySize + 1));
   if (time == NULL){
     fputs("Error: Failed to allocate memory for time.\n", stderr);
     fclose(fp);
-    exit(1);
+    return inputs;
   }
-  value = malloc(sizeof(double) * arraySize);
+  value = malloc(sizeof(double) * (arraySize + 1));
   if (value == NULL){
     fputs("Error: Failed to allocate memory for value.\n", stderr);
     fclose(fp);
-    exit(1);
+    free(time);
+    return inputs;
   }
 
-  memset(time,0,sizeof(double)*arraySize);
-  memset(value,0,sizeof(double)*arraySize);
+  memset(time,0,sizeof(double)*(arraySize+1));
+  memset(value,0,sizeof(double)*(arraySize+1));
 
   for (i=0; i<skipLines; i++) {
     if (fgets(buf, 100, fp) == NULL) { // skip the first "skipLines" lines
       fputs("Error: Failed to skip lines with fgets.\n", stderr);
       fclose(fp);
-      exit(1);
+      free(time);
+      free(value);
+      return inputs;
     }
   }
 
@@ -99,7 +107,9 @@ struct data readCSV(const char * filename, int skipLines) {
       if (time_tmp == NULL || value_tmp == NULL) {
         fputs("Fatal error -- out of memory!\n", stderr);
         fclose(fp);
-        exit(1);
+        free(time_tmp != NULL ? time_tmp : time);
+        free(value_tmp != NULL ? value_tmp : value);
+        return inputs;
       }
       time = time_tmp;
       value = value_tmp;
