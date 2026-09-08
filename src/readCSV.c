@@ -68,13 +68,16 @@ struct data readCSV(const char * filename, int skipLines) {
     return inputs;
   }
 
-  time = malloc(sizeof(double) * arraySize);
+  /* fscanf() below writes time[rowCount]/value[rowCount] before the
+     rowCount == arraySize test grows the buffers, so their capacity is kept
+     one element ahead of arraySize (as the realloc in the loop already does). */
+  time = malloc(sizeof(double) * (arraySize + 1));
   if (time == NULL){
     fputs("Error: Failed to allocate memory for time.\n", stderr);
     fclose(fp);
     return inputs;
   }
-  value = malloc(sizeof(double) * arraySize);
+  value = malloc(sizeof(double) * (arraySize + 1));
   if (value == NULL){
     fputs("Error: Failed to allocate memory for value.\n", stderr);
     fclose(fp);
@@ -82,8 +85,8 @@ struct data readCSV(const char * filename, int skipLines) {
     return inputs;
   }
 
-  memset(time,0,sizeof(double)*arraySize);
-  memset(value,0,sizeof(double)*arraySize);
+  memset(time,0,sizeof(double)*(arraySize+1));
+  memset(value,0,sizeof(double)*(arraySize+1));
 
   for (i=0; i<skipLines; i++) {
     if (fgets(buf, 100, fp) == NULL) { // skip the first "skipLines" lines
