@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## v2.0.2 (2026-09-08)
+
+### Fix
+
+- Linear time and memory in compareAndReport, and library-safe error handling
+- Report setData's unallocated-struct error to stderr
+- Stop readCSV overflowing its buffers by one element
+- Reject empty or NULL input series in compareAndReport
+- Free input data when directory creation fails in compareAndReport
+- Give equ a single, magnitude-relative definition
+- Compare x endpoints relative to their magnitude
+- Return errors from the library instead of terminating the process
+- Eliminate quadratic memory growth in the tube construction
+
+### Perf
+
+- Build the tube outline in an array, not a linked list
+- Load the shared library once per process, not once per call
+
 ## v2.0.1 (2025-09-26)
 
 ### Fix
