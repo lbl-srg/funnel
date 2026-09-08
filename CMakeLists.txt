@@ -31,24 +31,24 @@ enable_testing()
 
 # Detect OS.
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
-    set(WINDOWS 1)
-    message("Windows system detected.")
+  set(WINDOWS 1)
+  message("Windows system detected.")
 elseif(CMAKE_SYSTEM_NAME MATCHES Linux)
-    set(LINUX 1)
-    message("Linux system detected.")
+  set(LINUX 1)
+  message("Linux system detected.")
 elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
-    set(MACOSX 1)
-    message("Mac OS X system detected.")
+  set(MACOSX 1)
+  message("Mac OS X system detected.")
 else()
-    message(FATAL_ERROR "OS unknown!")
+  message(FATAL_ERROR "OS unknown!")
 endif()
 
 # Set compiling and linking options.
 if(LINUX OR MACOSX)
-    set(CMAKE_C_FLAGS "-fPIC -Wall -Wextra -Werror -Wfloat-equal -Wpedantic -O3")
-    set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
+  set(CMAKE_C_FLAGS "-fPIC -Wall -Wextra -Werror -Wfloat-equal -Wpedantic -O3")
+  set(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
 else()
-    set(CMAKE_C_FLAGS "/Wall /O2")
+  set(CMAKE_C_FLAGS "/Wall /O2")
 endif()
 
 message("CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
@@ -56,19 +56,19 @@ message("CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 # Set target directories.
 # NOTE: always add quotes to protect spaces in path when setting new variables.
 if (WINDOWS)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
-        set(PLATFORM_INSTALL_PREFIX win64)
-    else()
-        set(PLATFORM_INSTALL_PREFIX win32)
-    endif()
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
+    set(PLATFORM_INSTALL_PREFIX win64)
+  else()
+    set(PLATFORM_INSTALL_PREFIX win32)
+  endif()
 elseif(LINUX)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
-        set(PLATFORM_INSTALL_PREFIX linux64)
-    else()
-        set(PLATFORM_INSTALL_PREFIX linux32)
-    endif()
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
+    set(PLATFORM_INSTALL_PREFIX linux64)
+  else()
+    set(PLATFORM_INSTALL_PREFIX linux32)
+  endif()
 elseif(MACOSX)
-    set(PLATFORM_INSTALL_PREFIX darwin64)
+  set(PLATFORM_INSTALL_PREFIX darwin64)
 endif()
 
 set(ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/pyfunnel/lib/${PLATFORM_INSTALL_PREFIX}")
@@ -89,7 +89,9 @@ add_subdirectory(tests)
 ############################################################
 
 # Manage tests.
-find_package (Python)
+find_program(Python_EXECUTABLE NAMES python3 python REQUIRED)  # Searches $PATH, matches `which python3`.
+find_package(Python REQUIRED COMPONENTS Interpreter)           # Accepts Python_EXECUTABLE as a hint, validates it.
+
 message("Python interpreter used for testing: ${Python_EXECUTABLE}")
 set(CTEST_OUTPUT_ON_FAILURE ON)  # verbose if failed test
 set(CMAKE_TEST_DIR "${CMAKE_SOURCE_DIR}/tests")
@@ -142,24 +144,24 @@ file(
 list(LENGTH TEST_CASES len_tmp)
 math(EXPR len_tests "${len_tmp} - 1")
 foreach(t RANGE ${len_tests})
-    list(GET TEST_CASES ${t} test_case)
-    set(test_name test_numerics_${t})
-    set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
-    set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
-    set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST}
+  list(GET TEST_CASES ${t} test_case)
+  set(test_name test_numerics_${t})
+  set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
+  set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
+  set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST}
         \"${CMAKE_COMMAND} -E make_directory ${tmp_dir}\""
     )
-    add_test(
+  add_test(
         NAME ${test_name}
         COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_numerics.py ${test_name} ${test_dir} ${tmp_dir}
         WORKING_DIRECTORY ${tmp_dir}
     )
-    if (${test_case} MATCHES "fail4")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
-        set_tests_properties(${test_name} PROPERTIES PASS_REGULAR_EXPRESSION "Failed to create directory")
-    endif()
-    if (${test_case} MATCHES "fail(2|6)")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
-        set_tests_properties(${test_name} PROPERTIES PASS_REGULAR_EXPRESSION "Reference and test data maximum x values are different")
-    endif()
+  if (${test_case} MATCHES "fail4")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
+    set_tests_properties(${test_name} PROPERTIES PASS_REGULAR_EXPRESSION "Failed to create directory")
+  endif()
+  if (${test_case} MATCHES "fail(2|6)")  # WILL_FAIL shall not be used simultaneously with PASS_REGULAR_EXPRESSION!
+    set_tests_properties(${test_name} PROPERTIES PASS_REGULAR_EXPRESSION "Reference and test data maximum x values are different")
+  endif()
 endforeach()
 
 ## Plot function testing.
