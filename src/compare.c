@@ -216,6 +216,9 @@ int compareAndReport(
 
   if (rc_mkdir != 0) {
     fprintf(stderr, "Error: Failed to create directory: %s\n", outputDirectory);
+    freeData(baseCSV);
+    freeData(testCSV);
+    freeData(tube_size);
     return -1;
   }
   log_file = init_log(outputDirectory, "c_funnel.log");
