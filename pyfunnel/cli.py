@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """Standalone command-line interface for the funnel C library.
 
@@ -14,11 +13,11 @@ import os
 import sys
 from pathlib import Path
 
-# Add current directory to path if needed (CLI script run without package install)
-if __name__ == "__main__":
-    current_dir = Path(__file__).parent
-    if str(current_dir) not in sys.path:
-        sys.path.insert(0, str(current_dir))
+# Add repo root to path if needed (CLI script run without package install)
+if __name__ == '__main__':
+    repo_root = Path(__file__).resolve().parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
 
 from pyfunnel import compareAndReport
 
@@ -55,17 +54,25 @@ def main():
     required_named = parser.add_argument_group('required named arguments')
 
     required_named.add_argument(
-        '--reference', help='Path of two-column CSV file with reference data', required=True
+        '--reference',
+        help='Path of two-column CSV file with reference data',
+        required=True,
     )
     required_named.add_argument(
-        '--test', help='Path of two-column CSV file with test data', required=True
+        '--test',
+        help='Path of two-column CSV file with test data',
+        required=True,
     )
     parser.add_argument(
         '--output',
         help='Path of directory to store output data',
     )
-    parser.add_argument('--atolx', type=float, help='Absolute tolerance along x axis')
-    parser.add_argument('--atoly', type=float, help='Absolute tolerance along y axis')
+    parser.add_argument(
+        '--atolx', type=float, help='Absolute tolerance along x axis'
+    )
+    parser.add_argument(
+        '--atoly', type=float, help='Absolute tolerance along y axis'
+    )
     parser.add_argument(
         '--ltolx',
         type=float,
@@ -77,18 +84,22 @@ def main():
         help='Relative tolerance along y axis (relatively to the local value)',
     )
     parser.add_argument(
-        '--rtolx', type=float, help='Relative tolerance along x axis (relatively to the range)'
+        '--rtolx',
+        type=float,
+        help='Relative tolerance along x axis (relatively to the range)',
     )
     parser.add_argument(
-        '--rtoly', type=float, help='Relative tolerance along y axis (relatively to the range)'
+        '--rtoly',
+        type=float,
+        help='Relative tolerance along y axis (relatively to the range)',
     )
 
     # Parse the arguments.
     args = parser.parse_args()
 
     # Check the arguments.
-    assert os.path.isfile(args.reference), 'No such file: {}'.format(args.reference)
-    assert os.path.isfile(args.test), 'No such file: {}'.format(args.test)
+    assert os.path.isfile(args.reference), f'No such file: {args.reference}'
+    assert os.path.isfile(args.test), f'No such file: {args.test}'
 
     # Extract data from files.
     data = dict()
@@ -98,10 +109,8 @@ def main():
             spamreader = csv.reader(csvfile)
             for i, row in enumerate(spamreader):
                 if (l := len(row)) != 2:
-                    raise IOError(
-                        'The {} CSV file must have exactly two columns. Row {} contains {} elements.'.format(
-                            s, i, l
-                        )
+                    raise OSError(
+                        f'The {s} CSV file must have exactly two columns. Row {i} contains {l} elements.'
                     )
                 try:
                     data[s]['x'].append(float(row[0]))
