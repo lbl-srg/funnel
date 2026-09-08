@@ -161,7 +161,7 @@ void setData(
     memcpy(dat->x, x, sizeof(double) * dat->n);
     memcpy(dat->y, y, sizeof(double) * dat->n);
   } else {
-    fputs("Error: Cannot set data for unallocated struct.\n", log_file);
+    fputs("Error: Cannot set data for unallocated struct.\n", stderr);
   }
 }
 
