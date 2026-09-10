@@ -139,21 +139,15 @@ jobs:
           path: pyfunnel/lib/
           merge_multiple: true
 
-      - name: Flatten artifact structure
+      - name: Prune non-runtime files from binaries
         run: |
-          # Move files from nested directories to target structure
-          find pyfunnel/lib/binaries-* -type f -exec sh -c '
-            for file; do
-              # Extract the platform directory (darwin64, linux64, win64)
-              platform_dir=$(dirname "$file" | sed "s/.*binaries-[^/]*\///")
-              target_dir="pyfunnel/lib/$platform_dir"
-              mkdir -p "$target_dir"
-              mv "$file" "$target_dir/"
-            done
-          ' _ {} +
-
-          # Clean up empty artifact directories
-          rm -rf pyfunnel/lib/binaries-*
+          # Keep only the runtime shared libraries; drop build by-products
+          # such as the MSVC import lib (funnel.lib), .exp, .pdb, headers, etc.
+          find pyfunnel/lib -type f \
+            ! -name '*.dll' ! -name '*.so' ! -name '*.dylib' \
+            -print -delete
+          # Remove any directories left empty by the prune
+          find pyfunnel/lib -mindepth 1 -type d -empty -delete
 
       - name: Check for binaries
         run: |
