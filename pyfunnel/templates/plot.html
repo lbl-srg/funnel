@@ -32,30 +32,30 @@
         myDiv.innerHTML = '<div style="text-align:center;padding-top:100px;">Loading data...</div>';
 
         // Check if server is accessible first
-        fetch(`http://localhost:$SERVER_PORT/`)
+        fetch("/")
           .then(response => {
             if (!response.ok) {
               throw new Error(`Server not accessible (status: ${response.status})`);
             }
             // Server is accessible, proceed with data loading
             return Promise.all([
-              fetch("http://localhost:$SERVER_PORT/reference.csv").then((response) => {
+              fetch("/reference.csv").then((response) => {
                 if (!response.ok) throw new Error(`Error fetching reference.csv: ${response.status}`);
                 return response.text();
               }),
-              fetch("http://localhost:$SERVER_PORT/test.csv").then((response) => {
+              fetch("/test.csv").then((response) => {
                 if (!response.ok) throw new Error(`Error fetching test.csv: ${response.status}`);
                 return response.text();
               }),
-              fetch("http://localhost:$SERVER_PORT/errors.csv").then((response) => {
+              fetch("/errors.csv").then((response) => {
                 if (!response.ok) throw new Error(`Error fetching errors.csv: ${response.status}`);
                 return response.text();
               }),
-              fetch("http://localhost:$SERVER_PORT/lowerBound.csv").then((response) => {
+              fetch("/lowerBound.csv").then((response) => {
                 if (!response.ok) throw new Error(`Error fetching lowerBound.csv: ${response.status}`);
                 return response.text();
               }),
-              fetch("http://localhost:$SERVER_PORT/upperBound.csv").then((response) => {
+              fetch("/upperBound.csv").then((response) => {
                 if (!response.ok) throw new Error(`Error fetching upperBound.csv: ${response.status}`);
                 return response.text();
               }),

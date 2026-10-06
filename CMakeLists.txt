@@ -172,6 +172,13 @@ add_test(
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
+## Local HTTP server testing.
+add_test(
+    NAME test_server
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_server.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
+)
+
 ## Configure pre/post test.
 set(CTEST_CUSTOM_POST_TEST
     "${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_summary.py ${CMAKE_TEST_DIR}"

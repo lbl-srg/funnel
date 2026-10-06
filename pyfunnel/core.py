@@ -16,6 +16,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.parse
 import webbrowser
 from ctypes import POINTER, c_char_p, c_double, c_int, cdll
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -150,8 +151,10 @@ def plot_funnel(test_dir, title="", browser=None):
         _TEMPLATE_HTML = f.read()
 
     content = re.sub(r'\$TITLE', title, _TEMPLATE_HTML)
-    server = MyHTTPServer(('', 0), CORSRequestHandler,
-                          str_html=content, url_html='funnel', browse_dir=test_dir)
+    # Only listen on the loopback interface, so that test_dir is not exposed on the network.
+    server = MyHTTPServer(('127.0.0.1', 0), CORSRequestHandler,
+                          str_html=content, url_html='funnel', browse_dir=test_dir,
+                          allowed_paths=list_files)
     server.browse(list_files, browser=browser)
 
 
@@ -354,26 +357,40 @@ def compareAndReport(
 class MyHTTPServer(ThreadingHTTPServer):
     """Add custom server_launch, server_close and browse methods."""
 
+    # On Windows, SO_REUSEADDR allows binding to a port that is already in use.
+    allow_reuse_address = os.name != 'nt'
+
     def __init__(self, *args, **kwargs):
         """kwargs:
 
             str_html (str): HTML content to serve if URL ends with url_html
             url_html (str): pattern used to serve str_html if URL ends with it
             browse_dir (str): path of directory where to launch the server
+            allowed_paths (list of str): files and directories, relative to browse_dir,
+                that can be requested, see CORSRequestHandler
+                (default: None, meaning that the whole browse_dir can be requested)
         """
         str_html = kwargs.pop('str_html', None)
-        url_html = kwargs.pop('url_html', None)
-        browse_dir = kwargs.pop('browse_dir', os.getcwd())
-        ThreadingHTTPServer.__init__(self, *args)
-        self._STR_HTML = re.sub(r'\$SERVER_PORT', str(self.server_port), str_html)
-        self._URL_HTML = url_html
-        self._BROWSE_DIR = browse_dir
+        self._URL_HTML = kwargs.pop('url_html', None)
+        self._BROWSE_DIR = kwargs.pop('browse_dir', os.getcwd())
+        allowed_paths = kwargs.pop('allowed_paths', None)
+        self.allowed_paths = None if allowed_paths is None else list(allowed_paths)
+        # Attributes used by server_close must exist before binding the port:
+        # if binding fails, ThreadingHTTPServer.__init__ calls server_close.
         self.logger = io.BytesIO()
+        self.thread = None
+        ThreadingHTTPServer.__init__(self, *args)
+        self._STR_HTML = None if str_html is None else \
+            re.sub(r'\$SERVER_PORT', str(self.server_port), str_html)
 
     def server_launch(self):
         self.thread = threading.Thread(target=self.serve_forever)
         self.thread.daemon = True  # daemonic thread objects are terminated as soon as the main thread exits
         self.thread.start()
+
+    def _shutdown_and_close(self):
+        self.shutdown()
+        ThreadingHTTPServer.server_close(self)
 
     def is_server_alive(self):
         """Check if the server is accepting connections."""
@@ -385,10 +402,15 @@ class MyHTTPServer(ThreadingHTTPServer):
 
     def server_close(self):
         # Invoke to close logger.
-        # makes execution stall on Windows if main thread
-        threadd = threading.Thread(target=self.shutdown)
-        threadd.daemon = True
-        threadd.start()
+        if self.thread is None:
+            # Server never started (for instance if binding the port failed):
+            # shutdown would wait forever for serve_forever to exit.
+            ThreadingHTTPServer.server_close(self)
+        else:
+            # Shutdown makes execution stall on Windows if called from main thread.
+            threadd = threading.Thread(target=self._shutdown_and_close)
+            threadd.daemon = True
+            threadd.start()
         try:
             self.logger.close()
         except Exception as e:
@@ -522,7 +544,15 @@ class MyHTTPServer(ThreadingHTTPServer):
 
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
-    """Enable logging message and modify response header."""
+    """Enable logging message and restrict the files that can be requested.
+
+    Any web page opened in the browser can send requests to the server.
+    If server.allowed_paths is not None, only str_html, the paths in
+    server.allowed_paths and an empty response for '/' (used to check that
+    the server is accessible) are served, and directories are not listed.
+    No CORS header is sent (despite the class name, kept for compatibility):
+    the HTML pages served by the server only send requests to the same origin.
+    """
     server: MyHTTPServer  # type: ignore[override]
 
     def log_message(self, format, *args):
@@ -538,15 +568,16 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             print(e)
 
-    def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With')
-        SimpleHTTPRequestHandler.end_headers(self)
+    def is_url_html(self):
+        """Test if str_html must be served: exact URL if paths are restricted."""
+        if self.server._URL_HTML is None:
+            return False
+        if self.server.allowed_paths is None:
+            return self.translate_path(self.path).endswith(self.server._URL_HTML)
+        return urllib.parse.urlsplit(self.path).path == '/' + self.server._URL_HTML
 
     def send_head(self):
-        if (self.server._URL_HTML is not None) and \
-           (self.translate_path(self.path).endswith(self.server._URL_HTML)):
+        if self.is_url_html():
             f = io.BytesIO()
             f.write(self.server._STR_HTML.encode('utf-8'))
             length = f.tell()
@@ -556,5 +587,34 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(length))
             self.end_headers()
             return f
-        else:
+        elif self.server.allowed_paths is None:
             return SimpleHTTPRequestHandler.send_head(self)
+        elif urllib.parse.urlsplit(self.path).path == '/':
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return io.BytesIO()
+        elif self.is_allowed():
+            return SimpleHTTPRequestHandler.send_head(self)
+        else:
+            self.send_error(404)
+            return None
+
+    def list_directory(self, path):
+        if self.server.allowed_paths is None:
+            return SimpleHTTPRequestHandler.list_directory(self, path)
+        self.send_error(404)
+        return None
+
+    def is_allowed(self):
+        """Test if the requested path is within server.allowed_paths.
+
+        Resolved paths are compared so that neither '..' nor symbolic links
+        give access to files outside of the allowed paths.
+        """
+        real_path = os.path.realpath(self.translate_path(self.path))
+        for p in self.server.allowed_paths:
+            allowed = os.path.realpath(os.path.join(self.directory, p))
+            if real_path == allowed or real_path.startswith(allowed + os.sep):
+                return True
+        return False
