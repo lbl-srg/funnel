@@ -79,7 +79,8 @@ class TestRequestHandler(unittest.TestCase):
         self.tmp_dir = tempfile.mkdtemp()
         for f in ['allowed.csv', 'secret.txt', os.path.join('dir', 'allowed.csv')]:
             os.makedirs(os.path.join(self.tmp_dir, os.path.dirname(f)), exist_ok=True)
-            with open(os.path.join(self.tmp_dir, f), 'w') as fh:
+            # No newline translation, so that the served content is the same on Windows.
+            with open(os.path.join(self.tmp_dir, f), 'w', newline='') as fh:
                 fh.write('SECRET' if f == 'secret.txt' else 'x,y\n')
         # The handler serves the current directory.
         os.chdir(self.tmp_dir)
