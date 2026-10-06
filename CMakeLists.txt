@@ -148,9 +148,8 @@ foreach(t RANGE ${len_tests})
   set(test_name test_numerics_${t})
   set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
   set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
-  set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST}
-        \"${CMAKE_COMMAND} -E make_directory ${tmp_dir}\""
-    )
+  # Paths are quoted as they may contain spaces, e.g. C:/Program Files/... on Windows.
+  list(APPEND PRE_TEST_COMMANDS "\"${CMAKE_COMMAND}\" -E make_directory \"${tmp_dir}\"")
   add_test(
         NAME ${test_name}
         COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_numerics.py ${test_name} ${test_dir} ${tmp_dir}
@@ -180,14 +179,20 @@ add_test(
 )
 
 ## Configure pre/post test.
-set(CTEST_CUSTOM_POST_TEST
-    "${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_summary.py ${CMAKE_TEST_DIR}"
+set(POST_TEST_COMMAND
+    "\"${Python_EXECUTABLE}\" \"${CMAKE_TEST_DIR}/test_summary.py\" \"${CMAKE_TEST_DIR}\""
 )
+# Write each command as a quoted CMake string, escaping the quotes around paths.
+set(pre_test "")
+foreach(cmd IN LISTS PRE_TEST_COMMANDS)
+  string(REPLACE "\"" "\\\"" cmd "${cmd}")
+  string(APPEND pre_test "\n        \"${cmd}\"")
+endforeach()
+string(REPLACE "\"" "\\\"" post_test "${POST_TEST_COMMAND}")
 set(content "# Numerics testing configuration file
-    set(CTEST_CUSTOM_PRE_TEST
-        ${CTEST_CUSTOM_PRE_TEST})
+    set(CTEST_CUSTOM_PRE_TEST${pre_test})
     set(CTEST_CUSTOM_POST_TEST
-        \"${CTEST_CUSTOM_POST_TEST}\")"
+        \"${post_test}\")"
 )
 file(WRITE
     "${CMAKE_BINARY_DIR}/CTestCustom.cmake"
