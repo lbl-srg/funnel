@@ -56,13 +56,28 @@ message("CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 # Set target directories.
 # NOTE: always add quotes to protect spaces in path when setting new variables.
 if (WINDOWS)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
+  # Use the target architecture, which can differ from the host processor,
+  # e.g., -A x64 on Windows ARM64. Must match the directory selected in pyfunnel/core.py.
+  if(CMAKE_C_COMPILER_ARCHITECTURE_ID)  # Set by MSVC: x64, ARM64, X86.
+    string(TOUPPER "${CMAKE_C_COMPILER_ARCHITECTURE_ID}" TARGET_ARCH)
+  elseif(CMAKE_GENERATOR_PLATFORM)  # Set with -A for Visual Studio generators.
+    string(TOUPPER "${CMAKE_GENERATOR_PLATFORM}" TARGET_ARCH)
+  else()
+    string(TOUPPER "${CMAKE_SYSTEM_PROCESSOR}" TARGET_ARCH)
+  endif()
+  if(TARGET_ARCH MATCHES "ARM64")
+    set(PLATFORM_INSTALL_PREFIX winarm64)
+  elseif(TARGET_ARCH MATCHES ".*64$")
     set(PLATFORM_INSTALL_PREFIX win64)
   else()
     set(PLATFORM_INSTALL_PREFIX win32)
   endif()
 elseif(LINUX)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
+  # Must match the directory selected in pyfunnel/core.py.
+  string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" TARGET_ARCH)
+  if(TARGET_ARCH MATCHES "^(aarch64|arm64)$")
+    set(PLATFORM_INSTALL_PREFIX linuxarm64)
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(PLATFORM_INSTALL_PREFIX linux64)
   else()
     set(PLATFORM_INSTALL_PREFIX linux32)
@@ -170,6 +185,13 @@ add_test(
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}/test_bin"
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
+
+## Library path testing.
+add_test(
+    NAME test_lib_path
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_lib_path.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
+)
 
 ## Local HTTP server testing.
 add_test(

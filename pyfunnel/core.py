@@ -14,6 +14,7 @@ import re
 import socket
 import subprocess
 import sys
+import sysconfig
 import threading
 import time
 import urllib.parse
@@ -171,15 +172,27 @@ def _get_lib_path(project_name):
     os_name = platform.system()
     os_machine = platform.machine()
     if os_name == 'Windows':
-        if os_machine.endswith('64'):
-            lib_path = os.path.join(lib_path, 'win64', '{}.dll'.format(project_name))
-        else:
-            lib_path = os.path.join(lib_path, 'win32', '{}.dll'.format(project_name))
+        # Use the architecture of the Python process, which must match the library's,
+        # rather than the architecture of the host, given by platform.machine(), which differs
+        # for instance for x64 Python emulated on Windows ARM64.
+        python_platform = sysconfig.get_platform()
+        lib_dir = {'win-amd64': 'win64', 'win-arm64': 'winarm64', 'win32': 'win32'}.get(python_platform)
+        if lib_dir is None:
+            raise RuntimeError('No funnel library for this Python platform: {}.'.format(python_platform))
+        lib_path = os.path.join(lib_path, lib_dir, '{}.dll'.format(project_name))
     elif os_name == 'Linux':
-        if os_machine.endswith('64'):
-            lib_path = os.path.join(lib_path, 'linux64', 'lib{}.so'.format(project_name))
+        # platform.machine() gives the architecture of the kernel: also check
+        # the pointer size of the Python process, e.g., for 32-bit Python on x86_64.
+        machine = os_machine.lower()
+        is_64bit = sys.maxsize > 2**32
+        if machine in ('aarch64', 'arm64') and is_64bit:
+            lib_dir = 'linuxarm64'
+        elif machine in ('x86_64', 'amd64', 'i386', 'i486', 'i586', 'i686'):
+            lib_dir = 'linux64' if is_64bit else 'linux32'
         else:
-            lib_path = os.path.join(lib_path, 'linux32', 'lib{}.so'.format(project_name))
+            raise RuntimeError('No funnel library for this architecture: {} ({}-bit Python).'.format(
+                os_machine, 64 if is_64bit else 32))
+        lib_path = os.path.join(lib_path, lib_dir, 'lib{}.so'.format(project_name))
     elif os_name == 'Darwin':
         lib_path = os.path.join(lib_path, 'darwin64', 'lib{}.dylib'.format(project_name))
     else:
@@ -205,6 +218,14 @@ def _load_lib(lib_path):
     Returns:
         ctypes.CDLL: loaded library with ``compareAndReport`` signature configured
     """
+    if not os.path.isfile(lib_path):
+        lib_root = os.path.dirname(os.path.dirname(lib_path))
+        available = sorted(os.listdir(lib_root)) if os.path.isdir(lib_root) else []
+        raise RuntimeError(
+            "No funnel library for this platform ({}, Python {}): {} does not exist. "
+            "Libraries are available for: {}.".format(
+                platform.system(), sysconfig.get_platform(), lib_path,
+                ', '.join(available) if available else 'none'))
     try:
         lib = cdll.LoadLibrary(lib_path)
     except Exception as e:
