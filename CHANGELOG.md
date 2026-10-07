@@ -5,7 +5,7 @@
 ### Feat
 
 - Restrict files served by MyHTTPServer with allowed_paths (#104)
-- Select the library from the architecture of the Python process
+- Support creating arm64 libraries on Windows and Linux
 
 ### Fix
 
