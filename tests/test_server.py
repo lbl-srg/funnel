@@ -13,6 +13,7 @@ import warnings
 from test_import import *
 
 from pyfunnel import CORSRequestHandler, MyHTTPServer
+from pyfunnel.core import exit_test
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PLOT_FILES = ['reference.csv', 'test.csv', 'errors.csv', 'lowerBound.csv', 'upperBound.csv']
@@ -136,6 +137,30 @@ class TestRequestHandler(unittest.TestCase):
         self.assertIn(b'secret.txt', body)
         self.assertEqual(get(port, '/secret.txt')[0], 200)
         self.assertEqual(get(port, '/x/funnel')[2], b'<p>page</p>')
+
+    def test_exit_test(self):
+        """Files in subdirectories are detected whatever the path separator and the URL encoding."""
+        for f in ['a[1].csv', 'b c.csv']:
+            with open(os.path.join(self.tmp_dir, 'dir', f), 'w') as fh:
+                fh.write('x,y\n')
+        # Native path separators, as given by os.path.join.
+        list_files = [os.path.join('dir', f) for f in ['allowed.csv', 'a[1].csv', 'b c.csv']]
+        port = self.start(allowed_paths=['dir'])
+        self.assertFalse(exit_test(self.server, list_files))
+        self.assertFalse(exit_test(self.server, []))
+        for path in ['/funnel', '/dir/allowed.csv', '/dir/missing.csv', '/secret.txt',
+                     '/dir/a[1].csv']:
+            get(port, path)
+        # Requests yielding 404 are not counted.
+        self.assertFalse(exit_test(self.server, list_files))
+        self.assertFalse(exit_test(self.server, ['secret.txt']))
+        get(port, '/dir/b%20c.csv?t=0')
+        self.assertTrue(exit_test(self.server, list_files))
+
+    def test_browse_dir_absolute(self):
+        """browse changes the current directory: a relative browse_dir must be resolved first."""
+        self.start(browse_dir='dir')
+        self.assertEqual(self.server._BROWSE_DIR, os.path.join(os.getcwd(), 'dir'))
 
 
 class TestPlotFunnel(unittest.TestCase):

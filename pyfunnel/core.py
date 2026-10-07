@@ -99,41 +99,29 @@ def wait_until(somepredicate, timeout, period=0.5, *args, **kwargs):
     return False
 
 
-def exit_test(logger, list_files=None):
+def _real_path(path):
+    """Return the path resolved and normalized for comparison, e.g., case-insensitive on Windows."""
+    return os.path.normcase(os.path.realpath(path))
+
+
+def exit_test(server, list_files=None):
     """Test if listed files have been loaded by server.
 
-    Based on log of HTTP response status codes:
-        200: request received
-        304: requested resource not modified since previous transmission
+    Args:
+        server (MyHTTPServer): server, which stores the paths of the files served
+        list_files (list of str): paths of the files, relative to the directory of the server
     """
-    try:
-        # Use a 1MB limit for the logger content to prevent potential hanging
-        content_bytes = logger.getvalue()
-        content_size = len(content_bytes)
-        if content_size == 0:
-            return False
-
-        if content_size > 1024*1024:  # If over 1MB, truncate
-            print(f"Logger content too large ({content_size/1024/1024:.2f}MB), truncating for analysis")
-            content_bytes = content_bytes[-1024*1024:]  # Take last 1MB
-
-        content = content_bytes.decode('utf8', errors='replace')
-
-        # Short-circuit if no files to check
-        if list_files is None or len(list_files) == 0:
-            return False
-
-        # Check if all required files have been loaded (in any order, as the browser
-        # requests them concurrently): shutting down after the first one may prevent
-        # the others from being served.
-        for file_path in list_files:
-            pattern = r'GET.*?{}.*?(200|304)'.format(re.escape(file_path))
-            if not re.search(pattern, content):
-                return False
-
-        return True
-    except Exception:
+    # Short-circuit if no files to check
+    if list_files is None or len(list_files) == 0:
         return False
+
+    # Check if all required files have been loaded (in any order, as the browser
+    # requests them concurrently): shutting down after the first one may prevent
+    # the others from being served.
+    # The resolved file paths are compared, rather than the URLs in the log of the requests,
+    # so that the test does not depend on the path separator or the URL encoding.
+    return all(_real_path(os.path.join(server._BROWSE_DIR, f)) in server.served_paths
+               for f in list_files)
 
 
 def plot_funnel(test_dir, title="", browser=None):
@@ -394,9 +382,12 @@ class MyHTTPServer(ThreadingHTTPServer):
         """
         str_html = kwargs.pop('str_html', None)
         self._URL_HTML = kwargs.pop('url_html', None)
-        self._BROWSE_DIR = kwargs.pop('browse_dir', os.getcwd())
+        # Absolute path, as browse changes the current directory to browse_dir.
+        self._BROWSE_DIR = os.path.abspath(kwargs.pop('browse_dir', os.getcwd()))
         allowed_paths = kwargs.pop('allowed_paths', None)
         self.allowed_paths = None if allowed_paths is None else list(allowed_paths)
+        # Resolved paths of the files served, see exit_test.
+        self.served_paths = set()
         # Attributes used by server_close must exist before binding the port:
         # if binding fails, ThreadingHTTPServer.__init__ calls server_close.
         self.logger = io.BytesIO()
@@ -545,8 +536,9 @@ class MyHTTPServer(ThreadingHTTPServer):
                     cmd = re.sub(r'get\(.*?\)', 'get("{}")'.format(browser), cmd)
                     webbrowser_cmd = [sys.executable, '-c', cmd]
                 if inp == 'y' or inp == 'p':
-                    # Re initialize logger so wait_until is effective.
+                    # Re initialize logger and served files so wait_until is effective.
                     self.logger = io.BytesIO()
+                    self.served_paths.clear()
                     with open(os.devnull, 'w') as pipe:
                         proc = subprocess.Popen(webbrowser_cmd, stdout=pipe, stderr=pipe)
                 else:
@@ -555,7 +547,7 @@ class MyHTTPServer(ThreadingHTTPServer):
             print(f'Results available at http://localhost:{self.server_port}/funnel\n'
                   f'(Press Ctrl+C to shut down server and continue.)')
 
-            wait_until(exit_test, timeout, 0.5, self.logger, *args)
+            wait_until(exit_test, timeout, 0.5, self, *args)
 
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
@@ -576,6 +568,13 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
     the HTML pages served by the server only send requests to the same origin.
     """
     server: MyHTTPServer  # type: ignore[override]
+
+    def log_request(self, code='-', size='-'):
+        # Store the files served, see exit_test.
+        # 304: requested resource not modified since previous transmission.
+        if self.command == 'GET' and code in (200, 304):
+            self.server.served_paths.add(_real_path(self.translate_path(self.path)))
+        SimpleHTTPRequestHandler.log_request(self, code, size)
 
     def log_message(self, format, *args):
         try:
