@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v2.1.0 (2026-10-07)
+
+### Feat
+
+- Restrict files served by MyHTTPServer with allowed_paths (#104)
+- Select the library from the architecture of the Python process
+
+### Fix
+
+- Require all files instead of any file in exit_test
+
 ## v2.0.2 (2026-09-10)
 
 ### Fix
