@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.1.1 (2026-10-07)
+
+### Fix
+
+- Detect files served by MyHTTPServer from resolved paths in exit_test (#106)
+
 ## v2.1.0 (2026-10-07)
 
 ### Feat
