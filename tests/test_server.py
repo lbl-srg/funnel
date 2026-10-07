@@ -148,8 +148,9 @@ class TestPlotFunnel(unittest.TestCase):
         def client(server):
             status, _, page = get(server.server_port, '/funnel')
             info['page'] = (status, page)
-            info['files'] = [get(server.server_port, '/' + f)[0] for f in PLOT_FILES]
             info['root'] = get(server.server_port, '/')[2]
+            # Last, as the server shuts down once all files have been requested.
+            info['files'] = [get(server.server_port, '/' + f)[0] for f in PLOT_FILES]
 
         def launch(server):
             server_launch(server)

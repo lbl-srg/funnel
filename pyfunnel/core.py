@@ -123,14 +123,15 @@ def exit_test(logger, list_files=None):
         if list_files is None or len(list_files) == 0:
             return False
 
-        # Check if any required file has been loaded
+        # Check if all required files have been loaded (in any order, as the browser
+        # requests them concurrently): shutting down after the first one may prevent
+        # the others from being served.
         for file_path in list_files:
             pattern = r'GET.*?{}.*?(200|304)'.format(re.escape(file_path))
-            if re.search(pattern, content):
-                return True
+            if not re.search(pattern, content):
+                return False
 
-        # If we get here, no match was found
-        return False
+        return True
     except Exception:
         return False
 
