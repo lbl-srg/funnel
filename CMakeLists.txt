@@ -2,7 +2,7 @@
 #
 # @directions:
 #   Build from root/build/. with commands:
-#   > cmake .. (add `-A x64` on Windows to compile in 64 bits, MSVC compiles in 32 bits by default)
+#   > cmake ..
 #   > cmake --build . --target install (add `--config Release` on Windows, MSVC compiles in Debug mode by default)
 #   > ctest --verbose (add `-C Release` on Windows + add -R {lib, py or num} to specify a specific set of tests)
 #
@@ -56,13 +56,28 @@ message("CMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 # Set target directories.
 # NOTE: always add quotes to protect spaces in path when setting new variables.
 if (WINDOWS)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
+  # Use the target architecture, which can differ from the host processor,
+  # e.g., -A x64 on Windows ARM64. Must match the directory selected in pyfunnel/core.py.
+  if(CMAKE_C_COMPILER_ARCHITECTURE_ID)  # Set by MSVC: x64, ARM64, X86.
+    string(TOUPPER "${CMAKE_C_COMPILER_ARCHITECTURE_ID}" TARGET_ARCH)
+  elseif(CMAKE_GENERATOR_PLATFORM)  # Set with -A for Visual Studio generators.
+    string(TOUPPER "${CMAKE_GENERATOR_PLATFORM}" TARGET_ARCH)
+  else()
+    string(TOUPPER "${CMAKE_SYSTEM_PROCESSOR}" TARGET_ARCH)
+  endif()
+  if(TARGET_ARCH MATCHES "ARM64")
+    set(PLATFORM_INSTALL_PREFIX winarm64)
+  elseif(TARGET_ARCH MATCHES ".*64$")
     set(PLATFORM_INSTALL_PREFIX win64)
   else()
     set(PLATFORM_INSTALL_PREFIX win32)
   endif()
 elseif(LINUX)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*64$")
+  # Must match the directory selected in pyfunnel/core.py.
+  string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" TARGET_ARCH)
+  if(TARGET_ARCH MATCHES "^(aarch64|arm64)$")
+    set(PLATFORM_INSTALL_PREFIX linuxarm64)
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(PLATFORM_INSTALL_PREFIX linux64)
   else()
     set(PLATFORM_INSTALL_PREFIX linux32)
@@ -148,9 +163,8 @@ foreach(t RANGE ${len_tests})
   set(test_name test_numerics_${t})
   set(test_dir "${CMAKE_TEST_DIR}/${test_case}")
   set(tmp_dir "${CMAKE_TEST_DIR}/${test_name}")
-  set(CTEST_CUSTOM_PRE_TEST "${CTEST_CUSTOM_PRE_TEST}
-        \"${CMAKE_COMMAND} -E make_directory ${tmp_dir}\""
-    )
+  # Paths are quoted as they may contain spaces, e.g. C:/Program Files/... on Windows.
+  list(APPEND PRE_TEST_COMMANDS "\"${CMAKE_COMMAND}\" -E make_directory \"${tmp_dir}\"")
   add_test(
         NAME ${test_name}
         COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_numerics.py ${test_name} ${test_dir} ${tmp_dir}
@@ -172,15 +186,35 @@ add_test(
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
-## Configure pre/post test.
-set(CTEST_CUSTOM_POST_TEST
-    "${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_summary.py ${CMAKE_TEST_DIR}"
+## Library path testing.
+add_test(
+    NAME test_lib_path
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_lib_path.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
 )
+
+## Local HTTP server testing.
+add_test(
+    NAME test_server
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_server.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
+)
+
+## Configure pre/post test.
+set(POST_TEST_COMMAND
+    "\"${Python_EXECUTABLE}\" \"${CMAKE_TEST_DIR}/test_summary.py\" \"${CMAKE_TEST_DIR}\""
+)
+# Write each command as a quoted CMake string, escaping the quotes around paths.
+set(pre_test "")
+foreach(cmd IN LISTS PRE_TEST_COMMANDS)
+  string(REPLACE "\"" "\\\"" cmd "${cmd}")
+  string(APPEND pre_test "\n        \"${cmd}\"")
+endforeach()
+string(REPLACE "\"" "\\\"" post_test "${POST_TEST_COMMAND}")
 set(content "# Numerics testing configuration file
-    set(CTEST_CUSTOM_PRE_TEST
-        ${CTEST_CUSTOM_PRE_TEST})
+    set(CTEST_CUSTOM_PRE_TEST${pre_test})
     set(CTEST_CUSTOM_POST_TEST
-        \"${CTEST_CUSTOM_POST_TEST}\")"
+        \"${post_test}\")"
 )
 file(WRITE
     "${CMAKE_BINARY_DIR}/CTestCustom.cmake"
