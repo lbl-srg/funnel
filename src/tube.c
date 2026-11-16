@@ -82,8 +82,14 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
     x0 = sourceX[j-1];
     y0 = sourceY[j-1];
 
-    // Prevent NaN -> division by zero
-    if (!equ((x1-x0)*(x-x0), 0)) {
+    /* Prevent NaN -> division by zero.
+       This used to test equ((x1-x0)*(x-x0), 0), an absolute 1e-10 threshold on
+       a product of two x-differences: on a grid whose step is below 1e-5 the
+       product falls under it for every segment, so the tube was read as
+       y0 instead of being interpolated and the reference lay outside its own
+       tube. Only a zero-width segment needs the guard; for x == x0 the
+       interpolation already yields y0. */
+    if (x1 > x0) {
       targetY[i] = y0 + (((y1 - y0) / (x1 - x0)) * (x - x0));
     } else {
       targetY[i] = y0;

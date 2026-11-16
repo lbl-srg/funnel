@@ -32,6 +32,25 @@
 #define inline __inline
 #endif
 
+/*
+ * Function: slopeSign
+ * -------------------
+ *   sign of the step from y0 to y1 of the reference curve: 1 - increasing,
+ *   0 - constant, -1 - decreasing
+ *
+ *   A step that equ() considers zero is constant. Using the exact sign of
+ *   y1 - y0 instead classifies floating-point noise (e.g. 4e-13 on a plateau
+ *   written by a simulator) as a rise or a fall. getLower and getUpper then
+ *   add a pair of corner points at each of these spurious extrema, and the
+ *   pairs overlap or run backwards in x as soon as atolx exceeds the spacing
+ *   of the x values. Because equ() is also what detects identical points and
+ *   equal slopes, the exact sign made the classification inconsistent with
+ *   those tests (issues #107 and #108).
+ */
+static inline int slopeSign(double y1, double y0) {
+  return equ(y1, y0) ? 0 : sign(y1 - y0);
+}
+
 
 /* Normalize variable array by variable magnitude */
 void normalize(double *var, size_t length, double var_mag) {
@@ -144,7 +163,7 @@ struct data getLower(struct data *reference, struct data *tube_size) {
 
   if (b+1 < reference->n) {
   	  // slopes of reference curve (initialization)
-  	  s0 = sign(reference->y[b+1] - reference->y[b]);
+  	  s0 = slopeSign(reference->y[b+1], reference->y[b]);
   	  if (!equ(x_norm[b+1], x_norm[b])) {
   		  m0 = (reference->y[b+1] - reference->y[b]) / (x_norm[b+1] - x_norm[b]);
   	  } else {
@@ -163,7 +182,7 @@ struct data getLower(struct data *reference, struct data *tube_size) {
   			  continue;
 
   		  // slopes of reference curve
-  		  s1 = sign(reference->y[i+1] - reference->y[i]);
+  		  s1 = slopeSign(reference->y[i+1], reference->y[i]);
   		  if (!equ(x_norm[i+1], x_norm[i])) {
   			  m1 = (reference->y[i+1] - reference->y[i]) / (x_norm[i+1] - x_norm[i]);
   		  } else {
@@ -305,7 +324,7 @@ struct data getUpper(struct data *reference, struct data *tube_size) {
 
   if (b+1 < reference->n) {
 	  // slopes of reference curve (initialization)
-	  s0 = sign(reference->y[b+1] - reference->y[b]);
+	  s0 = slopeSign(reference->y[b+1], reference->y[b]);
 	  if (!equ(x_norm[b+1], x_norm[b])) {
 		  m0 = (reference->y[b+1] - reference->y[b]) / (x_norm[b+1] - x_norm[b]);
 	  } else {
@@ -324,7 +343,7 @@ struct data getUpper(struct data *reference, struct data *tube_size) {
 			  continue;
 
 		  // slopes of reference curve
-		  s1 = sign(reference->y[i+1] - reference->y[i]);
+		  s1 = slopeSign(reference->y[i+1], reference->y[i]);
 		  if (!equ(x_norm[i+1], x_norm[i])) {
 			  m1 = (reference->y[i+1] - reference->y[i]) / (x_norm[i+1] - x_norm[i]);
 		  } else {

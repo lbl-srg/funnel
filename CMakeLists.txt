@@ -186,6 +186,13 @@ add_test(
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
+## Identical reference and test must give zero error.
+add_test(
+    NAME test_identical
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_identical.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
+)
+
 ## Library path testing.
 add_test(
     NAME test_lib_path
