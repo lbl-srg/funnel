@@ -275,7 +275,7 @@ int compareAndReport(
     retVal = 1;
     goto end;
   }
-  retVal = validate(lowerCurve, upperCurve, *testCSV, &validateReport.errors);
+  retVal = validate(lowerCurve, upperCurve, *baseCSV, *tube_size, *testCSV, &validateReport.errors);
   if (retVal != 0){
     fputs("Error: Failed to run validate function.\n", log_file);
     goto end;
