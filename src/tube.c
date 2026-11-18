@@ -174,12 +174,76 @@ int compare(double* lower, double* upper, int refLen,
 
 
 /*
+ * Function: containReference
+ * --------------------------
+ *   widen the tube bounds, interpolated onto the test x values, so that they
+ *   contain the reference itself plus or minus the tube half-height there
+ *
+ *   The tube is the reference swept by the rectangle [-tx, tx] x [-ty, ty]: at
+ *   any x the points ref(x) - ty and ref(x) + ty are inside it, whatever the
+ *   rest of the reference does. The polylines from getLower/getUpper can miss
+ *   them (round-off in the corner-point construction, equ()'s absolute 1e-10
+ *   floor on a signal of magnitude 1e-9, a cluster of event times 1e-14
+ *   apart), and then a test equal to the reference fails. Widening to these
+ *   points never puts a bound outside the true tube, so no real violation is
+ *   hidden; it only removes errors at samples the tube contains.
+ *
+ *   At an x the reference holds several times (an event), every value it takes
+ *   there counts. Between two reference points the reference is interpolated
+ *   and the smaller of the two half-heights is used, which stays inside the
+ *   tube when the tolerances vary along x.
+ *
+ *   lower, upper: the bounds at test->x, modified in place
+ */
+/* bit-identical x values (an event repeats x exactly); avoids -Wfloat-equal */
+static inline int sameX(double a, double b) { return !(a < b) && !(a > b); }
+
+static void containReference(double *lower, double *upper,
+  const struct data *reference, const struct data *tube_size,
+  const struct data *test) {
+  size_t i, j = 0;
+  size_t n = reference->n;
+  if (n == 0) return;
+  for (i = 0; i < test->n; i++) {
+    double x = test->x[i];
+    double lo, hi;
+    while (j + 1 < n && reference->x[j + 1] < x) j++;
+    if (x <= reference->x[0]) {
+      j = 0;
+    }
+    /* reference points at exactly x: take them all */
+    size_t k = (reference->x[j] < x) ? j + 1 : j;
+    if (k < n && sameX(reference->x[k], x)) {
+      lo = reference->y[k] - tube_size->y[k];
+      hi = reference->y[k] + tube_size->y[k];
+      for (k = k + 1; k < n && sameX(reference->x[k], x); k++) {
+        if (reference->y[k] - tube_size->y[k] < lo) lo = reference->y[k] - tube_size->y[k];
+        if (reference->y[k] + tube_size->y[k] > hi) hi = reference->y[k] + tube_size->y[k];
+      }
+    } else if (j + 1 < n && reference->x[j] < x && x < reference->x[j + 1]) {
+      double x0 = reference->x[j], x1 = reference->x[j + 1];
+      double y = reference->y[j] + (reference->y[j + 1] - reference->y[j]) * ((x - x0) / (x1 - x0));
+      double h = tube_size->y[j] < tube_size->y[j + 1] ? tube_size->y[j] : tube_size->y[j + 1];
+      lo = y - h;
+      hi = y + h;
+    } else {
+      continue;  /* outside the reference's x range: nothing to add */
+    }
+    if (lo < lower[i]) lower[i] = lo;
+    if (hi > upper[i]) upper[i] = hi;
+  }
+}
+
+/*
  * Function: validate
  * ------------------
  *   validate test curve and generate error report
  *
  *   lower: data structure for lower curve
  *   upper: data structure for upper curve
+ *   reference: data structure for reference curve
+ *   tube_size: data structure for the tube half-width (x) and half-height (y)
+ *     at each reference point
  *   test: data structure for test curve
  *
  *   return: 0 if there was success
@@ -187,6 +251,8 @@ int compare(double* lower, double* upper, int refLen,
 int validate(
   const struct data lower,
   const struct data upper,
+  const struct data reference,
+  const struct data tube_size,
   const struct data test,
   struct errorReport* err) {
     double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
@@ -197,6 +263,7 @@ int validate(
       if (newUpper != upper.y) free(newUpper);
       return -1;
     }
+    containReference(newLower, newUpper, &reference, &tube_size, &test);
     int retVal = compare(newLower, newUpper, test.n, test.y, test.x, test.n, err);
     /* interpolateValues returns its own buffer, except in the degenerate case
        where it hands back the source pointer -- which the caller still owns. */

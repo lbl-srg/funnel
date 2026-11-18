@@ -200,6 +200,13 @@ add_test(
     WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
 )
 
+## The reference lies inside its own tube: zero error for an identical test.
+add_test(
+    NAME test_reference_in_tube
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_reference_in_tube.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
+)
+
 ## Configure pre/post test.
 set(POST_TEST_COMMAND
     "\"${Python_EXECUTABLE}\" \"${CMAKE_TEST_DIR}/test_summary.py\" \"${CMAKE_TEST_DIR}\""

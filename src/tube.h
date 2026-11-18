@@ -17,6 +17,8 @@ int compare(double* lower, double* upper, int refLen,
 int validate(
   const struct data lower,
   const struct data upper,
+  const struct data reference,
+  const struct data tube_size,
   const struct data test,
   struct errorReport* err);
 
