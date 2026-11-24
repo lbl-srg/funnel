@@ -186,6 +186,13 @@ add_test(
 )
 set_tests_properties(test_plot PROPERTIES FAIL_REGULAR_EXPRESSION "Exception;Error;Traceback")
 
+## Tube testing: what is inside the tube and what is not.
+add_test(
+    NAME test_tube
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_TEST_DIR}/test_tube.py
+    WORKING_DIRECTORY "${CMAKE_TEST_DIR}"
+)
+
 ## Library path testing.
 add_test(
     NAME test_lib_path

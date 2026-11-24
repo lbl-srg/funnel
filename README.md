@@ -28,9 +28,10 @@ than a simulation model that is considered to be the original specification.
 
 The funnel is computed as follows.
 
-1. Tolerance areas (based on L1-norm) are built around each reference data point.
+1. Tolerance rectangles (based on the max norm) are built around each reference data point.
    - The tolerance parameters correspond to the half-width and half-height of the
-     tolerance areas. They default to 0.
+     tolerance rectangles. They default to 0. When several are set, the largest
+     one applies; a half-width or half-height of 0 is replaced by `1e-10`.
 
    - When using `atolx` and `atoly`, the tolerance is considered as absolute
      (same unit as `x` and `y`).
@@ -39,7 +40,8 @@ The funnel is computed as follows.
      to the local value of `x` and `y`.
 
    - When using `rtolx` and `rtoly`, the tolerance is considered relative
-     to the range of `x` and `y`. This option is available mainly for compatibility with
+     to the range of `x` and `y`, or to their magnitude where the tolerance would
+     otherwise be 0. This option is available mainly for compatibility with
      the algorithm implemented in [csv-compare](https://github.com/modelica-tools/csv-compare)
      for relative comparison. It should be used with caution.
 
@@ -56,6 +58,11 @@ The funnel is computed as follows.
 The comparison then simply consists of interpolating the upper and lower envelopes
 at the `x` test values and comparing the yielded `y_up` and `y_low` values with the `y` test values.
 By convention, the error is `max(0, y - y_up) - min(0, y - y_low)` and hence it is always positive.
+
+The funnel includes its boundary, along `x` as along `y`: a test point at exactly
+the tolerance from the reference yields no error. Where the funnel has a vertical edge
+(for instance at a jump of the reference), the outer end of that edge is used.
+A test data set identical to the reference always yields an error of zero.
 
 ## How to Run
 
