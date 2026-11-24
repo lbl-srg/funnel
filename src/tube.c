@@ -6,7 +6,8 @@
  *
  * Functions:
  * ----------
- *   interpolateValues: interpolate sources data points
+ *   interpolate: interpolate source data points, with a choice of the value at a vertical edge
+ *   interpolateValues: interpolate source data points
  *   compare: compare test value with tube
  *   validate: validate test curve and generate error report
  */
@@ -21,27 +22,38 @@
 #include "tubeSize.h"
 #include "tube.h"
 
+/* Exact comparisons of x values are intended here, see algorithmRectangle.c. */
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
 #ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
 /*
- * Function: interpolateValues
- * ---------------------------
- *   interpolate sources data points,
+ * Function: interpolate
+ * ---------------------
+ *   interpolate source data points onto target x values,
  *                                 sourceY[j] - sourceY[j-1]
  *     targetY[i] = sourceY[j-1] + ------------------------- * (targetX[i] - sourceX[j-1])
  *                                 sourceX[j] - sourceX[j-1]
  *
- *   sourceX: source data x value
- *   sourceY: source data y value
- *   sourceLength: total source data points
- *   targetX: target data x value
- *   targetLength: total target data points
+ *   A target x equal to a source x takes the source y as is. The source may
+ *   hold several points at that x: a tube curve has a vertical edge wherever
+ *   the reference jumps by more than the tube height within the x tolerance.
+ *   `side` selects the value at such an edge:
+ *      0: the first point at that x
+ *     -1: the lowest one (lower tube curve)
+ *      1: the highest one (upper tube curve)
+ *   The tube is a closed set, so its edge belongs to it: with side = -1 or 1,
+ *   a test point at exactly the x tolerance from a jump of the reference is
+ *   inside the tube.
  *
- *   return: targetY -- target data y value
+ *   x values are compared exactly (see algorithmRectangle.c).
  */
-double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, double* targetX, int targetLength) {
+static double * interpolate(double* sourceX, double* sourceY, int sourceLength,
+  double* targetX, int targetLength, int side) {
   if (sourceY == NULL || sourceLength == 0) {
     return sourceY;
   }
@@ -50,6 +62,13 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
   if (targetY == NULL){
   	  fputs("Error: Failed to allocate memory for targetY.\n", stderr);
   	  return NULL;
+  }
+  if (sourceLength == 1) {
+    /* A single point holds no segment to interpolate on. */
+    for (i=0; i<targetLength; i++) {
+      targetY[i] = sourceY[0];
+    }
+    return targetY;
   }
   int j = 1;
   double x, x0, x1, y0, y1;
@@ -82,8 +101,20 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
     x0 = sourceX[j-1];
     y0 = sourceY[j-1];
 
-    // Prevent NaN -> division by zero
-    if (!equ((x1-x0)*(x-x0), 0)) {
+    if (x == x1 || x == x0) {
+      /* On a source point: no interpolation. Source points j-1, j, j+1, ...
+         may share this x. */
+      int k = (x == x0) ? j-1 : j;
+      double y = sourceY[k];
+      if (side != 0) {
+        for (k = k+1; k < sourceLength && sourceX[k] == x; k++) {
+          if ((side < 0 && sourceY[k] < y) || (side > 0 && sourceY[k] > y)) {
+            y = sourceY[k];
+          }
+        }
+      }
+      targetY[i] = y;
+    } else if (x1 != x0) {
       targetY[i] = y0 + (((y1 - y0) / (x1 - x0)) * (x - x0));
     } else {
       targetY[i] = y0;
@@ -91,6 +122,23 @@ double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, d
   }
 
   return targetY;
+}
+
+/*
+ * Function: interpolateValues
+ * ---------------------------
+ *   interpolate source data points onto target x values
+ *
+ *   sourceX: source data x value
+ *   sourceY: source data y value
+ *   sourceLength: total source data points
+ *   targetX: target data x value
+ *   targetLength: total target data points
+ *
+ *   return: targetY -- target data y value
+ */
+double * interpolateValues(double* sourceX, double* sourceY, int sourceLength, double* targetX, int targetLength) {
+  return interpolate(sourceX, sourceY, sourceLength, targetX, targetLength, 0);
 }
 
 /*
@@ -189,8 +237,9 @@ int validate(
   const struct data upper,
   const struct data test,
   struct errorReport* err) {
-    double *newLower = interpolateValues(lower.x, lower.y, lower.n, test.x, test.n);
-    double *newUpper = interpolateValues(upper.x, upper.y, upper.n, test.x, test.n);
+    /* At a vertical edge of the tube, take its outer end: the edge is inside. */
+    double *newLower = interpolate(lower.x, lower.y, lower.n, test.x, test.n, -1);
+    double *newUpper = interpolate(upper.x, upper.y, upper.n, test.x, test.n, 1);
     if (newLower == NULL || newUpper == NULL) {
       fputs("Error: Failed to interpolate the tube curves onto the test grid.\n", stderr);
       if (newLower != lower.y) free(newLower);

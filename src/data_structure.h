@@ -17,19 +17,11 @@
  * -------------
  *   compare two doubles for equality, relative to their magnitude
  *
- *   This was an absolute 1e-10, defined four times over in four translation
- *   units -- twice with the parentheses that the other two carry a comment
- *   about needing. An absolute tolerance is unusable above magnitude one: at
- *   3.15e7, a year in seconds, a double's ulp is about 7.5e-9, so no two
- *   distinct values can satisfy it and values equal to within rounding read as
- *   different. getLower and getUpper normalise x precisely to work around
- *   that, but y, the slopes computed from it, and the endpoint check in
- *   compareAndReport are all left at their natural magnitude.
+ *   The tolerance is 1e-10 times the larger operand, and 1e-10 for values at
+ *   or below magnitude one.
  *
- *   Scaling by the larger operand holds the tolerance at a constant ~1e-10
- *   relative, which is what the absolute form already meant for values of
- *   order one. At or below magnitude one the result is unchanged, which is why
- *   the stored numerics results are unaffected.
+ *   For parameters and data ranges only (tubeSize.c, compare.c). The tube
+ *   construction compares exactly: see algorithmRectangle.c.
  */
 static inline bool equ(double a, double b) {
   double mag_a = fabs(a);
